@@ -65,7 +65,7 @@ OBJECT_DEFS = {
     "fence": (1, 1, True, "obj"), "fence_v": (1, 1, True, "obj"), "picnic": (2, 1, True, "obj"),
     "flowerpot": (1, 1, True, "obj"), "flowerpot2": (1, 1, True, "obj"), "gazebo": (4, 2, True, "obj"),
     "lighthouse": (3, 2, True, "obj"), "towel": (2, 1, False, "decal"), "towel2": (2, 1, False, "decal"),
-    "sandcastle": (1, 1, True, "obj"), "bench_l": (1, 1, True, "obj"), "bench_r": (1, 1, True, "obj"),
+    "ricci_map": (2, 1, False, "wall"), "sandcastle": (1, 1, True, "obj"), "bench_l": (1, 1, True, "obj"), "bench_r": (1, 1, True, "obj"),
 }
 
 # Área que realmente bloqueia a jogadora (x, y, largura, altura em pixels de arte, a partir do canto
@@ -294,10 +294,10 @@ class GameMap:
 # ---------------------------------------------------------------------------
 CITY_DOORS = {"home": (6, 15), "hq": (21, 15), "cafe": (35, 15), "catco": (48, 15),
               "books": (55, 31), "market": (64, 31), "trattoria": (81, 31), "bar": (55, 45), "cinema": (65, 45),
-              "hospital": (78, 15)}
+              "hospital": (78, 15), "ricci": (64, 15)}
 INTERIOR_DOORS = {"home": (16, 15), "hq": (12, 17), "cafe": (7, 10), "catco": (11, 14),
                   "books": (8, 11), "market": (8, 11), "trattoria": (10, 12), "bar": (8, 11), "cinema": (10, 13),
-                  "hospital": (13, 16)}
+                  "hospital": (13, 16), "ricci": (10, 13)}
 TERRACE_DOOR = (15, 1)      # porta da sala para o terraço (na cobertura)
 STATION_SLOTS = [(x, y) for y in (4, 7) for x in (12, 14, 16, 18, 20, 22)]
 HOME_BED = (3, 4)          # onde a jogadora acorda
@@ -439,7 +439,7 @@ def build_city():
         Building("LUTHOR CORP", "tower", 16, 6, 11, 10, 6, 21, "hq"),
         Building("Grão Nobre", "cafe", 31, 10, 7, 6, 1, 35, "cafe"),
         Building("CatCo Worldwide Media", "catco", 44, 7, 10, 9, 5, 48, "catco"),
-        Building("Banco de National City", "bank", 60, 8, 8, 8, 1, 64, None),
+        Building("Gruppo Ricci", "ricci", 60, 8, 9, 8, 2, 64, "ricci"),
         Building("Conti Moretti Hospitais", "hospital", 74, 7, 9, 9, 3, 78, "hospital"),
         Building("Bayside Books", "books", 48, 25, 8, 7, 1, 55, "books"),
         Building("Mercado Central", "market", 61, 25, 8, 7, 1, 64, "market"),
@@ -949,8 +949,59 @@ def build_hospital():
     return m
 
 
+VITTORIA_DESK = (4, 2)      # onde a Vittoria trabalha na sede
+
+
+def build_ricci():
+    """Sede do Gruppo Ricci: sala da Vittoria, cozinha de testes, sala de degustação e recepção."""
+    rows = [
+        "WWWWWWWWWWWWWWWWWWWW",
+        "WWWWWWWWWWWWWWWWWWWW",
+        "WOOOOOOOGmmmmGkkkkkW",
+        "WOOOOOOOGmmmmGkkkkkW",
+        "WOOOOOOOmmmmmmkkkkkW",
+        "WOOOOOOOGmmmmGkkkkkW",
+        "WOOOOOOOGmmmmGkkkkkW",
+        "WGGGGGGGGmmmmGGGGGGW",
+        "WcccccGmmmmmmmmmmmmW",
+        "WcccccGmmmmmmmmmmmmW",
+        "WcccccmmmmmmmmmmmmmW",
+        "WcccccGmmmmmmmmmmmmW",
+        "WcccccGmmmmmmmmmmmmW",
+        "WWWWWWWWWWDWWWWWWWWW",
+    ]
+    m = _interior("ricci", rows, "Gruppo Ricci")
+    # sala da Vittoria
+    m.add("window_big", 2, 1); m.add("window_big", 5, 1)
+    m.add("desk", 3, 3)
+    m.add("plant_big", 1, 2); m.add("bookshelf", 6, 2)
+    m.add("rug_red", 2, 5)
+    m.add("armchair", 1, 6); m.add("armchair", 7, 6)
+    # corredor com o mapa dos restaurantes
+    m.add("ricci_map", 10, 1)
+    m.add("plant", 9, 2); m.add("plant", 12, 2)
+    # cozinha de testes
+    m.add("window", 16, 1)
+    m.add("kitchen", 14, 2); m.add("stove", 17, 2); m.add("fridge", 18, 2)
+    m.add("island", 15, 4)
+    for x in (15, 16, 17):
+        m.add("stool", x, 5)
+    # sala de degustação
+    m.add("wine_shelf", 1, 8)
+    m.add("dining", 2, 10); m.add("chair", 1, 10); m.add("chair", 4, 10)
+    m.add("plant", 5, 12)
+    # recepção
+    m.add("desk", 13, 9)
+    m.add("rug_green", 8, 10)
+    m.add("sofa_grey", 15, 12)
+    m.add("plant_big", 18, 8); m.add("plant_big", 7, 12)
+    m.add("coffee", 18, 10)
+    m.finalize()
+    return m
+
+
 def build_world():
     return {"city": build_city(), "home": build_home(), "hq": build_hq(), "cafe": build_cafe(),
             "catco": build_catco(), "books": build_books(), "market": build_market(),
             "trattoria": build_trattoria(), "bar": build_bar(), "terrace": build_terrace(),
-            "cinema": build_cinema(), "hospital": build_hospital()}
+            "cinema": build_cinema(), "hospital": build_hospital(), "ricci": build_ricci()}

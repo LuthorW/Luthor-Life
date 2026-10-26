@@ -2133,6 +2133,9 @@ class Game:
             ui.text(surf, "CINE NATIONAL", (cx, y + H - 52 * SCALE + 6), 20, (255, 230, 140), bold=True, center=True)
         elif b.style == "bank":
             ui.text(surf, "BANCO", (cx, y + 13 * SCALE), 15, (90, 80, 60), bold=True, center=True, shadow=False)
+        elif b.style == "ricci":
+            ui.text(surf, "GRUPPO RICCI", (cx, y + H - 44 * SCALE + 1), 16, (240, 214, 140), bold=True, center=True,
+                    shadow=False)
         elif b.style == "hospital":
             logo = art.load_image("cmh.png", (18 * SCALE, 18 * SCALE))
             if logo:

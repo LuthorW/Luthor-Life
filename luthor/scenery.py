@@ -669,3 +669,118 @@ def _water_corner(which):
                         P(s, (150, 206, 240), x, y)
         return up(s)
     return cached(("wcorner", which), make)
+
+
+# ---------------------------------------------------------------------------
+# Gruppo Ricci: fachada de palazzo italiano e o mapa dos restaurantes
+# ---------------------------------------------------------------------------
+RICCI_GREEN = (58, 108, 72)
+RICCI_GOLD = (214, 172, 84)
+
+
+def _ricci_building(w, h, extra, night):
+    W, H = w * TS, (h + extra) * TS
+    s = new(W, H)
+    stucco, stucco_dk, stucco_lt = (238, 224, 198), (206, 188, 160), (250, 242, 222)
+    terra, terra_dk = (184, 98, 66), (138, 70, 48)
+    top = 12
+    R(s, stucco, 0, top, W, H - top)
+    R(s, stucco_lt, 0, top, 3, H - top)
+    R(s, stucco_dk, W - 3, top, 3, H - top)
+    # telhado de telhas e cornija
+    R(s, terra_dk, 0, top - 4, W, 6)
+    for x in range(0, W, 4):
+        R(s, terra, x, top - 6, 3, 5)
+        P(s, mix(terra, (255, 230, 200), 0.3), x, top - 6)
+    R(s, stucco_lt, 0, top + 2, W, 2)
+    R(s, stucco_dk, 0, top + 4, W, 1)
+    # frontão central com o brasão dourado
+    cx = W // 2
+    pygame.draw.polygon(s, stucco_lt, [(cx - 18, top), (cx, top - 12), (cx + 18, top)])
+    pygame.draw.polygon(s, stucco_dk, [(cx - 18, top), (cx, top - 12), (cx + 18, top)], 1)
+    pygame.draw.circle(s, RICCI_GOLD, (cx, top - 4), 3)
+    P(s, (255, 236, 170), cx - 1, top - 5)
+    # faixa da placa sobre o portão (o nome é escrito pelo jogo)
+    sy = H - 44
+    R(s, RICCI_GREEN, 8, sy, W - 16, 10)
+    R(s, RICCI_GOLD, 8, sy, W - 16, 1); R(s, RICCI_GOLD, 8, sy + 9, W - 16, 1)
+    R(s, shade(RICCI_GREEN, 0.7), 8, sy + 10, W - 16, 1)
+    # janelas em arco com persianas verdes, em dois andares
+    glass = (250, 214, 140) if night else (150, 196, 222)
+    glass_dk = (220, 170, 100) if night else (110, 150, 186)
+    cols = [10, 32, W - 42, W - 20]
+    for row_y in (top + 24, top + 54):
+        for x in cols:
+            R(s, RICCI_GREEN, x - 4, row_y + 2, 3, 16); R(s, RICCI_GREEN, x + 13, row_y + 2, 3, 16)
+            R(s, stucco_dk, x - 1, row_y - 1, 14, 20)
+            R(s, glass, x, row_y + 3, 12, 15)
+            pygame.draw.circle(s, glass, (x + 6, row_y + 4), 6, draw_top_left=True, draw_top_right=True)
+            R(s, glass_dk, x + 6, row_y + 3, 1, 15); R(s, glass_dk, x, row_y + 10, 12, 1)
+            R(s, stucco_lt, x - 2, row_y + 18, 16, 2)
+    # sacada no centro do primeiro andar, com bandeirinhas italianas
+    by = top + 24
+    R(s, glass, cx - 10, by + 2, 20, 18)
+    R(s, glass_dk, cx, by + 2, 1, 18)
+    R(s, stucco_dk, cx - 14, by + 20, 28, 3)
+    for x in range(cx - 13, cx + 14, 3):
+        R(s, (52, 48, 56), x, by + 14, 1, 6)
+    R(s, (52, 48, 56), cx - 14, by + 13, 28, 1)
+    for i, c in enumerate(((60, 140, 80), (244, 244, 240), (200, 50, 56))):
+        R(s, c, cx - 16 + i * 3, by - 8, 3, 6)
+        R(s, c, cx + 7 + i * 3, by - 8, 3, 6)
+    R(s, (90, 80, 70), cx - 17, by - 9, 1, 10); R(s, (90, 80, 70), cx + 16, by - 9, 1, 10)
+    # térreo: base de pedra, portão em arco e vasos de limoeiro
+    R(s, (196, 180, 156), 0, H - 30, W, 30)
+    for x in range(0, W, 12):
+        R(s, (172, 156, 132), x, H - 30, 1, 30)
+    R(s, (172, 156, 132), 0, H - 16, W, 1)
+    door_w = 18
+    dx0 = cx - door_w // 2
+    R(s, (92, 60, 40), dx0 - 2, H - 26, door_w + 4, 26)
+    pygame.draw.circle(s, (92, 60, 40), (cx, H - 26), door_w // 2 + 2, draw_top_left=True, draw_top_right=True)
+    R(s, (134, 88, 56), dx0, H - 24, door_w, 24)
+    pygame.draw.circle(s, (134, 88, 56), (cx, H - 24), door_w // 2, draw_top_left=True, draw_top_right=True)
+    R(s, (92, 60, 40), cx, H - 30, 1, 30)
+    P(s, RICCI_GOLD, cx - 3, H - 12); P(s, RICCI_GOLD, cx + 2, H - 12)
+    for x in (cx - 30, cx + 22):
+        R(s, (166, 92, 62), x, H - 10, 8, 8)
+        R(s, (196, 112, 76), x - 1, H - 11, 10, 2)
+        pygame.draw.circle(s, (70, 132, 70), (x + 4, H - 16), 6)
+        pygame.draw.circle(s, (96, 160, 84), (x + 2, H - 18), 3)
+        for (lx, ly) in ((x + 1, H - 15), (x + 6, H - 19), (x + 5, H - 13)):
+            P(s, (250, 220, 70), lx, ly)
+    # janelas do térreo
+    for x in (10, W - 22):
+        R(s, stucco_dk, x - 1, H - 25, 14, 14)
+        R(s, glass, x, H - 24, 12, 12)
+        R(s, glass_dk, x + 6, H - 24, 1, 12)
+    return s
+
+
+_orig_building_sprite = art.building_sprite
+
+
+def _building_sprite(style, w, h, extra, night=False):
+    if style == "ricci":
+        return cached(("bld", style, w, h, extra, night), lambda: up(_ricci_building(w, h, extra, night)))
+    return _orig_building_sprite(style, w, h, extra, night)
+
+
+art.building_sprite = _building_sprite
+
+
+def _ricci_map():
+    """Mapa-múndi na parede com os restaurantes do grupo marcados."""
+    s = new(32, 16)
+    R(s, (120, 84, 52), 0, 1, 32, 14)
+    R(s, (236, 222, 186), 1, 2, 30, 12)
+    land = (150, 176, 120)
+    for (x, y, w, h) in ((3, 4, 7, 3), (5, 7, 4, 4), (14, 3, 5, 3), (15, 6, 4, 5), (21, 3, 8, 4), (25, 8, 4, 3)):
+        R(s, land, x, y, w, h)
+    for (x, y) in ((16, 4), (17, 5), (16, 5), (6, 5), (24, 4), (27, 9)):
+        P(s, (210, 40, 50), x, y)
+    R(s, RICCI_GOLD, 1, 2, 30, 1)
+    return s
+
+
+art.OBJECT_BUILDERS["ricci_map"] = _ricci_map

@@ -82,7 +82,9 @@ luthor/
   Cristina (contrato de $200 às segundas), Lexie (trabalho gasta menos energia), Izzie e Addison (presentes).
 - **Conti Moretti Hospitais** segue o site do projeto `CMHospitais` (pasta irmã): 12 especialidades,
   lideranças clínicas, cores verde #123f35, cobre #b77b65, papel #fbfaf8. Consulta: energia cheia + bônus do dia.
-- **Romance:** Lucy Williams (repórter da CatCo, Brie Larson) e Vittoria Ricci (chef, Adria Arjona).
+- **Romance:** Lucy Williams (repórter da CatCo, Brie Larson) e Vittoria Ricci (Adria Arjona), dona do Gruppo Ricci,
+  rede de restaurantes com sede em National City (o prédio que antes era o banco). Ela **não é chef**: quem cozinha
+  e cuida da loja da Ricci Trattoria é a Dona Graça, chef brasileira veterana.
   Rosas aos 8 corações → namoro; pingente aos 10 → morar junto. Cutscenes nos eventos de coração.
 - **Ações LCORP:** variação noturna = aleatório + vendas de produtos/800 + bônus (Nia, doação).
   Compra e venda com quantidade livre (`ui.NumberPrompt`) e "Vender todas".
@@ -118,3 +120,4 @@ substitua `pygame.key.get_pressed`. Antes de entregar uma mudança, rode alguns 
 6. Site em `docs/` e README novo para o GitHub.
 7. Cidade ampliada (Bosque Bayside, Jardim do Mirante, farol), cenário estilo Stardew e colisão mais suave.
 8. Calçadão reorganizado (portas alinhadas ao desenho, bancos de lado), mar maior e personagens estilo Stardew.
+9. Sede do Gruppo Ricci no lugar do banco; Vittoria vira dona da rede e a Dona Graça assume a cozinha da Trattoria.

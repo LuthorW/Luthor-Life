@@ -220,32 +220,36 @@ NPCS = {
         morning_gift=["panquecas", "cappuccino", "policial"],
     ),
     "vittoria": dict(
-        name="Vittoria Ricci", short="Vittoria", role="Chef da Ricci Trattoria", romance=True,
-        look=look((58, 34, 26), (206, 156, 120), (240, 236, 230), (190, 40, 50), (40, 36, 44), (60, 30, 30), "long"),
-        portrait="vittoria.jpg", shop="trattoria", shop_map="trattoria",
+        name="Vittoria Ricci", short="Vittoria", role="Dona do Gruppo Ricci", romance=True,
+        look=look((58, 34, 26), (206, 156, 120), (128, 32, 48), (244, 236, 222), (40, 36, 44), (60, 30, 30), "long"),
+        portrait="vittoria.jpg",
         moods=dict(happy="vittoria_feliz.jpg", love="vittoria_apaixonada.jpg"),
         gifts=dict(love=["girassois", "lasanha_nonna", "risoto", "vinho"],
                    like=["flores", "massa_pesto", "peixe_grelhado", "tiramisu", "moqueca", "polvo"],
                    dislike=["rosquinha", "sanduiche", "lata", "jornal"]),
         schedule=dict(
-            default=[(360, None, 0, 0, "down"), (420, "market", 3, 7, "up"), (540, "trattoria", 9, 4, "down"),
-                     (900, "city", 17, 39, "right"), (990, "trattoria", 9, 4, "down"), (1380, None, 0, 0, "down")],
-            weekend=[(360, None, 0, 0, "down"), (480, "city", 47, 56, "down"), (660, "trattoria", 9, 4, "down"),
+            # mercado cedo, sede do Gruppo Ricci, almoço na Trattoria, parque às 15h e a Trattoria à noite
+            default=[(360, None, 0, 0, "down"), (420, "market", 3, 7, "up"), (540, "ricci", 4, 2, "down"),
+                     (750, "trattoria", 13, 4, "left"), (900, "city", 17, 39, "right"), (990, "ricci", 4, 2, "down"),
+                     (1140, "trattoria", 13, 4, "left"), (1380, None, 0, 0, "down")],
+            weekend=[(360, None, 0, 0, "down"), (480, "city", 47, 56, "down"), (660, "trattoria", 13, 4, "left"),
                      (1380, None, 0, 0, "down")],
-            rain=[(360, None, 0, 0, "down"), (540, "trattoria", 9, 4, "down"), (1380, None, 0, 0, "down")],
+            rain=[(360, None, 0, 0, "down"), (540, "ricci", 4, 2, "down"), (1140, "trattoria", 13, 4, "left"),
+                  (1380, None, 0, 0, "down")],
         ),
         lines=dict(
             low=["Buongiorno! Mesa pra uma? Ah, você é a famosa Letícia Luthor. Che piacere!",
-                 "Aqui só entra ingrediente fresco. Se não estiver fresco, não entra. Nem você, se estiver cansada.",
+                 "Nos restaurantes Ricci só entra ingrediente fresco. Regra número um do grupo. Nem você entra, se estiver cansada.",
                  "Minha nonna dizia: quem cozinha com pressa, come com tristeza.",
                  "Sou de Milão. Rossonera de coração! Vi que a LuthorCorp patrocina o Milan. Ponto pra você."],
-            mid=["Passo no Mercado Central toda manhã às sete. A Bea guarda os melhores tomates pra mim.",
+            mid=["Passo no Mercado Central toda manhã às sete. A Bea guarda os melhores tomates pra Trattoria.",
+                 "O Gruppo Ricci tem doze restaurantes em três países. A sede é pequena, mas tem o melhor café da Bayside.",
                  "Você já cozinhou alguma vez na vida? Não minta pra uma italiana. A gente sabe.",
-                 "Às três da tarde eu dou uma volta no parque. Chef também precisa respirar, cara mia."],
-            high=["Quando você entra no restaurante, eu erro o ponto da massa. Isso nunca acontece. Mai!",
+                 "Às três da tarde eu dou uma volta no parque. Dona de restaurante também precisa respirar, cara mia."],
+            high=["Quando você entra no restaurante, eu esqueço o que ia dizer pros investidores. Isso nunca acontece. Mai!",
                   "Eu vim pra National City pra recomeçar. Não sabia que ia encontrar... alguém.",
                   "Tesoro, senta. Hoje eu cozinho só pra você."],
-            evening=["A cozinha fecha às onze. Depois disso, sou só a Vittoria. Sem avental."],
+            evening=["A Trattoria fecha às onze. Depois disso, sou só a Vittoria. Sem planilha."],
             rain=["Chuva! Dia perfeito para um risoto bem cremoso. Quer?"],
             weekend=["No fim de semana eu nado cedo, antes de abrir. O mar daqui é quase o Mediterrâneo. Quase."],
             partner=["Buongiorno, amore. Deixei uma coisinha pra você na cozinha. Não abre a geladeira antes do café!",
@@ -260,7 +264,7 @@ NPCS = {
                        dislike="Isso... é industrializado? Dio mio. Bem, obrigada pela intenção."),
         events={
             2: dict(scene="vittoria_2", mood="happy", gift="pizza", lines=["Você de novo! Vou começar a reservar sua mesa.",
-                                                      "Toma, uma pizza por conta da casa. Margherita, como em Napoli.",
+                                                      "Toma, uma pizza por conta da casa. A Dona Graça fez, eu só servi. Margherita, como em Napoli.",
                                                       "Não conta pros outros clientes, eh?"]),
             4: dict(scene="vittoria_4", mood="happy", flag="vittoria_family", lines=["Sabe, eu decidi uma coisa. Você agora é família Ricci.",
                                                                  "E família Ricci tem 20% de desconto. É a regra. Regra da nonna.",
@@ -358,6 +362,31 @@ NPCS = {
                        neutral="Obrigada, querida!", dislike="Uma lata... Vou reciclar, viu?"),
         events={},
     ),
+    "graca": dict(
+        name="Dona Graça", short="Graça", role="Chef da Ricci Trattoria",
+        look=look((96, 84, 86), (176, 120, 86), (240, 236, 230), (40, 130, 80), (60, 52, 56), (50, 40, 40), "bun"),
+        portrait=None, shop="trattoria", shop_map="trattoria",
+        gifts=dict(love=["moqueca", "lasanha_nonna"], like=["manjericao", "tomate", "abobora", "cappuccino", "flores"],
+                   dislike=["lata", "rosquinha", "sanduiche"]),
+        schedule=dict(default=[(360, None, 0, 0, "down"), (540, "trattoria", 9, 4, "down"), (1380, None, 0, 0, "down")]),
+        lines=dict(
+            low=["Bem-vinda, filha! Senta que a massa já vem. Hoje tem nhoque com molho de tomate da Bea.",
+                 "Trinta anos de fogão, dez deles na Itália. Aprendi italiano antes de aprender a fazer um bom risoto.",
+                 "A Vittoria cuida dos números. Eu cuido do sabor. Assim ninguém briga. Quase ninguém."],
+            mid=["Segredo da casa: um tiquinho de pimenta-do-reino no molho de tomate. Não conta pra nonna da Vittoria.",
+                 "Lasanha boa é que nem conversa boa: camada por camada, sem pressa.",
+                 "Quando dá saudade da Bahia, eu faço moqueca pra equipe. Ninguém reclama."],
+            high=["Você come bem, minha filha. Quem come bem é gente boa. Não erro nunca.",
+                  "A Vittoria fala de você o tempo todo. Eu finjo que não ouço. Mas ouço tudo."],
+            evening=["Cozinha cheia, panela no fogo e coração tranquilo. É assim que eu gosto."],
+            rain=["Dia de chuva pede caldo quentinho. Já botei o feijão pra cozinhar, só por garantia."],
+        ),
+        reactions=dict(love="Ai, que coisa mais linda! Você tem mão boa, viu?", like="Obrigada, filha!",
+                       neutral="Obrigada, querida.", dislike="Comida de pacote? Ai, meu Deus. Mas obrigada pela lembrança."),
+        events={3: dict(gift="moqueca", lines=["Fiz uma moqueca do jeito da minha mãe, lá em Salvador.",
+                                               "Leva pra casa. Esquenta devagar, não deixa ferver.",
+                                               "E volta pra me dizer se ficou boa. Eu sei que ficou."])},
+    ),
     "marco": dict(
         name="Marco", short="Marco", role="Barman do Noonan's",
         look=look((30, 26, 28), (190, 140, 110), (40, 40, 46), (200, 40, 60), (30, 30, 36), (20, 18, 22), "short"),
@@ -406,19 +435,19 @@ NPCS = {
 
 EYES = {"sam": (110, 70, 40), "brainy": (60, 40, 34), "jess": (90, 60, 36), "rafa": (70, 130, 190),
         "lucy": (80, 150, 200), "vittoria": (96, 56, 30), "nia": (60, 36, 26), "theo": (70, 48, 30),
-        "bea": (90, 150, 90), "marco": (50, 36, 30), "joca": (90, 120, 150)}
+        "bea": (90, 150, 90), "marco": (50, 36, 30), "joca": (90, 120, 150), "graca": (80, 52, 34)}
 for _k, _e in EYES.items():
     NPCS[_k]["look"]["eyes"] = _e
 NPCS["vittoria"]["look"]["style"] = "wavy"
 # roupa de cada personagem (desenhada em sprites.py)
 OUTFITS = {"sam": "blazer", "brainy": "blazer", "jess": "blouse", "rafa": "apron", "lucy": "blazer",
-           "vittoria": "chef", "nia": "blouse", "theo": "cardigan", "bea": "apron", "marco": "vest", "joca": "fisher"}
+           "vittoria": "blazer", "graca": "chef", "nia": "blouse", "theo": "cardigan", "bea": "apron", "marco": "vest", "joca": "fisher"}
 for _k, _o in OUTFITS.items():
     NPCS[_k]["look"]["outfit"] = _o
 
 from .doctors import DOCTORS, DOCTOR_KEYS
 NPCS.update(DOCTORS)
-NPC_ORDER = ["sam", "brainy", "jess", "rafa", "lucy", "vittoria", "nia", "theo", "bea", "marco", "joca"] + DOCTOR_KEYS
+NPC_ORDER = ["sam", "brainy", "jess", "rafa", "lucy", "vittoria", "nia", "theo", "bea", "graca", "marco", "joca"] + DOCTOR_KEYS
 TEAM = ["sam", "brainy", "jess", "rafa"]
 ROMANCES = ["lucy", "vittoria"]
 

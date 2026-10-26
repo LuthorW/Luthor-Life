@@ -22,12 +22,12 @@ from .hospital import LEADERS
 
 # Horário de funcionamento (minutos do dia; fecha depois da meia-noite = > 1440)
 VENUES = {
-    "cafe": (7 * 60, 19 * 60), "catco": (8 * 60, 20 * 60), "books": (9 * 60, 21 * 60),
+    "cafe": (7 * 60, 19 * 60), "catco": (8 * 60, 20 * 60), "ricci": (9 * 60, 18 * 60), "books": (9 * 60, 21 * 60),
     "market": (7 * 60, 19 * 60), "trattoria": (11 * 60 + 30, 23 * 60), "bar": (17 * 60, 25 * 60),
     "cinema": (12 * 60, 24 * 60), "hospital": (7 * 60, 22 * 60), "park": (6 * 60 + 30, 21 * 60),
     "beach": (7 * 60, 20 * 60),
 }
-WEEKEND_ONLY_CLOSED = {"catco"}     # CatCo quase vazia no fim de semana
+WEEKEND_ONLY_CLOSED = {"catco", "ricci"}     # escritórios quase vazios no fim de semana
 ENTRIES = [(1, 17), (110, 20), (1, 49), (110, 52), (10, 17), (68, 21), (79, 49), (43, 46)]
 
 HAIR = [(30, 22, 20), (70, 44, 30), (120, 80, 50), (200, 160, 90), (236, 210, 140), (150, 60, 40), (90, 90, 96),
