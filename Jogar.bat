@@ -2,10 +2,10 @@
 chcp 65001 >nul
 cd /d "%~dp0"
 set "PY="
-py -3 --version >/dev/null 2>/dev/null && set "PY=py -3"
-if not defined PY python --version >/dev/null 2>/dev/null && set "PY=python"
+py -3 --version >nul 2>nul && set "PY=py -3"
+if not defined PY python --version >nul 2>nul && set "PY=python"
 if not defined PY goto semPython
-%PY% -c "import pygame" >/dev/null 2>/dev/null || %PY% -m pip install -r requirements.txt
+%PY% -c "import pygame" >nul 2>nul || %PY% -m pip install -r requirements.txt
 %PY% main.py
 if errorlevel 1 pause
 exit /b

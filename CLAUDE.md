@@ -25,6 +25,9 @@ luthor/
   game.py        classe Game: estado, loop, interação, HUD, desenho, fim do dia, save/load
   world.py       mapas (interiores desenhados em texto), OBJECT_DEFS, portas CITY_DOORS/INTERIOR_DOORS
   art.py         TODA a pixel art é procedural (tiles, prédios, objetos, personagens 16x32, ícones)
+  sprites.py     personagens estilo Stardew (cabeça grande de 12 px, rosto do jogo original com nariz, cabelo em mechas); roupas por `look["outfit"]`
+                 (shirt, blazer, coat, chef, apron, vest, cardigan, fisher, blouse); substitui art._frames
+  scenery.py     cenário estilo Stardew: árvores grandes (copa some atrás), grama/terra, cantos e enfeites do chão
   entities.py    Player, NPC (rotina e caminho entre mapas), Car
   characters.py  NPCS (aparência, rotina, falas base, presentes, reações, eventos), NPC_ORDER, TEAM, ROMANCES
   dialogue.py    LINES por período/clima/lugar/amizade, REACTIVE (falas condicionais), BUSY
@@ -47,6 +50,10 @@ luthor/
   `art.OBJECT_BUILDERS` (módulos novos fazem `art.OBJECT_BUILDERS.update(...)`). O objeto também precisa de
   uma entrada em `world.OBJECT_DEFS` = (largura, altura, sólido, camada "obj" | "decal" | "wall").
 - **Ícones de item:** `art._icon(kind, color)`; módulos novos estendem via wrapper (ver `activities._icon_extra`).
+- **Cidade (mapa v2, 112x80; o mar vai até o fim para a câmera mostrar o oceano):** áreas verdes em `world.CITY_AREAS` (park, woods, garden, beach) — figurantes e
+  coletáveis usam essas áreas. Saves antigos são convertidos por `world.old_city_xy` (campo `city_layout`).
+- **Colisão:** `world.HITBOXES` define a parte que bloqueia a jogadora em objetos pequenos (poste, banco, árvore,
+  arbusto...); NPCs desviam do tile inteiro. A jogadora escorrega pelas quinas (`Player._slide`).
 - **Mapas:** interiores são listas de strings (W parede, G vidro, o madeira, m mármore, t azulejo, c carpete,
   b carpete azul, k xadrez, r terracota, D porta). Toda porta de interior precisa estar em
   `INTERIOR_DOORS` e `CITY_DOORS`. **Sempre teste se todas as salas são alcançáveis** (`m.find_path`):
@@ -62,7 +69,7 @@ luthor/
 
 ## Sistemas e regras de design (pedidos da dona)
 
-- **Visual:** personagens magrinhas (16x32), a Letícia tem **olhos verdes**, sem nuvens no céu,
+- **Visual:** personagens no estilo Stardew (sprites.py), mas magrinhas (16x32), a Letícia tem **olhos verdes**, sem nuvens no céu,
   câmera afastada. Gráficos "bonitinhos".
 - **Conversas:** muitas falas e nada de repetição (`lines_seen` guarda as já ditas). Cada personagem conversa
   **uma vez por período** (manhã 6–12h, tarde 12–18h, noite 18–2h); depois disso aparece a fala BUSY e
@@ -109,3 +116,5 @@ substitua `pygame.key.get_pressed`. Antes de entregar uma mudança, rode alguns 
 4. Personagens magras, câmera afastada, falas por período sem repetição, horta, coletáveis, pet, karaokê, cinema.
 5. Conti Moretti Hospitais, ações com quantidade livre, figurantes, médicas como personagens completas.
 6. Site em `docs/` e README novo para o GitHub.
+7. Cidade ampliada (Bosque Bayside, Jardim do Mirante, farol), cenário estilo Stardew e colisão mais suave.
+8. Calçadão reorganizado (portas alinhadas ao desenho, bancos de lado), mar maior e personagens estilo Stardew.

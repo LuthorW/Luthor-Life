@@ -22,10 +22,10 @@ NPCS = {
         portrait="sam.jpg",
         gifts=dict(love=["vinho", "bolo"], like=["flores", "livro", "relatorio", "risoto"], dislike=["rosquinha", "lata"]),
         schedule=dict(
-            default=[(360, None, 0, 0, "down"), (510, "hq", 21, 11, "down"), (1020, "city", 14, 25, "up"),
+            default=[(360, None, 0, 0, "down"), (510, "hq", 21, 11, "down"), (1020, "city", 16, 30, "up"),
                      (1140, "cafe", 11, 7, "left"), (1320, None, 0, 0, "down")],
-            weekend=[(360, None, 0, 0, "down"), (600, "city", 30, 46, "down"), (780, "trattoria", 4, 10, "left"),
-                     (900, "city", 14, 25, "up"), (1140, "cafe", 11, 7, "left"), (1320, None, 0, 0, "down")],
+            weekend=[(360, None, 0, 0, "down"), (600, "city", 34, 56, "down"), (780, "trattoria", 4, 10, "left"),
+                     (900, "city", 16, 30, "up"), (1140, "cafe", 11, 7, "left"), (1320, None, 0, 0, "down")],
         ),
         lines=dict(
             low=["Bom dia, Letícia. Os números de hoje estão na sua mesa... ou deveriam estar.",
@@ -57,10 +57,10 @@ NPCS = {
         gifts=dict(love=["rosquinha", "athena", "hecate", "bolo"], like=["livro", "software", "artemis", "sushi"],
                    dislike=["flores", "girassois", "lata"]),
         schedule=dict(
-            default=[(360, None, 0, 0, "down"), (450, "hq", 11, 5, "right"), (1200, "city", 21, 28, "left"),
+            default=[(360, None, 0, 0, "down"), (450, "hq", 11, 5, "right"), (1200, "city", 23, 33, "left"),
                      (1380, None, 0, 0, "down")],
             weekend=[(360, None, 0, 0, "down"), (540, "books", 6, 7, "up"), (780, "hq", 11, 5, "right"),
-                     (1200, "city", 21, 28, "left"), (1380, None, 0, 0, "down")],
+                     (1200, "city", 23, 33, "left"), (1380, None, 0, 0, "down")],
         ),
         lines=dict(
             low=["Saudações, CEO. Há 87,3% de chance de você ter vindo me pedir algo.",
@@ -97,7 +97,7 @@ NPCS = {
         schedule=dict(
             default=[(360, None, 0, 0, "down"), (420, "hq", 12, 11, "down"), (1080, "cafe", 12, 4, "right"),
                      (1260, None, 0, 0, "down")],
-            weekend=[(360, None, 0, 0, "down"), (600, "market", 7, 7, "up"), (720, "city", 13, 30, "right"),
+            weekend=[(360, None, 0, 0, "down"), (600, "market", 7, 7, "up"), (720, "city", 15, 38, "right"),
                      (1080, "cafe", 12, 4, "right"), (1260, None, 0, 0, "down")],
         ),
         lines=dict(
@@ -158,8 +158,8 @@ NPCS = {
             default=[(360, None, 0, 0, "down"), (480, "cafe", 14, 4, "left"), (540, "catco", 11, 7, "down"),
                      (780, "trattoria", 12, 8, "left"), (840, "catco", 11, 7, "down"), (1080, "books", 4, 7, "up"),
                      (1200, "bar", 5, 5, "up"), (1380, None, 0, 0, "down")],
-            weekend=[(360, None, 0, 0, "down"), (540, "city", 10, 32, "left"), (720, "books", 4, 7, "up"),
-                     (960, "city", 24, 46, "down"), (1200, "bar", 5, 5, "up"), (1380, None, 0, 0, "down")],
+            weekend=[(360, None, 0, 0, "down"), (540, "city", 10, 40, "left"), (720, "books", 4, 7, "up"),
+                     (960, "city", 26, 56, "down"), (1200, "bar", 5, 5, "up"), (1380, None, 0, 0, "down")],
             rain=[(360, None, 0, 0, "down"), (480, "cafe", 14, 4, "left"), (540, "catco", 11, 7, "down"),
                   (1200, "bar", 5, 5, "up"), (1380, None, 0, 0, "down")],
         ),
@@ -207,7 +207,7 @@ NPCS = {
                                          "Anos de silêncio, um apagão, mil cafés... e você.",
                                          "Se quiser ir mais longe... você sabe onde me encontrar."]),
         },
-        date_places=[("bar", 7, 8, "left", "um drinque no Noonan's"), ("city", 22, 46, "down", "pôr do sol na praia"),
+        date_places=[("bar", 7, 8, "left", "um drinque no Noonan's"), ("city", 24, 56, "down", "pôr do sol na praia"),
                      ("books", 10, 8, "left", "uma noite de leitura na Bayside")],
         date_lines=["Você veio. Eu tinha apostado comigo mesma que viria. Ganhei.",
                     "Sabe o que eu mais gosto em você? Você escuta. Ninguém escuta numa cidade dessas.",
@@ -229,8 +229,8 @@ NPCS = {
                    dislike=["rosquinha", "sanduiche", "lata", "jornal"]),
         schedule=dict(
             default=[(360, None, 0, 0, "down"), (420, "market", 3, 7, "up"), (540, "trattoria", 9, 4, "down"),
-                     (900, "city", 15, 31, "right"), (990, "trattoria", 9, 4, "down"), (1380, None, 0, 0, "down")],
-            weekend=[(360, None, 0, 0, "down"), (480, "city", 40, 46, "down"), (660, "trattoria", 9, 4, "down"),
+                     (900, "city", 17, 39, "right"), (990, "trattoria", 9, 4, "down"), (1380, None, 0, 0, "down")],
+            weekend=[(360, None, 0, 0, "down"), (480, "city", 47, 56, "down"), (660, "trattoria", 9, 4, "down"),
                      (1380, None, 0, 0, "down")],
             rain=[(360, None, 0, 0, "down"), (540, "trattoria", 9, 4, "down"), (1380, None, 0, 0, "down")],
         ),
@@ -276,8 +276,8 @@ NPCS = {
                                          "...Mas é verdade."]),
         },
         date_places=[("trattoria", 12, 10, "left", "um jantar só nosso na Trattoria"),
-                     ("city", 40, 46, "down", "um passeio na praia ao luar"),
-                     ("city", 22, 28, "left", "uma volta no parque, perto do chafariz")],
+                     ("city", 47, 56, "down", "um passeio na praia ao luar"),
+                     ("city", 24, 33, "left", "uma volta no parque, perto do chafariz")],
         date_lines=["Você chegou! Separei o melhor vinho e a melhor vista. Que no caso, é você.",
                     "Sabe o que minha nonna diria? 'Essa aí tem fome de vida.' Ela ia te adorar.",
                     "Fica. Esquece os contratos por uma noite, amore."],
@@ -383,8 +383,8 @@ NPCS = {
         portrait=None, shop="bait", shop_map="city",
         gifts=dict(love=["moqueca", "atum", "kryptoniano"], like=["peixe_grelhado", "expresso", "sardinha", "drink"],
                    dislike=["software", "relatorio"]),
-        schedule=dict(default=[(360, "city", 52, 53, "down"), (1080, "bar", 11, 8, "left"), (1320, None, 0, 0, "down")],
-                      rain=[(360, "city", 52, 53, "down"), (1140, "bar", 11, 8, "left"), (1320, None, 0, 0, "down")]),
+        schedule=dict(default=[(360, "city", 62, 65, "down"), (1080, "bar", 11, 8, "left"), (1320, None, 0, 0, "down")],
+                      rain=[(360, "city", 62, 65, "down"), (1140, "bar", 11, 8, "left"), (1320, None, 0, 0, "down")]),
         lines=dict(
             low=["Ô, moça! Quer pescar? Escolhe a vara na barra, fica de frente pra água e aperta E.",
                  "Quando o peixe morder, aperta rápido! Depois segura o botão pra subir a barra verde.",
@@ -410,6 +410,11 @@ EYES = {"sam": (110, 70, 40), "brainy": (60, 40, 34), "jess": (90, 60, 36), "raf
 for _k, _e in EYES.items():
     NPCS[_k]["look"]["eyes"] = _e
 NPCS["vittoria"]["look"]["style"] = "wavy"
+# roupa de cada personagem (desenhada em sprites.py)
+OUTFITS = {"sam": "blazer", "brainy": "blazer", "jess": "blouse", "rafa": "apron", "lucy": "blazer",
+           "vittoria": "chef", "nia": "blouse", "theo": "cardigan", "bea": "apron", "marco": "vest", "joca": "fisher"}
+for _k, _o in OUTFITS.items():
+    NPCS[_k]["look"]["outfit"] = _o
 
 from .doctors import DOCTORS, DOCTOR_KEYS
 NPCS.update(DOCTORS)

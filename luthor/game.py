@@ -25,11 +25,14 @@ from . import hospital
 from . import doctors
 from .crowd import Crowd, thought
 from .cutscenes import Cutscene, SCENES, dating_scene, move_in_scene, date_scene
+from . import scenery
+from .world import CITY_LAYOUT, CITY_DOORS, old_city_xy
 
 SHADOW_KINDS = {"tree": 46, "tree2": 46, "tree3": 46, "palm": 30, "bush": 26, "bush2": 26, "bush3": 26,
                 "planter": 30, "lamp": 16, "bench": 34, "statue": 30, "hydrant": 18, "umbrella": 40, "umbrella2": 40,
                 "kiosk": 120, "signboard": 20, "plant": 26, "plant_big": 30, "sofa": 120, "armchair": 40,
                 "table": 34, "table_it": 34, "arcade": 40, "jukebox": 36, "terminal": 36, "station": 40}
+SHADOW_KINDS.update(scenery.SHADOWS)
 
 NO_GIFT = ("proposal", "tool", "bait", "seed", "treat")
 
@@ -50,7 +53,8 @@ FLAVOR = {
     "sofa": "Um sofá roxo. Perigosamente confortável.", "sofa_grey": "Um sofá de espera.",
     "armchair": "Uma poltrona de leitura.", "coffee_table": "Uma mesinha de centro com revistas da CatCo.",
     "statue": "O monumento da Luthor Corp. Dizem que dá sorte tocar no 'L'.",
-    "bench": "Um banco. A vista daqui é ótima.", "lamp": "Iluminação pública patrocinada pela Luthor Corp.",
+    "bench": "Um banco. A vista daqui é ótima.", "bench_l": "Um banco encostado na parede. Lugar bom pra ver o movimento.",
+    "bench_r": "Um banco encostado na parede. Lugar bom pra ver o movimento.", "lamp": "Iluminação pública patrocinada pela Luthor Corp.",
     "table": "Uma mesinha.", "table_it": "Toalha xadrez, vela acesa. Romântico.",
     "dining": "Mesa de jantar para dois. Ou para quatro, se a Sam trouxer a Ruby.",
     "reception": "A recepção da Luthor Corp. Tudo extremamente organizado.",
@@ -1682,7 +1686,7 @@ class Game:
     def save(self):
         os.makedirs(SAVE_DIR, exist_ok=True)
         data = dict(
-            version=SAVE_VERSION, day=self.day, quarter=self.quarter, year=self.year, minutes=self.minutes,
+            version=SAVE_VERSION, city_layout=CITY_LAYOUT, day=self.day, quarter=self.quarter, year=self.year, minutes=self.minutes,
             money=self.money, energy=self.energy, inventory=self.inventory, selected=self.selected,
             stations=self.stations, friendship=self.friendship, talked=list(self.talked),
             gifted=list(self.gifted), gift_known=self.gift_known, flags=list(self.flags),
@@ -1746,6 +1750,8 @@ class Game:
             self.player.place_tile(*HOME_BED, "down")
         else:
             self.player.x, self.player.y, self.player.dir = px, py, pd
+        if d.get("city_layout", 1) < CITY_LAYOUT:
+            self.migrate_city()
         self.plan_npcs()
         self.scene = "play"
         self.modals = []
@@ -1753,6 +1759,28 @@ class Game:
         self.toasts.push(f"Bem-vinda de volta! {self.date_label()}", C_LILAC)
         if d.get("version", 1) < SAVE_VERSION:
             self.toasts.push("National City cresceu! Novos lugares e pessoas para conhecer.", C_GOLD)
+
+    def migrate_city(self):
+        """Save do mapa antigo (72x56): leva posições da cidade para o mapa ampliado."""
+        city = self.world["city"]
+        if self.map_name == "city":
+            tx, ty = self.player.tile
+            nx, ny = old_city_xy(tx, ty)
+            self.player.x += (nx - tx) * TILE
+            self.player.y += (ny - ty) * TILE
+            if city.is_solid(*self.player.tile):
+                self.player.place_tile(*CITY_DOORS["home"], "down")
+                self.player.y += TILE
+        moved = []
+        for f in self.forage:
+            if f[0] == "city":
+                x, y = old_city_xy(f[1], f[2])
+                if city.is_solid(x, y) or city.object_at(x, y):
+                    continue
+                f = [f[0], x, y, f[3]]
+            moved.append(f)
+        self.forage = moved
+        self.toasts.push("National City ficou maior: conheça o Bosque Bayside e o Jardim do Mirante!", C_GOLD)
 
     # ------------------------------------------------------------------
     # Tela de título
@@ -1802,7 +1830,7 @@ class Game:
         m = self.world["city"]
         mw = m.w * TILE
         cx = (math.sin(self.t * 0.04) * 0.5 + 0.5) * (mw - SCREEN_W)
-        cam = (int(cx), int(1.2 * TILE))
+        cam = (int(cx), int(4.2 * TILE))
         self.draw_world(surf, m, cam, with_player=False, minutes=20 * 60 + 30)
         veil = pygame.Surface((SCREEN_W, SCREEN_H), pygame.SRCALPHA)
         veil.fill((8, 4, 18, 140))
@@ -1947,6 +1975,10 @@ class Game:
                 if d < nd:
                     near_staff, nd = e, d
         lamps = []
+        behind = None       # a jogadora atrás de uma árvore deixa a copa transparente
+        if with_player and actors is None and m.outdoor:
+            pr = self.player
+            behind = pygame.Rect(int(pr.x - cam[0]) - 8 * SCALE, int(pr.y - cam[1]) - 30 * SCALE, 16 * SCALE, 30 * SCALE)
         for _, _, kind, e in items:
             if kind == "obj":
                 spr = self.object_image(e)
@@ -1956,9 +1988,14 @@ class Game:
                     continue
                 if e.kind in SHADOW_KINDS:
                     draw_shadow(surf, x + spr.get_width() // 2, e.base_y - cam[1] - 2, SHADOW_KINDS[e.kind] * SCALE // 3)
+                if e.kind in scenery.TREE_KINDS and behind is not None and self.player.y < e.base_y and behind.colliderect(
+                        (x + 4 * SCALE, y, spr.get_width() - 8 * SCALE, spr.get_height() - 14 * SCALE)):
+                    spr = scenery.faded(e.kind)
                 surf.blit(spr, (x, y))
                 if e.kind == "lamp":
                     lamps.append((x + spr.get_width() // 2, y + 7 * SCALE))
+                elif e.kind == "lighthouse":
+                    lamps.append((x + spr.get_width() // 2, y + 18 * SCALE))
                 elif e.kind == "aquarium":
                     self.draw_aquarium_fish(surf, x, y)
                 elif e.kind == "station":
@@ -2046,6 +2083,9 @@ class Game:
             ui.text(surf, "!", (r.centerx, r.y + 2), 28, C_RED, bold=True, center=True, shadow=False)
 
     def object_image(self, o):
+        img = scenery.object_image(self, o)
+        if img is not None:
+            return img
         if o.kind == "plot":
             return activities.plot_image(self, o)
         if o.kind == "station":

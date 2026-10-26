@@ -15,7 +15,7 @@ from .config import (SCALE, TILE, SCREEN_W, SCREEN_H, C_TEXT, C_MUTED, C_LILAC, 
                      C_ACCENT, C_ACCENT_2, C_PANEL_2)
 from .data import ITEMS, CROPS, FORAGE, FORAGE_EXTRA
 from .characters import NPCS
-from .world import PLOT_SLOTS
+from .world import PLOT_SLOTS, in_area
 
 # ---------------------------------------------------------------------------
 # Arte: objetos novos
@@ -625,10 +625,13 @@ def spawn_forage(g):
 
     beach = [k for k, f in FORAGE.items() if f["where"] == "beach"]
     park = [k for k, f in FORAGE.items() if f["where"] == "park"]
-    sand = [(x, y) for y in range(45, 49) for x in range(1, city.w - 1) if city.tile_at(x, y) == "sand"]
-    grass = [(x, y) for y in range(20, 39) for x in range(1, 33) if city.tile_at(x, y) in ("grass", "flowers")]
-    n_beach = rnd.randint(5, 7) + (2 if g.weather == "chuva" else 0)
-    n_park = rnd.randint(4, 6)
+    sand = [(x, y) for y in range(city.h) for x in range(1, city.w - 1)
+            if city.tile_at(x, y) == "sand" and in_area("beach", x, y)]
+    grass = [(x, y) for y in range(city.h) for x in range(1, city.w - 1)
+             if city.tile_at(x, y) in ("grass", "flowers")
+             and (in_area("park", x, y) or in_area("woods", x, y) or in_area("garden", x, y))]
+    n_beach = rnd.randint(6, 8) + (2 if g.weather == "chuva" else 0)
+    n_park = rnd.randint(6, 9)
     for pool, kinds, n in ((sand, beach, n_beach), (grass, park, n_park)):
         weights = [FORAGE[k]["weight"] for k in kinds]
         extra = FORAGE_EXTRA.get("park", []) if kinds is park else []

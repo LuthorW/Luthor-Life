@@ -6,6 +6,7 @@ import time
 import pygame
 
 from . import art
+from . import sprites  # noqa: F401  (personagens no estilo Stardew)
 from .config import TILE, SCALE
 
 FOOT = 2 * SCALE  # distância do pé até a base do tile
@@ -14,7 +15,7 @@ from .world import CITY_DOORS, INTERIOR_DOORS
 DIRS = {"up": (0, -1), "down": (0, 1), "left": (-1, 0), "right": (1, 0)}
 
 PLAYER_LOOK = dict(hair=(32, 22, 34), skin=(240, 202, 172), cloth=(112, 40, 172), accent=(236, 228, 250),
-                   pants=(40, 30, 56), shoes=(22, 16, 26), style="long", eyes=(56, 168, 96))
+                   pants=(40, 30, 56), shoes=(22, 16, 26), style="long", eyes=(56, 168, 96), outfit="blazer")
 
 _shadow_cache = {}
 
@@ -69,14 +70,35 @@ class Player:
     def _collides(self, rect, gmap, blockers, old_rect):
         x0, x1 = rect.left // TILE, (rect.right - 1) // TILE
         y0, y1 = rect.top // TILE, (rect.bottom - 1) // TILE
+        hit = getattr(gmap, "hitboxes", {})
         for ty in range(y0, y1 + 1):
             for tx in range(x0, x1 + 1):
                 if gmap.is_solid(tx, ty):
-                    return True
+                    hb = hit.get((tx, ty))
+                    if hb is None or rect.colliderect(hb):
+                        return True
         for b in blockers:
             if rect.colliderect(b) and not old_rect.colliderect(b):
                 return True
         return False
+
+    def _slide(self, vx, vy, gmap, blockers):
+        """Bateu de frente numa quina: procura uma brecha logo ao lado e escorrega até ela."""
+        old = self.rect_at(self.x, self.y)
+        step = abs(vx) + abs(vy)
+        for k in range(2, int(TILE * 0.6) + 1, 2):
+            for sgn in (-1, 1):
+                ox, oy = (0, sgn * k) if vx else (sgn * k, 0)
+                if self._collides(self.rect_at(self.x + ox, self.y + oy), gmap, blockers, old):
+                    continue
+                if self._collides(self.rect_at(self.x + ox + vx, self.y + oy + vy), gmap, blockers, old):
+                    continue
+                mv = min(step, k)
+                sx, sy = (0, sgn * mv) if vx else (sgn * mv, 0)
+                if not self._collides(self.rect_at(self.x + sx, self.y + sy), gmap, blockers, old):
+                    self.x += sx
+                    self.y += sy
+                return
 
     def update(self, dt, move, gmap, blockers, speed):
         mx, my = move
@@ -92,10 +114,14 @@ class Player:
             nx = self.x + vx
             if not self._collides(self.rect_at(nx, self.y), gmap, blockers, old):
                 self.x = nx
+            elif vx and not vy:
+                self._slide(vx, 0, gmap, blockers)
             old = self.rect_at(self.x, self.y)
             ny = self.y + vy
             if not self._collides(self.rect_at(self.x, ny), gmap, blockers, old):
                 self.y = ny
+            elif vy and not vx:
+                self._slide(0, vy, gmap, blockers)
             self.anim += dt * (10 if speed > 3.8 * TILE else 8)
         else:
             self.anim = 0

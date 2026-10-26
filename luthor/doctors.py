@@ -11,7 +11,8 @@ DOCTOR_KEYS = ["yang", "meredith", "milany", "lexie", "izzie", "addison"]
 
 
 def _look(hair, skin, cloth, accent, pants, shoes, style, eyes):
-    return dict(hair=hair, skin=skin, cloth=cloth, accent=accent, pants=pants, shoes=shoes, style=style, eyes=eyes)
+    return dict(hair=hair, skin=skin, cloth=cloth, accent=accent, pants=pants, shoes=shoes, style=style, eyes=eyes,
+                outfit="coat")
 
 
 COAT, GREEN, GREEN2, COPPER = (244, 244, 248), (18, 63, 53), (29, 89, 74), (183, 123, 101)

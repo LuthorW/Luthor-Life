@@ -60,7 +60,7 @@ decide como gastar a sua energia.
 </tr>
 </table>
 
-E ainda: **cozinha** com receitas secretas, **coletáveis** na praia e no parque, **Cine National**, **aquário**,
+E ainda: **cozinha** com receitas secretas, **coletáveis** na praia, no parque e no Bosque Bayside, **Cine National**, **aquário**,
 **livros com bônus permanentes**, **pedidos** da cidade e **centenas de falas** que não se repetem.
 
 ## Como jogar
@@ -111,6 +111,7 @@ Luthor-Life/
     ├── game.py        # núcleo do jogo
     ├── world.py       # mapas de National City (desenhados em texto)
     ├── art.py         # toda a pixel art, gerada por código
+    ├── scenery.py     # árvores, grama, lagos e cenário no estilo Stardew
     ├── characters.py  # personagens, rotinas, presentes e eventos
     ├── dialogue.py    # falas por período, clima, lugar e amizade
     ├── activities.py  # horta, coletáveis, bichinho, karaokê e cinema

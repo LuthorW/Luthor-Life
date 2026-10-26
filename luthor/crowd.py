@@ -17,7 +17,7 @@ from . import art
 from .config import TILE, SCALE, C_MUTED
 from .entities import NPC
 from .characters import NPCS
-from .world import CITY_DOORS
+from .world import CITY_DOORS, in_area
 from .hospital import LEADERS
 
 # Horário de funcionamento (minutos do dia; fecha depois da meia-noite = > 1440)
@@ -28,7 +28,7 @@ VENUES = {
     "beach": (7 * 60, 20 * 60),
 }
 WEEKEND_ONLY_CLOSED = {"catco"}     # CatCo quase vazia no fim de semana
-ENTRIES = [(1, 14), (70, 17), (1, 39), (70, 42), (10, 14), (58, 18), (66, 39), (36, 38)]
+ENTRIES = [(1, 17), (110, 20), (1, 49), (110, 52), (10, 17), (68, 21), (79, 49), (43, 46)]
 
 HAIR = [(30, 22, 20), (70, 44, 30), (120, 80, 50), (200, 160, 90), (236, 210, 140), (150, 60, 40), (90, 90, 96),
         (20, 20, 30), (230, 230, 236), (120, 60, 140)]
@@ -45,7 +45,8 @@ NAMES = ["Ana", "Bruno", "Carla", "Diego", "Elisa", "Fábio", "Gabi", "Hugo", "I
 
 def _look(rnd):
     return dict(hair=rnd.choice(HAIR), skin=rnd.choice(SKIN), cloth=rnd.choice(CLOTH), accent=rnd.choice(CLOTH),
-                pants=rnd.choice(PANTS), shoes=(30, 26, 30), style=rnd.choice(STYLES), eyes=rnd.choice(EYES))
+                pants=rnd.choice(PANTS), shoes=(30, 26, 30), style=rnd.choice(STYLES), eyes=rnd.choice(EYES),
+                outfit=rnd.choice(["shirt", "shirt", "blouse", "cardigan", "blazer"]))
 
 
 class Extra(NPC):
@@ -104,18 +105,21 @@ class Crowd:
         if venue in ("park", "beach"):
             m = self.world["city"]
             out = []
+            green = ("park", "woods", "garden")
             for o in m.objects:
-                if venue == "park" and o.kind == "bench" and o.x < 33 and o.y >= 20:
+                is_green = any(in_area(a, o.x, o.y) for a in green)
+                if venue == "park" and o.kind in ("bench", "picnic") and is_green:
                     out.append((o.x, o.y + 1, "up"))
-                elif venue == "park" and o.kind in ("tree", "tree2", "tree3") and 1 < o.x < 33 and 20 <= o.y <= 38:
+                elif venue == "park" and o.kind in ("tree", "tree2", "tree3") and is_green and o.x > 1:
                     out.append((o.x, o.y + 1, "up"))
                 elif venue == "beach" and o.kind in ("umbrella", "umbrella2", "palm"):
                     out.append((o.x, o.y + 1, "down"))
             if venue == "beach":
-                out += [(x, 47, "down") for x in (5, 15, 24, 31, 41, 62, 67)]
-                out += [(50, 50, "down"), (48, 53, "down"), (52, 53, "down")]
+                out += [(x, 59, "down") for x in (5, 17, 26, 35, 48, 75, 80, 94)]
+                out += [(60, 62, "down"), (55, 65, "down"), (62, 65, "down")]
             if venue == "park":
-                out += [(15, 29, "right"), (21, 29, "left"), (18, 26, "down"), (18, 31, "up")]
+                out += [(17, 34, "right"), (23, 34, "left"), (20, 31, "down"), (20, 36, "up"),
+                        (99, 38, "up"), (98, 9, "up")]
             mapn = "city"
         else:
             m = self.world[venue]
@@ -136,7 +140,7 @@ class Crowd:
                     for xx in range(o.x, o.x + o.w):
                         out.append((xx, o.y + o.h, "up"))
         good = []
-        start = CITY_DOORS.get(mapn) if mapn != "city" else (36, 38)
+        start = CITY_DOORS.get(mapn) if mapn != "city" else (43, 46)
         door = None
         if mapn != "city":
             from .world import INTERIOR_DOORS
@@ -154,7 +158,7 @@ class Crowd:
             if door and (abs(x - door[0]) + abs(y - door[1]) <= 1):
                 continue
             src = door or start
-            if mm.find_path(src, (x, y), 4000) is None and src != (x, y):
+            if mm.find_path(src, (x, y), 16000) is None and src != (x, y):
                 continue
             good.append((x, y, d))
         # sem repetidos

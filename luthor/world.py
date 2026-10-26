@@ -4,8 +4,8 @@ import random
 
 import pygame
 
-from . import art
-from .config import TILE
+from . import art, scenery
+from .config import TILE, SCALE
 
 SOLID_TILES = {"wall", "wall_top", "glass", "water", "sea", "sea_foam", "fountain", "void"}
 WATER_TILES = {"water": "pond", "sea": "sea", "sea_foam": "sea"}
@@ -59,6 +59,26 @@ OBJECT_DEFS = {
     "window": (1, 1, False, "wall"), "window_big": (2, 1, False, "wall"), "painting": (1, 1, False, "decal"),
     "painting2": (1, 1, False, "decal"), "poster": (1, 1, False, "decal"), "poster2": (1, 1, False, "decal"),
     "menuboard": (2, 1, False, "decal"), "neon": (2, 1, False, "wall"), "tv_wall": (4, 1, False, "decal"),
+    # cenário estilo Stardew (scenery.py)
+    "pine": (1, 1, True, "obj"), "tallgrass": (1, 1, False, "obj"), "rock": (1, 1, True, "obj"),
+    "rock_big": (1, 1, True, "obj"), "stump": (1, 1, True, "obj"), "log": (2, 1, True, "obj"),
+    "fence": (1, 1, True, "obj"), "fence_v": (1, 1, True, "obj"), "picnic": (2, 1, True, "obj"),
+    "flowerpot": (1, 1, True, "obj"), "flowerpot2": (1, 1, True, "obj"), "gazebo": (4, 2, True, "obj"),
+    "lighthouse": (3, 2, True, "obj"), "towel": (2, 1, False, "decal"), "towel2": (2, 1, False, "decal"),
+    "sandcastle": (1, 1, True, "obj"), "bench_l": (1, 1, True, "obj"), "bench_r": (1, 1, True, "obj"),
+}
+
+# Área que realmente bloqueia a jogadora (x, y, largura, altura em pixels de arte, a partir do canto
+# do objeto). Postes, bancos, árvores e arbustos ocupam só a base: dá para contornar sem enroscar.
+# NPCs continuam desviando do tile inteiro.
+HITBOXES = {
+    "lamp": (5, 10, 6, 6), "hydrant": (4, 8, 8, 8), "signboard": (5, 10, 6, 6), "bench": (1, 6, 14, 9),
+    "tree": (4, 8, 8, 8), "tree2": (4, 8, 8, 8), "tree3": (4, 8, 8, 8), "pine": (5, 8, 6, 8),
+    "palm": (4, 9, 8, 7), "bush": (2, 5, 12, 11), "bush2": (2, 5, 12, 11), "bush3": (2, 5, 12, 11),
+    "planter": (2, 5, 12, 11), "umbrella": (6, 9, 4, 7), "umbrella2": (6, 9, 4, 7), "rock": (3, 7, 10, 9),
+    "rock_big": (1, 5, 14, 11), "stump": (3, 6, 10, 10), "log": (1, 6, 30, 9), "fence": (0, 7, 16, 8),
+    "fence_v": (5, 0, 6, 16), "flowerpot": (3, 8, 10, 8), "flowerpot2": (3, 8, 10, 8), "sandcastle": (2, 7, 12, 9),
+    "bench_r": (3, 7, 11, 9), "bench_l": (2, 7, 11, 9),
 }
 
 COUNTERS = {"ceo_desk", "desk", "desk_home", "desk_editor", "desk_news", "reception", "cafe_counter", "kitchen",
@@ -141,6 +161,16 @@ class GameMap:
                     self.solid[yy][xx] = not ((xx, yy) == b.door and b.target)
         for (dx, dy) in self.doors:
             self.solid[dy][dx] = False
+        self.hitboxes = {}
+        for o in self.objects:
+            hb = HITBOXES.get(o.kind) if o.solid else None
+            if not hb:
+                continue
+            r = pygame.Rect(o.x * TILE + hb[0] * SCALE, o.y * TILE + hb[1] * SCALE, hb[2] * SCALE, hb[3] * SCALE)
+            for yy in range(o.y, o.y + o.h):
+                for xx in range(o.x, o.x + o.w):
+                    if self.in_bounds(xx, yy) and self.tiles[yy][xx] not in SOLID_TILES                             and not self.building_at(xx, yy):
+                        self.hitboxes[(xx, yy)] = r
         self.wall_decor = [o for o in self.objects if o.layer == "wall"]
         self._build_floor()
 
@@ -184,11 +214,16 @@ class GameMap:
                 n = self.tile_at(x + dx, y + dy)
                 if n not in ANIMATED and n != "void":
                     self.water_edges.append((x, y, side))
+            # cantos arredondados do lago quando a margem é grama
+            for which, (dx, dy) in (("c_tl", (-1, -1)), ("c_tr", (1, -1)), ("c_bl", (-1, 1)), ("c_br", (1, 1))):
+                if self.tile_at(x + dx, y) in grassy and self.tile_at(x, y + dy) in grassy:
+                    self.water_edges.append((x, y, which))
         # sombras suaves sob os prédios
         for o in self.objects:
             if o.layer == "decal":
                 spr = art.object_sprite(o.kind)
                 surf.blit(spr, (o.x * TILE, (o.y + o.h) * TILE - spr.get_height()))
+        scenery.decorate_floor(self, surf)
         sh = pygame.Surface((TILE, TILE // 3), pygame.SRCALPHA)
         sh.fill((0, 0, 0, 55))
         for b in self.buildings:
@@ -223,7 +258,7 @@ class GameMap:
                 return b
         return None
 
-    def find_path(self, start, goal, max_nodes=6000):
+    def find_path(self, start, goal, max_nodes=16000):
         if start == goal:
             return []
         if self.is_solid(*goal) and goal not in self.doors:
@@ -257,9 +292,9 @@ class GameMap:
 # ---------------------------------------------------------------------------
 # Portas
 # ---------------------------------------------------------------------------
-CITY_DOORS = {"home": (6, 12), "hq": (19, 12), "cafe": (30, 12), "catco": (41, 12),
-              "books": (44, 26), "market": (54, 26), "trattoria": (65, 26), "bar": (44, 37), "cinema": (55, 37),
-              "hospital": (65, 12)}
+CITY_DOORS = {"home": (6, 15), "hq": (21, 15), "cafe": (35, 15), "catco": (48, 15),
+              "books": (55, 31), "market": (64, 31), "trattoria": (81, 31), "bar": (55, 45), "cinema": (65, 45),
+              "hospital": (78, 15)}
 INTERIOR_DOORS = {"home": (16, 15), "hq": (12, 17), "cafe": (7, 10), "catco": (11, 14),
                   "books": (8, 11), "market": (8, 11), "trattoria": (10, 12), "bar": (8, 11), "cinema": (10, 13),
                   "hospital": (13, 16)}
@@ -271,145 +306,282 @@ HOME_BED = (3, 4)          # onde a jogadora acorda
 # ---------------------------------------------------------------------------
 # Cidade
 # ---------------------------------------------------------------------------
+# Versão 2 do mapa: a cidade antiga (72x56) foi "esticada" com as faixas abaixo
+# (coluna/linha antiga onde a faixa entra, quantidade) e ganhou o Jardim do Mirante,
+# o Bosque Bayside e o farol a leste. old_city_xy converte posições de saves antigos.
+CITY_LAYOUT = 2
+_OLD_X = ((12, 2), (26, 2), (34, 3), (49, 3), (59, 3), (70, 3))
+_OLD_Y = ((2, 3), (20, 2), (30, 3), (39, 2), (47, 2))
+
+
+def old_city_xy(x, y):
+    return (x + sum(n for c, n in _OLD_X if c <= x), y + sum(n for c, n in _OLD_Y if c <= y))
+
+
+CITY_W, CITY_H = 112, 80        # o mar vai até a linha 79: a câmera desce e mostra o oceano
+# áreas verdes (x0, y0, x1, y1): figurantes passeiam e coletáveis nascem nelas
+CITY_AREAS = {
+    "park": [(1, 23, 39, 48)],          # Parque Central
+    "woods": [(88, 22, 110, 48)],       # Bosque Bayside
+    "garden": [(84, 3, 110, 14)],       # Jardim do Mirante
+    "beach": [(0, 55, CITY_W - 1, 60)],
+}
+
+
+def in_area(name, x, y):
+    return any(x0 <= x <= x1 and y0 <= y <= y1 for (x0, y0, x1, y1) in CITY_AREAS[name])
+
+
+def _scatter(m, kinds, area, n, rnd, gap=2, tiles=("grass",), avoid=()):
+    """Espalha objetos em tiles livres, mantendo distância entre eles (nunca fecha passagens)."""
+    x0, y0, x1, y1 = area
+    busy = set()
+    for o in m.objects:
+        if o.layer == "obj":
+            for yy in range(o.y, o.y + o.h):
+                for xx in range(o.x, o.x + o.w):
+                    busy.add((xx, yy))
+    for b in m.buildings:
+        for yy in range(b.y, b.y + b.h):
+            for xx in range(b.x, b.x + b.w):
+                busy.add((xx, yy))
+    cand = [(x, y) for y in range(y0, y1 + 1) for x in range(x0, x1 + 1) if m.tiles[y][x] in tiles]
+    rnd.shuffle(cand)
+    placed = 0
+    for (x, y) in cand:
+        if placed >= n:
+            break
+        if any((x + dx, y + dy) in busy for dx in range(-gap, gap + 1) for dy in range(-gap, gap + 1)):
+            continue
+        if any(m.tile_at(x + dx, y + dy) in avoid for dx in (-1, 0, 1) for dy in (-1, 0, 1)):
+            continue
+        m.add(rnd.choice(kinds), x, y)
+        busy.add((x, y))
+        placed += 1
+
 
 def build_city():
-    W, H = 72, 56
+    W, H = CITY_W, CITY_H
     m = GameMap("city", W, H, outdoor=True, label="National City")
     m.fill(0, 0, W - 1, H - 1, "grass")
-    # Avenida Siegel (horizontal)
-    m.fill(1, 13, W - 2, 14, "pavement")
-    m.fill(0, 15, W - 1, 15, "road_line_b")
-    m.fill(0, 16, W - 1, 16, "road_line_t")
-    m.fill(1, 17, W - 2, 18, "pavement")
-    for cx in (18, 19, 20, 54, 55, 56):
-        m.tiles[15][cx] = "cross"; m.tiles[16][cx] = "cross"
-    # frente dos prédios do centro: calçada larga
-    m.fill(13, 11, 48, 12, "pavement")
-    # Rua Bayside (vertical)
-    m.fill(34, 19, 35, 38, "pavement")
-    m.fill(38, 19, 39, 38, "pavement")
-    m.fill(36, 17, 36, 41, "road_line_r")
-    m.fill(37, 17, 37, 41, "road_line_l")
-    m.fill(36, 15, 37, 16, "road")
-    for yy in (17, 18):
-        m.tiles[yy][36] = "cross_v"; m.tiles[yy][37] = "cross_v"
-    # Orla (horizontal)
-    m.fill(1, 39, W - 2, 39, "pavement")
-    m.fill(0, 40, W - 1, 40, "road_line_b")
-    m.fill(0, 41, W - 1, 41, "road_line_t")
-    m.fill(36, 40, 37, 41, "road")
-    m.fill(1, 42, W - 2, 42, "pavement")
-    for cx in (17, 18, 49, 50):
-        m.tiles[40][cx] = "cross"; m.tiles[41][cx] = "cross"
-    m.fill(0, 43, W - 1, 44, "boardwalk")
-    m.fill(0, 45, W - 1, 48, "sand")
-    m.fill(0, 49, W - 1, 49, "sea_foam")
-    m.fill(0, 50, W - 1, H - 1, "sea")
-    m.fill(49, 45, 51, 53, "pier")
-    m.fill(47, 52, 53, 53, "pier")
-    # Parque central
-    m.fill(12, 24, 24, 32, "dirt")
-    m.fill(16, 20, 19, 23, "dirt")
-    m.fill(25, 27, 33, 28, "dirt")
-    m.fill(16, 33, 19, 38, "dirt")
-    m.fill(16, 27, 20, 29, "fountain")
-    m.fill(3, 30, 9, 35, "water")
-    m.fill(10, 30, 10, 35, "dirt")
-    for (fx, fy, fw, fh) in [(4, 22, 4, 2), (26, 21, 3, 3), (22, 34, 4, 2), (1, 37, 3, 1), (28, 31, 3, 2),
-                             (12, 21, 2, 2)]:
+    # --- Avenida Siegel (horizontal) ---------------------------------------
+    m.fill(1, 16, W - 2, 17, "pavement")
+    m.fill(0, 18, W - 1, 18, "road_line_b")
+    m.fill(0, 19, W - 1, 19, "road_line_t")
+    m.fill(1, 20, W - 2, 21, "pavement")
+    for cx in (20, 21, 22, 64, 65, 66, 97, 98):
+        m.tiles[18][cx] = "cross"; m.tiles[19][cx] = "cross"
+    m.fill(15, 14, 55, 15, "pavement")      # calçada larga da torre, do café e da CatCo
+    # --- Rua Bayside (vertical) --------------------------------------------
+    m.fill(41, 22, 42, 48, "pavement")
+    m.fill(45, 22, 46, 48, "pavement")
+    m.fill(43, 20, 43, 51, "road_line_r")
+    m.fill(44, 20, 44, 51, "road_line_l")
+    m.fill(43, 18, 44, 19, "road")
+    for yy in (20, 21):
+        m.tiles[yy][43] = "cross_v"; m.tiles[yy][44] = "cross_v"
+    # --- Orla ----------------------------------------------------------------
+    m.fill(1, 49, W - 2, 49, "pavement")
+    m.fill(0, 50, W - 1, 50, "road_line_b")
+    m.fill(0, 51, W - 1, 51, "road_line_t")
+    m.fill(43, 50, 44, 51, "road")
+    m.fill(1, 52, W - 2, 52, "pavement")
+    for cx in (19, 20, 59, 60, 98, 99):
+        m.tiles[50][cx] = "cross"; m.tiles[51][cx] = "cross"
+    m.fill(0, 53, W - 1, 54, "boardwalk")
+    m.fill(0, 55, W - 1, 60, "sand")
+    m.fill(0, 61, W - 1, 61, "sea_foam")
+    m.fill(0, 62, W - 1, H - 1, "sea")
+    m.fill(59, 55, 61, 65, "pier")
+    m.fill(54, 64, 63, 65, "pier")
+
+    # --- Parque Central -------------------------------------------------------
+    m.fill(14, 29, 26, 40, "dirt")          # praça do chafariz
+    m.fill(18, 22, 21, 28, "dirt")          # entrada norte
+    m.fill(27, 32, 40, 33, "dirt")          # trilha leste até a Rua Bayside
+    m.fill(18, 41, 21, 48, "dirt")          # trilha sul até a orla
+    m.fill(18, 32, 22, 34, "fountain")
+    for (x0, y0, x1, y1) in ((3, 38, 9, 43), (4, 37, 8, 37), (4, 44, 8, 44)):
+        m.fill(x0, y0, x1, y1, "water")     # lago
+    m.fill(9, 40, 12, 41, "pier")           # deque de pesca do lago
+    for (fx, fy, fw, fh) in [(4, 27, 4, 2), (30, 26, 3, 3), (24, 42, 6, 2), (1, 45, 3, 1), (32, 39, 3, 2),
+                             (14, 26, 2, 2), (28, 45, 4, 2)]:
         m.fill(fx, fy, fx + fw - 1, fy + fh - 1, "flowers")
-    m.add("statue", 18, 28)
-    for x in range(1, 33):
-        if x not in (16, 17, 18, 19):
-            m.add("hedge", x, 19)
-    for y in range(20, 39):
-        if y not in (27, 28):
-            m.add("hedge", 33, y)
-    for (bx, by) in [(13, 23), (23, 23), (12, 33), (24, 33), (25, 26), (25, 29)]:
+    m.add("statue", 20, 33)
+    for x in range(1, 41):
+        if x not in (18, 19, 20, 21):
+            m.add("hedge", x, 22)
+    for y in range(23, 49):
+        if y not in (32, 33):
+            m.add("hedge", 40, y)
+    for (bx, by) in [(15, 28), (25, 28), (14, 41), (26, 41), (27, 31), (27, 34), (12, 39)]:
         m.add("bench", bx, by)
-    for (tx, ty, k) in [(2, 21, "tree"), (8, 20, "tree2"), (11, 25, "tree3"), (5, 26, "tree"), (2, 28, "tree2"),
-                        (13, 36, "tree"), (8, 37, "tree3"), (27, 20, "tree2"), (30, 23, "tree"), (28, 25, "tree3"),
-                        (31, 30, "tree"), (27, 35, "tree2"), (31, 36, "tree"), (21, 36, "tree3"), (2, 33, "tree"),
-                        (22, 21, "tree"), (10, 22, "tree3")]:
+    for (tx, ty, k) in [(2, 26, "tree"), (8, 24, "tree2"), (11, 30, "tree3"), (5, 32, "tree"), (2, 35, "tree2"),
+                        (15, 45, "tree"), (11, 46, "tree3"), (31, 24, "tree2"), (36, 27, "tree"), (33, 29, "tree3"),
+                        (36, 38, "tree"), (31, 43, "tree2"), (37, 45, "tree"), (24, 46, "tree3"), (2, 42, "tree"),
+                        (25, 24, "tree"), (11, 26, "tree3"), (35, 35, "pine"), (2, 47, "pine"), (7, 47, "tree2")]:
         m.add(k, tx, ty)
-    for (lx, ly) in [(15, 22), (20, 22), (12, 29), (24, 29), (15, 34), (20, 34)]:
+    for (lx, ly) in [(17, 27), (22, 27), (13, 34), (27, 37), (17, 42), (22, 42), (13, 30)]:
         m.add("lamp", lx, ly)
-    for (bx, by, k) in [(14, 21, "bush"), (21, 21, "bush2"), (11, 27, "bush3"), (25, 31, "bush"), (11, 31, "bush2"),
-                        (6, 24, "bush"), (29, 27, "bush3"), (3, 36, "bush2"), (24, 36, "bush"), (9, 28, "bush3"),
-                        (30, 34, "bush"), (5, 20, "bush2")]:
+    for (bx, by, k) in [(16, 26, "bush"), (23, 26, "bush2"), (11, 33, "bush3"), (27, 39, "bush"), (11, 37, "bush2"),
+                        (6, 29, "bush"), (3, 45, "bush2"), (27, 44, "bush"), (9, 34, "bush3"), (34, 42, "bush"),
+                        (5, 24, "bush2"), (37, 30, "bush3"), (13, 43, "bush")]:
         if m.tiles[by][bx] in ("grass", "flowers"):
             m.add(k, bx, by)
-    # Centro: prédios
+    for (px, py) in [(17, 31), (23, 31), (16, 36), (24, 36)]:
+        m.add("flowerpot" if px < 20 else "flowerpot2", px, py)
+    m.add("picnic", 29, 36)
+    m.add("rock_big", 2, 38); m.add("rock", 10, 44); m.add("stump", 34, 47)
+
+    # --- Centro: prédios -------------------------------------------------------
     m.buildings += [
-        Building("Residencial Luthor", "home", 2, 5, 9, 8, 2, 6, "home"),
-        Building("LUTHOR CORP", "tower", 14, 3, 11, 10, 6, 19, "hq"),
-        Building("Grão Nobre", "cafe", 27, 7, 7, 6, 1, 30, "cafe"),
-        Building("CatCo Worldwide Media", "catco", 37, 4, 10, 9, 5, 41, "catco"),
-        Building("Banco de National City", "bank", 50, 5, 8, 8, 1, 54, None),
-        Building("Conti Moretti Hospitais", "hospital", 61, 4, 9, 9, 3, 65, "hospital"),
-        Building("Bayside Books", "books", 41, 20, 8, 7, 1, 44, "books"),
-        Building("Mercado Central", "market", 51, 20, 8, 7, 1, 54, "market"),
-        Building("Ricci Trattoria", "trattoria", 61, 20, 9, 7, 1, 65, "trattoria"),
-        Building("Noonan's", "bar", 41, 31, 8, 7, 1, 44, "bar"),
-        Building("Cine National", "cinema", 51, 31, 9, 7, 2, 55, "cinema"),
-        Building("Apartamentos Bayside", "apartments", 62, 31, 8, 7, 2, 66, None),
+        Building("Residencial Luthor", "home", 2, 8, 9, 8, 2, 6, "home"),
+        Building("LUTHOR CORP", "tower", 16, 6, 11, 10, 6, 21, "hq"),
+        Building("Grão Nobre", "cafe", 31, 10, 7, 6, 1, 35, "cafe"),
+        Building("CatCo Worldwide Media", "catco", 44, 7, 10, 9, 5, 48, "catco"),
+        Building("Banco de National City", "bank", 60, 8, 8, 8, 1, 64, None),
+        Building("Conti Moretti Hospitais", "hospital", 74, 7, 9, 9, 3, 78, "hospital"),
+        Building("Bayside Books", "books", 48, 25, 8, 7, 1, 55, "books"),
+        Building("Mercado Central", "market", 61, 25, 8, 7, 1, 64, "market"),
+        Building("Ricci Trattoria", "trattoria", 74, 25, 9, 7, 1, 81, "trattoria"),
+        Building("Noonan's", "bar", 48, 39, 8, 7, 1, 55, "bar"),
+        Building("Cine National", "cinema", 61, 39, 9, 7, 2, 65, "cinema"),
+        Building("Apartamentos Bayside", "apartments", 75, 39, 8, 7, 2, 79, None),
     ]
-    for (tx, ty, k) in [(12, 6, "tree"), (12, 9, "tree2"), (26, 4, "tree3"), (35, 6, "tree"), (35, 9, "tree2"),
-                        (48, 6, "tree"), (48, 9, "tree3"), (59, 7, "tree2"), (59, 10, "tree"), (1, 3, "tree3"),
-                        (70, 3, "tree")]:
+    m.fill(39, 11, 41, 13, "flowers")
+    for (tx, ty, k) in [(13, 9, "tree"), (13, 13, "tree2"), (29, 8, "tree3"), (40, 8, "tree"), (42, 13, "tree2"),
+                        (56, 9, "tree"), (56, 13, "tree3"), (71, 9, "tree2"), (71, 13, "tree"), (58, 6, "pine")]:
         m.add(k, tx, ty)
-    for x in (4, 24, 46, 60, 68):
-        m.add("lamp", x, 13)
-    for x in (8, 30, 44, 64):
-        m.add("lamp", x, 18)
-    m.add("busstop", 10, 13)
-    m.add("busstop", 58, 17)
-    m.add("hydrant", 26, 14)
-    m.add("hydrant", 47, 17)
-    # Calçadão comercial
-    m.fill(40, 19, 70, 38, "plaza")
-    for (px, py) in [(42, 28), (47, 28), (52, 28), (57, 28), (62, 28), (67, 28)]:
-        m.add("planter", px, py)
-    for (bx, by) in [(44, 29), (54, 29), (64, 29)]:
+    for (bx, by) in [(28, 14), (57, 15)]:
         m.add("bench", bx, by)
-    m.add("kiosk", 58, 27, data="news")
-    m.add("petstand", 48, 29)
-    for (bx, by, k) in [(40, 19, "bush"), (49, 19, "bush2"), (59, 19, "bush3"), (70, 19, "bush"),
-                        (40, 38, "bush2"), (50, 38, "bush3"), (61, 38, "bush")]:
+    for x in (4, 26, 53, 73, 81, 92, 104):
+        m.add("lamp", x, 16)
+    for x in (8, 34, 51, 77, 90, 106):
+        m.add("lamp", x, 21)
+    m.add("busstop", 10, 16)
+    m.add("busstop", 68, 20)
+    m.add("hydrant", 30, 17)
+    m.add("hydrant", 54, 20)
+
+    # --- Calçadão comercial ----------------------------------------------------
+    m.fill(47, 22, 86, 48, "plaza")
+    # Portas das lojas de cima: x 55, 64 e 81 (linha 31); as de baixo abrem para o sul. Nada fica na
+    # frente das portas nem no meio dos becos: postes, bancos e bancas ficam encostados na lateral dos
+    # prédios, com os bancos virados para o beco. No meio do calçadão só há árvores sob as fachadas.
+    for x in (49, 52, 62, 67, 75, 78):
+        m.add("planter", x, 35)
+    # becos de cima (entre as lojas): banca encostada numa parede, banco e poste na outra
+    m.add("petstand", 56, 27)
+    m.add("lamp", 60, 27); m.add("bench_l", 60, 29)
+    m.add("kiosk", 69, 27, data="news")
+    m.add("lamp", 73, 27); m.add("bench_l", 73, 29)
+    # becos de baixo: bancos frente a frente, um poste em cada parede
+    for (left, right) in ((56, 60), (70, 74)):
+        m.add("lamp", left, 40); m.add("lamp", right, 40)
+        m.add("bench_r", left, 42); m.add("bench_l", right, 42)
+    # bordas do calçadão (oeste junto à Rua Bayside, leste junto ao bosque)
+    for y in (27, 41):
+        m.add("lamp", 47, y); m.add("bench_l", 47, y + 2)
+        m.add("lamp", 83, y); m.add("bench_r", 83, y + 2)
+    for (bx, by, k) in [(47, 22, "bush"), (86, 22, "bush2"), (47, 48, "bush3"), (86, 48, "bush")]:
         m.add(k, bx, by)
-    for (lx, ly) in [(40, 27), (50, 30), (60, 30), (70, 27)]:
-        if m.in_bounds(lx, ly):
-            m.add("lamp", lx, ly)
-    # Orla e praia
-    for x in (6, 16, 26, 44, 58, 66):
-        m.add("lamp", x, 42)
-    for (px, py) in [(3, 45), (12, 46), (33, 45), (45, 46), (60, 45), (68, 46)]:
+
+    # --- Orla e praia ----------------------------------------------------------
+    for x in (6, 18, 30, 51, 68, 79, 92, 104):
+        m.add("lamp", x, 52)
+    for (px, py) in [(3, 55), (14, 56), (37, 55), (52, 56), (73, 55), (81, 56), (90, 56), (97, 55)]:
         m.add("palm", px, py)
-    for (ux, uy, k) in [(8, 47, "umbrella"), (19, 46, "umbrella2"), (28, 47, "umbrella"), (38, 47, "umbrella2"),
-                        (56, 46, "umbrella")]:
+    for (ux, uy, k) in [(8, 59, "umbrella"), (21, 56, "umbrella2"), (32, 59, "umbrella"), (45, 59, "umbrella2"),
+                        (66, 56, "umbrella"), (86, 59, "umbrella2")]:
         m.add(k, ux, uy)
-    m.add("lifeguard", 63, 47)
-    m.add("kiosk", 45, 43, data="bait")
-    m.add("shipbox_pier", 52, 45)
-    m.add("signboard", 48, 45)
-    m.add("boat", 58, 51)
-    m.add("boat", 24, 53)
-    # bordas
-    for x in range(W):
-        if m.tiles[0][x] == "grass":
-            m.add("tree" if x % 2 else "tree2", x, 0)
-    for y in range(1, 39):
-        if y in (13, 14, 15, 16, 17, 18):
+    for (tx, ty, k) in [(9, 59, "towel"), (22, 56, "towel2"), (46, 59, "towel"), (87, 59, "towel2")]:
+        m.add(k, tx, ty)
+    m.add("sandcastle", 27, 58); m.add("sandcastle", 70, 59)
+    m.add("lifeguard", 76, 59)
+    m.add("kiosk", 56, 53, data="bait")     # barraca do Joca, colada na entrada do píer
+    m.add("shipbox_pier", 62, 55)
+    m.add("signboard", 58, 55)
+    m.add("boat", 68, 63)
+    m.add("boat", 26, 65)
+    for (bx, by) in [(40, 72), (88, 70), (12, 76), (76, 77)]:    # barcos mais longe, em alto-mar
+        m.add("boat", bx, by)
+    m.add("lighthouse", 104, 56)
+    for (rx, ry, k) in [(102, 57, "rock_big"), (108, 56, "rock"), (107, 58, "rock_big"), (101, 59, "rock")]:
+        m.add(k, rx, ry)
+
+    # --- Jardim do Mirante (nordeste) -----------------------------------------
+    m.fill(97, 8, 98, 15, "dirt")
+    m.fill(87, 11, 108, 12, "dirt")
+    m.fill(93, 7, 102, 8, "dirt")
+    for (fx, fy, fw, fh) in [(88, 6, 4, 3), (104, 6, 4, 3), (88, 13, 5, 2), (103, 13, 5, 2)]:
+        m.fill(fx, fy, fx + fw - 1, fy + fh - 1, "flowers")
+    m.add("gazebo", 96, 4)
+    for (bx, by) in [(94, 13), (101, 13), (93, 6), (102, 6)]:
+        m.add("bench", bx, by)
+    for (lx, ly) in [(96, 10), (99, 10), (88, 10), (107, 10)]:
+        m.add("lamp", lx, ly)
+    for x in range(85, 111):
+        if x not in (97, 98):
+            m.add("fence", x, 15)
+    for (tx, ty, k) in [(85, 6, "tree2"), (85, 11, "tree"), (109, 7, "tree3"), (109, 12, "tree2"),
+                        (90, 4, "tree"), (106, 3, "pine"), (93, 3, "tree2"), (101, 2, "tree")]:
+        m.add(k, tx, ty)
+    for (px, py) in [(95, 9), (100, 9)]:
+        m.add("flowerpot", px, py)
+
+    # --- Bosque Bayside (sudeste) ----------------------------------------------
+    for y in range(22, 49):
+        if y not in (35, 36):
+            m.add("hedge", 87, y)
+    m.fill(87, 35, 92, 36, "dirt")          # entrada pelo calçadão
+    m.fill(91, 24, 108, 25, "dirt")         # trilha em volta do lago
+    m.fill(91, 24, 92, 40, "dirt")
+    m.fill(107, 24, 108, 40, "dirt")
+    m.fill(91, 39, 108, 40, "dirt")
+    m.fill(98, 41, 99, 48, "dirt")          # saída para a orla
+    for (x0, y0, x1, y1) in ((95, 28, 104, 34), (97, 27, 102, 27), (94, 29, 94, 33), (105, 29, 105, 32),
+                             (96, 35, 103, 35)):
+        m.fill(x0, y0, x1, y1, "water")
+    m.fill(99, 35, 100, 38, "pier")         # deque do lago do bosque
+    for (fx, fy, fw, fh) in [(94, 42, 3, 2), (102, 46, 4, 2), (89, 27, 1, 3), (110, 30, 1, 4)]:
+        m.fill(fx, fy, fx + fw - 1, fy + fh - 1, "flowers")
+    for (px, py) in [(102, 42), (105, 44)]:
+        m.add("picnic", px, py)
+    m.add("log", 94, 37); m.add("stump", 105, 37); m.add("bench", 95, 26); m.add("bench", 103, 26)
+    for (lx, ly) in [(93, 34), (106, 34), (97, 41), (100, 41)]:
+        m.add("lamp", lx, ly)
+    rnd = random.Random("bosque")
+    _scatter(m, ["pine", "pine", "tree", "tree3"], (88, 22, 110, 48), 34, rnd, gap=1, avoid=("dirt", "water", "pier"))
+    _scatter(m, ["rock", "rock_big", "stump", "bush", "bush3"], (88, 22, 110, 48), 10, rnd, gap=1,
+             avoid=("dirt", "pier"))
+
+    # --- capim alto (não bloqueia a passagem) ----------------------------------
+    for area, n in (((88, 22, 110, 48), 40), ((1, 23, 39, 48), 26), ((84, 2, 110, 14), 14), ((1, 2, 110, 5), 18)):
+        _scatter(m, ["tallgrass"], area, n, rnd, gap=0, tiles=("grass",))
+
+    # --- bordas: floresta em volta da cidade -----------------------------------
+    def near_obj(x, y, d=1):
+        return any(o.layer == "obj" and o.kind != "tallgrass" and o.x - d <= x < o.x + o.w + d
+                   and o.y - d <= y < o.y + o.h + d for o in m.objects)
+
+    for row, first in ((1, 0), (3, 1)):     # duas fileiras desencontradas: as copas fecham a borda
+        for x in range(first, W, 2):
+            if m.tiles[row][x] != "grass" or near_obj(x, row) \
+                    or any(b.x - 1 <= x <= b.x + b.w and b.y <= row + 4 for b in m.buildings):
+                continue
+            m.objects = [o for o in m.objects if not (o.kind == "tallgrass" and o.x == x and o.y == row)]
+            m.add(("pine", "tree", "tree", "tree2", "pine", "tree3")[(x * 7 + row) % 6], x, row)
+    for y in range(2, 49, 2):
+        if 15 <= y <= 22:
             continue
-        if m.tiles[y][0] in ("grass", "flowers"):
-            m.add("tree", 0, y)
-        if m.tiles[y][W - 1] in ("grass", "flowers"):
-            m.add("tree2", W - 1, y)
+        for x in (0, W - 1):
+            if m.tiles[y][x] in ("grass", "flowers") and not any(o.covers(x, y) for o in m.objects):
+                m.add("pine" if (y // 2) % 2 else "tree", x, y)
     for key, (dx, dy) in CITY_DOORS.items():
         ix, iy = INTERIOR_DOORS[key]
         m.doors[(dx, dy)] = (key, ix, iy - 1, "up")
-    m.spawn_edges = [(0, 15), (W - 1, 16), (0, 40), (W - 1, 41)]
-    m.car_lanes = [(15, -1), (16, 1), (40, -1), (41, 1)]
+    m.spawn_edges = [(0, 18), (W - 1, 19), (0, 50), (W - 1, 51)]
+    m.car_lanes = [(18, -1), (19, 1), (50, -1), (51, 1)]
     m.finalize()
     return m
 
