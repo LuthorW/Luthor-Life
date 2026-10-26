@@ -127,7 +127,7 @@ Para trocar os retratos, coloque as fotos em `assets/portraits/` e indique o nom
 
 ## Créditos
 
-Jogo de fã, gratuito e sem fins lucrativos. Personagens e marcas inspirados em obras de terceiros pertencem aos
-seus respectivos donos. Fonte [Jersey 10](https://fonts.google.com/specimen/Jersey+10) sob a SIL Open Font License.
+Jogo feito por uma pessoa que está cansada da vida real. Personagens e marcas inspirados em obras de terceiros pertencem 
+aos seus respectivos donos. Fonte [Jersey 10](https://fonts.google.com/specimen/Jersey+10) sob a SIL Open Font License.
 
 <div align="center"><sub>Feito com 💜 e muitos pixels em National City.</sub></div>
