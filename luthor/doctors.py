@@ -95,11 +95,15 @@ DOCTORS = {
             weekend=["No fim de semana eu caminho na orla. Cardiologista dá o exemplo."],
         ),
         reactions=dict(love="Que lindo! Você acertou em cheio. Obrigada!", like="Que carinho, obrigada!",
-                       neutral="Obrigada, de verdade.", dislike="Hm... rosquinha? Como cardiologista, vou fingir que não vi."),
-        events={3: dict(flag="cmh_discount", lines=[
-            "Conversei com a diretoria do Conti Moretti.",
+                       neutral="Obrigada, de verdade.", dislike="Hm... sério? Como cardiologista, vou fingir que não vi."),
+        events={
+            1: dict(scene="milany_1", lines=["Sabe o que eu percebi? Você me olha igual na faculdade. Como se fosse um problema pra resolver.",
+            "Eu não sou um problema, Letícia. Eu sou... uma pergunta em aberto.",
+            "Me encontra no Noonan's qualquer noite. Sem gravador. Prometo."]),
+            3: dict(flag="cmh_discount", lines=["Conversei com a diretoria do Conti Moretti.",
             "A partir de hoje, suas consultas saem pela metade do preço. Prevenção não pode ter barreira.",
             "Sua saúde em primeiro lugar. Literalmente."])},
+            
     ),
     "lexie": dict(
         name="Dra. Lexie Grey", short="Lexie", role="Centro de Neurociências · Conti Moretti",
