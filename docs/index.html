@@ -1,0 +1,387 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Luthor Life — uma vida executiva em National City</title>
+  <meta name="description" content="Luthor Life é um jogo de simulação de vida em pixel art, no estilo Stardew Valley, feito em Python. Comande a Luthor Corp, pesque, cultive, faça amizades e encontre o amor em National City.">
+  <meta property="og:title" content="Luthor Life">
+  <meta property="og:description" content="Uma vida executiva em National City. Simulação de vida em pixel art feita em Python.">
+  <meta property="og:image" content="img/title.png">
+  <meta name="theme-color" content="#8a00e6">
+  <link rel="icon" href="img/logo.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div class="sky" aria-hidden="true"></div>
+
+<header class="nav">
+  <div class="wrap">
+    <a class="brand" href="#topo"><img class="pixel" src="img/logo.png" alt=""><span>Luthor Life</span></a>
+    <button class="menu-btn" aria-label="Abrir menu" aria-expanded="false">☰</button>
+    <ul id="menu">
+      <li><a href="#dia">O jogo</a></li>
+      <li><a href="#atividades">Atividades</a></li>
+      <li><a href="#personagens">Personagens</a></li>
+      <li><a href="#galeria">Galeria</a></li>
+      <li><a href="#jogar">Como jogar</a></li>
+      <li><a href="#controles">Controles</a></li>
+    </ul>
+    <a class="btn ghost" href="https://github.com/LuthorW/Luthor-Life" target="_blank" rel="noopener" style="font-size:20px;padding:9px 16px">
+      <svg viewBox="0 0 16 16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+      GitHub
+    </a>
+  </div>
+</header>
+
+<main id="topo">
+  <!-- ============================================================ HERO -->
+  <section class="hero">
+    <div class="wrap">
+      <div>
+        <span class="tag">Simulação de vida · Pixel art · Python</span>
+        <h1>LUTHOR<br>LIFE</h1>
+        <p class="sub">Uma vida executiva em National City</p>
+        <p class="lead">Você é Letícia Luthor, a CEO da Luthor Corp. Lance projetos no laboratório, pesque no píer,
+          cultive a horta do terraço, adote um bichinho e encontre o amor numa cidade que vive com você,
+          da manhã até tarde da noite.</p>
+        <div class="cta">
+          <a class="btn green" href="https://github.com/LuthorW/Luthor-Life/archive/refs/heads/main.zip">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
+            Baixar o jogo
+          </a>
+          <a class="btn" href="#jogar">Como jogar</a>
+        </div>
+        <div class="stats">
+          <div>17<small>personagens</small></div>
+          <div>13<small>peixes</small></div>
+          <div>12<small>lugares</small></div>
+          <div><b>∞</b><small>dias em National City</small></div>
+        </div>
+      </div>
+      <div class="screen">
+        <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
+        <img src="img/title.png" alt="Tela de título do Luthor Life sobre a cidade de National City à noite" width="1280" height="720">
+      </div>
+    </div>
+
+    <div class="parade" aria-hidden="true">
+      <div class="track">
+        <!-- preenchido pelo script (duas voltas para o loop infinito) -->
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ O DIA -->
+  <section id="dia">
+    <div class="wrap reveal">
+      <p class="kicker">// o jogo</p>
+      <h2>Um dia em National City</h2>
+      <p class="intro">Luthor Life é inspirado em Stardew Valley e Coral Island, mas trocando a fazenda por uma empresa
+        de tecnologia. Cada dia tem manhã, tarde e noite. A cidade muda de rotina, as pessoas mudam de lugar
+        e você decide como gastar a sua energia.</p>
+      <div class="day">
+        <article class="period m">
+          <div class="sun"></div>
+          <span class="time">06h — 12h</span>
+          <h3>Manhã</h3>
+          <ul>
+            <li>Café no Grão Nobre e e-mails da CEO</li>
+            <li>Trabalhar nos projetos do laboratório</li>
+            <li>Regar a horta e catar conchas na praia</li>
+          </ul>
+        </article>
+        <article class="period t">
+          <div class="sun"></div>
+          <span class="time">12h — 18h</span>
+          <h3>Tarde</h3>
+          <ul>
+            <li>Almoço na Ricci Trattoria</li>
+            <li>Consulta no Conti Moretti Hospitais</li>
+            <li>Sessão no Cine National e pesca no lago</li>
+          </ul>
+        </article>
+        <article class="period n">
+          <div class="sun"></div>
+          <span class="time">18h — 02h</span>
+          <h3>Noite</h3>
+          <ul>
+            <li>Encontros às 20h com quem você ama</li>
+            <li>Karaokê e fliperama no Noonan's</li>
+            <li>Lula no píer, vagalumes no parque</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ ATIVIDADES -->
+  <section id="atividades">
+    <div class="wrap">
+      <div class="reveal">
+        <p class="kicker">// o que fazer</p>
+        <h2>Muito além do escritório</h2>
+        <p class="intro">Trabalhar dá dinheiro, mas a vida em National City tem muito mais. Cada atividade tem
+          o seu próprio minigame, coleção ou recompensa.</p>
+      </div>
+      <div class="grid">
+        <article class="card reveal"><div class="ico"><img src="img/icons/athena.png" alt=""></div><h3>Laboratório P&amp;D</h3>
+          <p>Compre propostas, inicie projetos nas bancadas e trabalhe neles todo dia. Lance produtos e feche contratos à noite.</p></article>
+        <article class="card reveal"><div class="ico"><img src="img/icons/robalo.png" alt=""></div><h3>Pescaria</h3>
+          <p>13 espécies no mar e no lago, que mudam com o trimestre, a hora e a chuva. Tem um peixe lendário brilhando verde…</p></article>
+        <article class="card g reveal"><span class="pill">novo</span><div class="ico"><img src="img/icons/semente_morango.png" alt=""></div><h3>Horta no terraço</h3>
+          <p>Plante manjericão, tomate, morango, girassol, rosas e abóbora. Regue todo dia, colha e cozinhe.</p></article>
+        <article class="card g reveal"><span class="pill">novo</span><div class="ico"><img src="img/icons/petisco_pet.png" alt=""></div><h3>Bichinho</h3>
+          <p>Adote um gato ou um cachorro no Abrigo Patinhas. Faça carinho, dê petiscos e receba presentinhos.</p></article>
+        <article class="card reveal"><div class="ico"><img src="img/icons/lasanha_nonna.png" alt=""></div><h3>Cozinha</h3>
+          <p>Ingredientes do Mercado Central viram pratos no fogão da cobertura. Livros ensinam receitas secretas.</p></article>
+        <article class="card g reveal"><span class="pill">novo</span><div class="ico"><img src="img/icons/concha.png" alt=""></div><h3>Coletáveis</h3>
+          <p>Conchas, corais e estrelas-do-mar na praia; flores, amoras e trevos de 4 folhas no parque. Todo dia tem mais.</p></article>
+        <article class="card reveal"><div class="ico"><svg viewBox="0 0 16 16" width="40" height="40" shape-rendering="crispEdges" aria-hidden="true"><path fill="#b84cff" d="M6 2h8v2H8v8H7v1H6v1H3v-1H2v-2h1V10h3V4zM12 4h2v7h-1v1h-1v1H9v-1H8v-2h1V9h3z"/></svg></div><h3>Karaokê</h3>
+          <p>À noite a jukebox do Noonan's vira palco. Acerte as setas no ritmo e ganhe gorjetas da plateia.</p></article>
+        <article class="card reveal"><div class="ico"><img src="img/icons/pipoca.png" alt=""></div><h3>Cine National</h3>
+          <p>Seis filmes que se revezam, cada um com a sua cena. Leve alguém especial e divida a pipoca.</p></article>
+        <article class="card g reveal"><span class="pill">novo</span><div class="ico"><img src="img/icons/vitamina.png" alt=""></div><h3>Conti Moretti</h3>
+          <p>12 especialidades no hospital da cidade. Cada consulta renova a energia e dá um bônus diferente no dia.</p></article>
+        <article class="card reveal"><div class="ico"><img src="img/icons/hecate.png" alt=""></div><h3>Ações LCORP</h3>
+          <p>Compre e venda ações da sua empresa. Vender bem faz a cotação subir; escolha a hora certa de lucrar.</p></article>
+        <article class="card reveal"><div class="ico"><img src="img/icons/rosas.png" alt=""></div><h3>Romance</h3>
+          <p>Lucy ou Vittoria? Rosas aos 8 corações para namorar, pingente aos 10 para morarem juntas.</p></article>
+        <article class="card reveal"><div class="ico"><img src="img/icons/livro.png" alt=""></div><h3>Cutscenes</h3>
+          <p>Cenas especiais nos eventos de coração, com câmera, emoções e momentos que você pode rever no menu.</p></article>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ DESTAQUES -->
+  <section id="destaques">
+    <div class="wrap">
+      <div class="feature reveal">
+        <div class="shot"><span class="badge">Luthor Corp</span><img src="img/lab.png" alt="Laboratório da Luthor Corp com bancadas de projetos em andamento" loading="lazy"></div>
+        <div>
+          <p class="kicker">// a empresa</p>
+          <h3>Comande a Luthor Corp</h3>
+          <p class="intro" style="margin:0">O laboratório é a sua fazenda. Projetos são as sementes, e o trabalho diário faz eles crescerem.</p>
+          <ul class="checks">
+            <li><b>8 projetos</b>, do Relatório de Mercado ao misterioso Projeto Hecate</li>
+            <li><b>Até 12 bancadas</b> e uma cafeteira executiva para os dias longos</li>
+            <li><b>Pedidos</b> da equipe e da cidade, com prazo e recompensa</li>
+            <li><b>Ações LCORP</b> que sobem quando a empresa vende bem</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="feature rev reveal">
+        <div class="shot"><span class="badge">Lar, doce cobertura</span><img src="img/terrace.png" alt="Terraço da cobertura com horta florida, gato e skyline ao pôr do sol" loading="lazy"></div>
+        <div>
+          <p class="kicker">// a cobertura</p>
+          <h3>Horta, bichinho e pôr do sol</h3>
+          <p class="intro" style="margin:0">A porta de vidro da sala leva ao terraço: canteiros, espreguiçadeiras, telescópio e a cidade inteira lá embaixo.</p>
+          <ul class="checks">
+            <li><b>6 plantas</b> com crescimento diário; a chuva rega sozinha</li>
+            <li><b>Gato ou cachorro</b> com nome e cor à sua escolha, que te segue pela casa</li>
+            <li><b>Aquário</b> na sala para cada espécie que você pescar</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="feature reveal">
+        <div class="shot"><span class="badge">♥ Romance</span><img src="img/cutscene.png" alt="Cutscene noturna no píer com a Lucy Williams" loading="lazy"></div>
+        <div>
+          <p class="kicker">// relacionamentos</p>
+          <h3>Amizades, encontros e cutscenes</h3>
+          <p class="intro" style="margin:0">Converse todos os dias, descubra o presente favorito de cada pessoa e acompanhe histórias que se desenrolam aos poucos.</p>
+          <ul class="checks">
+            <li><b>Centenas de falas</b> que mudam com a hora, o clima, o lugar e a amizade, sem repetir</li>
+            <li><b>Eventos de coração</b> que liberam benefícios permanentes</li>
+            <li><b>Encontros às 20h</b> no Noonan's, na praia, na Trattoria ou no cinema</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="feature rev reveal">
+        <div class="shot"><span class="badge">Conti Moretti</span><img src="img/hospital.png" alt="Saguão do Conti Moretti Hospitais com recepção, farmácia e consultórios" loading="lazy"></div>
+        <div>
+          <p class="kicker">// a cidade</p>
+          <h3>Uma cidade que vive</h3>
+          <p class="intro" style="margin:0">Moradores chegam pela rua, entram nos lugares, ficam um tempo e vão embora. Ninguém repete o mesmo lugar em sequência.</p>
+          <ul class="checks">
+            <li><b>12 lugares</b> para visitar, cada um com horário próprio</li>
+            <li><b>Médicas com plantão</b>, almoço fora e folgas que mudam todo dia</li>
+            <li><b>Carros, chuva, vagalumes</b>, pétalas de cerejeira e luz pelas janelas</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ PERSONAGENS -->
+  <section id="personagens">
+    <div class="wrap">
+      <div class="reveal">
+        <p class="kicker">// quem você vai conhecer</p>
+        <h2>Personagens</h2>
+        <p class="intro">Cada personagem tem rotina própria, gostos, falas e eventos de coração. Todas aceitam conversa e presentes.</p>
+      </div>
+      <div class="tabs" role="tablist" aria-label="Filtrar personagens">
+        <button role="tab" aria-selected="true" data-f="all">Todas</button>
+        <button role="tab" aria-selected="false" data-f="team">Luthor Corp</button>
+        <button role="tab" aria-selected="false" data-f="romance">Romance</button>
+        <button role="tab" aria-selected="false" data-f="city">Cidade</button>
+        <button role="tab" aria-selected="false" data-f="doc">Conti Moretti</button>
+      </div>
+      <div class="people" id="people"><!-- preenchido pelo script --></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ GALERIA -->
+  <section id="galeria">
+    <div class="wrap">
+      <div class="reveal">
+        <p class="kicker">// capturas de tela</p>
+        <h2>Galeria</h2>
+        <p class="intro">Tudo desenhado por código, pixel por pixel. Clique numa imagem para ampliar.</p>
+      </div>
+      <div class="gallery reveal" id="gallery"><!-- preenchido pelo script --></div>
+    </div>
+  </section>
+
+  <!-- ============================================================ COMO JOGAR -->
+  <section id="jogar">
+    <div class="wrap">
+      <div class="reveal">
+        <p class="kicker">// instalação</p>
+        <h2>Como jogar</h2>
+        <p class="intro">O jogo roda em Windows, Linux e macOS. Você só precisa do Python.</p>
+      </div>
+      <div class="steps">
+        <div class="step reveal">
+          <h3>Instale o Python</h3>
+          <p>Baixe em python.org (3.10 ou mais novo). No Windows, marque <b>“Add Python to PATH”</b> na instalação.</p>
+          <a class="btn ghost" href="https://www.python.org/downloads/" target="_blank" rel="noopener" style="font-size:20px;padding:9px 16px">python.org</a>
+        </div>
+        <div class="step reveal">
+          <h3>Baixe o jogo</h3>
+          <p>Baixe o .zip e extraia, ou clone o repositório:</p>
+          <div class="code"><code>git clone https://github.com/LuthorW/Luthor-Life.git</code><button type="button">copiar</button></div>
+        </div>
+        <div class="step reveal">
+          <h3>Jogue!</h3>
+          <p>No Windows, dê dois cliques em <b>Jogar.bat</b>: ele instala o que falta e abre o jogo. Ou, no terminal:</p>
+          <div class="code"><code>pip install -r requirements.txt</code><button type="button">copiar</button></div>
+          <div class="code" style="margin-top:8px"><code>python main.py</code><button type="button">copiar</button></div>
+        </div>
+      </div>
+      <p class="note reveal"><b>Dica:</b> o jogo salva sozinho toda noite, quando você dorme. O progresso fica em <code>saves/save.json</code>.
+        Aperte <kbd>F11</kbd> para jogar em tela cheia.</p>
+    </div>
+  </section>
+
+  <!-- ============================================================ CONTROLES -->
+  <section id="controles">
+    <div class="wrap">
+      <div class="reveal">
+        <p class="kicker">// teclado e mouse</p>
+        <h2>Controles</h2>
+      </div>
+      <div class="keys reveal">
+        <div class="krow"><div class="k"><kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd></div><span>Andar (com <kbd>Shift</kbd>, devagar)</span></div>
+        <div class="krow"><div class="k"><kbd>E</kbd><kbd>Espaço</kbd></div><span>Interagir, conversar, trabalhar, pescar</span></div>
+        <div class="krow"><div class="k"><kbd>1</kbd>…<kbd>0</kbd><kbd>-</kbd><kbd>=</kbd></div><span>Escolher item da barra (ou roda do mouse)</span></div>
+        <div class="krow"><div class="k"><kbd>F</kbd></div><span>Comer, beber ou ler o item escolhido</span></div>
+        <div class="krow"><div class="k"><kbd>I</kbd><kbd>Tab</kbd></div><span>Abrir a mochila (24 espaços)</span></div>
+        <div class="krow"><div class="k"><kbd>Esc</kbd></div><span>Menu: objetivos, relacionamentos, coleções e cenas</span></div>
+        <div class="krow"><div class="k"><kbd>←</kbd><kbd>↓</kbd><kbd>↑</kbd><kbd>→</kbd></div><span>Karaokê (ou <kbd>D</kbd><kbd>F</kbd><kbd>J</kbd><kbd>K</kbd>)</span></div>
+        <div class="krow"><div class="k"><kbd>F11</kbd></div><span>Tela cheia</span></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ DICAS -->
+  <section id="dicas">
+    <div class="wrap">
+      <div class="reveal">
+        <p class="kicker">// para começar bem</p>
+        <h2>Dicas</h2>
+      </div>
+      <div class="faq reveal">
+        <details><summary>Como ganho dinheiro no começo?</summary>
+          <p>Compre Relatórios de Mercado no Terminal P&amp;D (são baratos e ficam prontos em 2 dias) e trabalhe nas bancadas todo dia.
+            Enquanto isso, pesque: o Seu Joca dá uma vara de pesca na primeira conversa no píer.</p></details>
+        <details><summary>Como faço a ação LCORP subir?</summary>
+          <p>Venda produtos do laboratório: a cada $800 em produtos numa noite, a ação sobe cerca de $1. A amizade com a Nia
+            e uma doação ao Conti Moretti também ajudam. Compre na baixa e venda depois de um lote grande.</p></details>
+        <details><summary>Como começo a namorar?</summary>
+          <p>Converse e dê presentes para a Lucy ou a Vittoria até 8 corações, depois entregue um Buquê de Rosas Vermelhas
+            (Mercado Central). Aos 10 corações, o Pingente de Compromisso convida ela para morar com você.</p></details>
+        <details><summary>Por que não consigo conversar de novo?</summary>
+          <p>Cada personagem conversa uma vez por período: manhã, tarde e noite. Presentes, lojas e convites continuam liberados.</p></details>
+        <details><summary>E se eu ficar acordada até tarde?</summary>
+          <p>Às 2h você desmaia de cansaço e acorda num leito do Conti Moretti, com uma conta para pagar. Durma antes!</p></details>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============================================================ CÓDIGO -->
+  <section id="codigo">
+    <div class="wrap split">
+      <div class="reveal">
+        <p class="kicker">// por dentro</p>
+        <h2>Feito em Python</h2>
+        <p class="intro">Toda a arte é gerada por código com <b>pygame-ce</b>: tiles, prédios, personagens, ícones e efeitos.
+          O projeto é organizado em módulos simples de entender e de modificar.</p>
+        <ul class="checks">
+          <li>Personagens, falas e presentes em <b>characters.py</b> e <b>dialogue.py</b></li>
+          <li>Mapas desenhados em texto em <b>world.py</b></li>
+          <li>Itens, peixes, receitas e lojas em <b>data.py</b></li>
+        </ul>
+      </div>
+      <pre class="tree reveal"><b>Luthor-Life/</b>
+├── main.py            <i># inicia o jogo</i>
+├── Jogar.bat          <i># atalho para Windows</i>
+├── assets/            <i># fonte, logos e retratos</i>
+└── <b>luthor/</b>
+    ├── game.py        <i># núcleo do jogo</i>
+    ├── world.py       <i># mapas de National City</i>
+    ├── art.py         <i># pixel art procedural</i>
+    ├── characters.py  <i># personagens e rotinas</i>
+    ├── dialogue.py    <i># falas por período</i>
+    ├── activities.py  <i># horta, pet, karaokê, cinema</i>
+    ├── hospital.py    <i># Conti Moretti</i>
+    ├── doctors.py     <i># as médicas</i>
+    ├── crowd.py       <i># moradores da cidade</i>
+    ├── cutscenes.py   <i># motor de cenas</i>
+    ├── minigames.py   <i># pesca, fliperama, fogão</i>
+    └── data.py        <i># itens, peixes, receitas</i></pre>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div>
+      <a class="brand" href="#topo"><img class="pixel" src="img/logo.png" alt=""><span>Luthor Life</span></a>
+      <small>Jogo de fã, gratuito e sem fins lucrativos. Personagens e marcas inspirados em obras de terceiros pertencem
+        aos seus respectivos donos. Fonte Jersey 10 sob a SIL Open Font License.</small>
+    </div>
+    <div>
+      <a href="https://github.com/LuthorW/Luthor-Life" target="_blank" rel="noopener">Repositório no GitHub</a><br>
+      <a href="https://github.com/LuthorW/Luthor-Life/issues" target="_blank" rel="noopener">Reportar um bug</a><br>
+      <a href="#topo">Voltar ao topo ↑</a>
+    </div>
+  </div>
+</footer>
+
+<div class="lightbox" id="lightbox" role="dialog" aria-modal="true" aria-label="Imagem ampliada">
+  <button class="x" aria-label="Fechar">✕</button>
+  <button class="nav-l" aria-label="Anterior">‹</button>
+  <figure style="margin:0"><img alt=""><p></p></figure>
+  <button class="nav-r" aria-label="Próxima">›</button>
+</div>
+
+<script src="script.js"></script>
+</body>
+</html>
