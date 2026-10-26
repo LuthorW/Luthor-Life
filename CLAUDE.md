@@ -36,6 +36,7 @@ luthor/
   crowd.py       figurantes (moradores sem conversa) que circulam pela cidade
   activities.py  horta do terraço, coletáveis, bichinho, karaokê, cinema, céu do terraço
   cutscenes.py   motor de cutscenes (comandos em tuplas) e as cenas
+  scenetest.py   modo de teste de cenas: `python main.py --cenas` / `--cena chave` (não salva nada)
   minigames.py   pesca, fliperama Meteoro, fogão, mochila
   effects.py     borboletas, vagalumes, pétalas, brilho na água, luz de janela
   ui.py          fonte, painéis, Dialog, Choice, Shop, InfoPanel, NumberPrompt, Toasts, HUD
@@ -93,6 +94,9 @@ luthor/
   em pixel art, não as fotos reais dos retratos.
 
 ## Como testar
+
+Para ver uma cutscene sem progresso: `python main.py --cenas` (lista, F5 reabre) ou `python main.py --cena lucy_6`.
+Nesse modo `Game.save` é desligado. Títulos da lista vêm de `Game.scene_title`.
 
 Não há suíte de testes no repositório. Para checar sem abrir janela, rode o jogo em modo headless:
 

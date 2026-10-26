@@ -112,6 +112,7 @@ Luthor-Life/
     ├── world.py       # mapas de National City (desenhados em texto)
     ├── art.py         # toda a pixel art, gerada por código
     ├── scenery.py     # árvores, grama, lagos e cenário no estilo Stardew
+    ├── sprites.py     # personagens e roupas
     ├── characters.py  # personagens, rotinas, presentes e eventos
     ├── dialogue.py    # falas por período, clima, lugar e amizade
     ├── activities.py  # horta, coletáveis, bichinho, karaokê e cinema
@@ -119,9 +120,23 @@ Luthor-Life/
     ├── doctors.py     # as médicas e suas rotinas
     ├── crowd.py       # moradores que circulam pela cidade
     ├── cutscenes.py   # motor de cutscenes
+    ├── scenetest.py   # modo de teste de cenas (--cenas)
     ├── minigames.py   # pesca, fliperama, fogão e mochila
     └── data.py        # itens, peixes, receitas, livros e lojas
 ```
+
+### Testar cutscenes
+
+Para assistir qualquer cena sem precisar de progresso no jogo (nada é salvo nesse modo):
+
+```
+python main.py --cenas            # lista com todas as cutscenes
+python main.py --cena lucy_6      # toca uma cena direto
+```
+
+Na lista: setas escolhem, Enter assiste e Esc fecha; durante o jogo, **F5** reabre a lista.
+Cenas novas no dicionário `SCENES` (em `luthor/cutscenes.py`) aparecem sozinhas. Para dar um nome bonito
+na lista, adicione a chave em `scene_title` (em `luthor/game.py`).
 
 Para trocar os retratos, coloque as fotos em `assets/portraits/` e indique o nome do arquivo em
 `luthor/characters.py` (campo `portrait`).
