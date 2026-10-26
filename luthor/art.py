@@ -1709,7 +1709,7 @@ def portrait(filename, look, size=120):
         frames = character_frames(look)
         small = pygame.transform.scale(frames[("down", 0)], (16, 32))
         head = new(16, 14)
-        head.blit(small, (0, -2))
+        head.blit(small, (0, -1))
         s = pygame.Surface((size, size))
         top, bottom = (70, 46, 104), (34, 22, 54)
         for y in range(size):

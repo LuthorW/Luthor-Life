@@ -54,6 +54,8 @@
   const SHOTS = [
     ["city", "O calçadão Bayside numa manhã movimentada", true],
     ["park", "Parque central com chafariz e lago"],
+    ["woods", "Bosque Bayside, com lago e deque de pesca"],
+    ["garden", "Jardim do Mirante e o gazebo"],
     ["beach", "A orla no fim de tarde"],
     ["fishing", "Peixe mordendo no píer!"],
     ["terrace", "Terraço com horta e o gato Kiwi"],
