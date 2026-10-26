@@ -1,0 +1,580 @@
+{
+ "version": 2,
+ "day": 9,
+ "quarter": 1,
+ "year": 2034,
+ "minutes": 360,
+ "money": 1550,
+ "energy": 115,
+ "inventory": [
+  [
+   "vara_fibra",
+   1
+  ],
+  [
+   "vara",
+   1
+  ],
+  [
+   "lata",
+   1
+  ],
+  [
+   "cogumelos",
+   4
+  ],
+  null,
+  null,
+  null,
+  [
+   "jornal",
+   1
+  ],
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null,
+  null
+ ],
+ "selected": 8,
+ "stations": [
+  {
+   "unlocked": true,
+   "project": "software",
+   "progress": 4,
+   "worked": false
+  },
+  {
+   "unlocked": true,
+   "project": "software",
+   "progress": 4,
+   "worked": false
+  },
+  {
+   "unlocked": true,
+   "project": "software",
+   "progress": 4,
+   "worked": false
+  },
+  {
+   "unlocked": true,
+   "project": "software",
+   "progress": 4,
+   "worked": false
+  },
+  {
+   "unlocked": true,
+   "project": "athena",
+   "progress": 2,
+   "worked": false
+  },
+  {
+   "unlocked": true,
+   "project": "athena",
+   "progress": 2,
+   "worked": false
+  },
+  {
+   "unlocked": true,
+   "project": "athena",
+   "progress": 3,
+   "worked": false
+  },
+  {
+   "unlocked": true,
+   "project": "nike",
+   "progress": 3,
+   "worked": false
+  },
+  {
+   "unlocked": true,
+   "project": "athena",
+   "progress": 3,
+   "worked": false
+  },
+  {
+   "unlocked": false,
+   "project": null,
+   "progress": 0,
+   "worked": false
+  },
+  {
+   "unlocked": false,
+   "project": null,
+   "progress": 0,
+   "worked": false
+  },
+  {
+   "unlocked": false,
+   "project": null,
+   "progress": 0,
+   "worked": false
+  }
+ ],
+ "friendship": {
+  "sam": 148,
+  "brainy": 216,
+  "jess": 168,
+  "rafa": 60,
+  "lucy": 634,
+  "vittoria": 286,
+  "nia": 140,
+  "theo": 100,
+  "bea": 60,
+  "marco": 20,
+  "joca": 96,
+  "yang": 0,
+  "meredith": 20,
+  "milany": 20,
+  "lexie": 0,
+  "izzie": 28,
+  "addison": 28
+ },
+ "talked": [],
+ "gifted": [],
+ "gift_known": {
+  "sam": {},
+  "brainy": {
+   "rosquinha": "love"
+  },
+  "jess": {},
+  "rafa": {},
+  "lucy": {
+   "polvo": "neutral",
+   "policial": "love"
+  },
+  "vittoria": {},
+  "nia": {},
+  "theo": {},
+  "bea": {},
+  "marco": {},
+  "joca": {},
+  "yang": {},
+  "meredith": {},
+  "milany": {},
+  "lexie": {},
+  "izzie": {},
+  "addison": {}
+ },
+ "flags": [
+  "book_energy",
+  "got_rod",
+  "book_fish",
+  "book_stocks"
+ ],
+ "events_seen": [
+  "lucy:2"
+ ],
+ "stats": {
+  "launched": 11,
+  "earned": 6901,
+  "hecate": 0,
+  "fish": 112,
+  "arcade_best": 68,
+  "karaoke_best": 54,
+  "karaoke_s": 0,
+  "harvest": 0,
+  "movies": 1,
+  "forage": 32
+ },
+ "stock": 92.86,
+ "stock_prev": 94.85,
+ "shares": 15,
+ "shipped": [],
+ "request": {
+  "npc": "marco",
+  "item": "truta",
+  "qty": 1,
+  "reward": 209,
+  "deadline": 13
+ },
+ "weather": "chuva",
+ "weather_tomorrow": "chuva",
+ "map": "home",
+ "player": [
+  112.0,
+  156,
+  "down"
+ ],
+ "coffee_today": false,
+ "fish_caught": [
+  "robalo",
+  "carpa",
+  "tilapia",
+  "sardinha",
+  "lula",
+  "polvo",
+  "truta"
+ ],
+ "aquarium": [
+  "tilapia",
+  "truta",
+  "carpa"
+ ],
+ "cooked": [],
+ "dating": null,
+ "partner": null,
+ "date": null,
+ "scenes_seen": [
+  "lucy_2"
+ ],
+ "talk_log": [],
+ "lines_seen": {
+  "vittoria": [
+   "Aqui só entra ingrediente fresco. Se não estiver fresco, não entra. Nem você, se estiver cansada.",
+   "Você já almoçou? Não minta. Senta aí, eu faço um prato rápido.",
+   "Minha nonna dizia: 'Cozinha é como amor. Se você não prova, não sabe se está bom.'",
+   "Tá vendo esse forno? Veio de Napoli em três caixas. Montei sozinha. Chorei duas vezes."
+  ],
+  "lucy": [
+   "Folga! Vou ler no parque, perto do lago. Se você aparecer, finjo que foi coincidência.",
+   "Almoço rápido na Trattoria. A Vittoria me olhou estranho. Ela olha todo mundo assim? Ou só quem fala com você?",
+   "A Nia diz que eu sou dura demais com você. A Nia é gentil demais com todo mundo.",
+   "O lago do parque é o lugar mais calmo da cidade. Até os patos parecem jornalistas aposentados.",
+   "Sabe qual é a pior parte de voltar pra National City? Todo mundo lembra de quem você era.",
+   "Você ainda não respondeu minhas perguntas sobre o apagão. Eu sou paciente. Mentira, não sou."
+  ],
+  "brainy": [
+   "Recalibrei as bancadas às 6h. Elas estão 0,4% mais felizes. Eu acho.",
+   "O Terminal P&D foi atualizado. Agora ele também diz 'bom dia'. Fui eu.",
+   "O parque à noite tem vagalumes. Bioluminescência é a coisa mais bonita que a natureza inventou.",
+   "O laboratório está ficando enorme. Precisamos de mais tomadas. E de mais rosquinhas.",
+   "Calculei que você precisa de uma pausa. 78% de chance de estar certo. Vai tomar um café."
+  ],
+  "theo": [
+   "O gato da vizinha dormiu na vitrine de novo. Vendeu dois livros de gato.",
+   "Sábado tem clube do livro. A Lucy às vezes aparece e discorda de todo mundo.",
+   "Eu fico com os livros que ninguém compra. Alguém tem que amá-los."
+  ],
+  "sam": [
+   "Projetos de laboratório dão retorno, mas quem paga as contas no curto prazo são os relatórios.",
+   "A reunião das 15h foi cancelada. Considere isso um presente.",
+   "Relatórios de mercado são baratos e rápidos. Ótimos para manter o caixa respirando.",
+   "Três da tarde é a hora mais perigosa do expediente. Todo mundo quer café e ninguém quer trabalhar."
+  ],
+  "joca": [
+   "Linha forte, mão leve. Esse é o segredo.",
+   "Fim de semana o píer enche de turista. Eles fazem barulho e espantam o robalo.",
+   "Lago do parque tem carpa e tilápia. Aqui no mar tem robalo, lula de noite, polvo...",
+   "Meu chapéu tem 30 anos. Já perdeu pro vento umas vinte vezes. Sempre volta.",
+   "Molhado eu já estou mesmo. Que venha o peixe."
+  ],
+  "bea": [
+   "Ovos? Leite? Farinha? Panqueca é a receita mais fácil do mundo. Até a Jess consegue.",
+   "Sábado o mercado lota! Traz sacola, que eu tô sem."
+  ],
+  "nia": [
+   "Estou escrevendo sobre os cafés da cidade. O Grão Nobre ganhou cinco estrelas. O Rafa chorou.",
+   "Folga! Vou ao mercado comprar flores e fingir que sou uma pessoa organizada.",
+   "Uma cidade também é escrita por quem decide contar suas histórias."
+  ],
+  "jess": [
+   "A tarde está tranquila. Tranquila demais. Fico nervosa quando está tranquilo.",
+   "A Lucy Williams, da CatCo, ligou de novo pedindo entrevista. Digo que você está em reunião?",
+   "Já respondi 47 e-mails. São 7h40. Estou em êxtase.",
+   "Recebi 47 e-mails pra você. 46 eram spam. O outro era da sua mãe."
+  ],
+  "marco": [
+   "Aqui todo mundo é igual. CEO, repórter, pescador. Todo mundo paga a conta."
+  ],
+  "rafa": [
+   "Me contaram que você cantou no Noonan's. Quero ver ao vivo!",
+   "Um expresso resolve 80% dos problemas. Os outros 20% se resolvem com dois expressos."
+  ],
+  "milany": [
+   "Bem-vinda ao Conti Moretti! Sua saúde em primeiro lugar."
+  ],
+  "izzie": [
+   "Bom dia! Trouxe muffins de mirtilo. Corre que acaba!",
+   "Chuva é dia de forno ligado o dia inteiro."
+  ],
+  "meredith": [
+   "Bom dia. Café? Eu preciso de três."
+  ],
+  "addison": [
+   "Elegância é saber exatamente o que fazer em uma emergência.",
+   "Pediatria, ginecologia e obstetrícia: um andar inteiro de gente nascendo e crescendo."
+  ]
+ },
+ "garden": {
+  "7": {
+   "crop": "manjericao",
+   "growth": 2,
+   "watered": true
+  },
+  "6": {
+   "crop": "manjericao",
+   "growth": 2,
+   "watered": true
+  },
+  "8": {
+   "crop": "manjericao",
+   "growth": 2,
+   "watered": true
+  },
+  "9": {
+   "crop": "tomate",
+   "growth": 2,
+   "watered": true
+  },
+  "10": {
+   "crop": "morango",
+   "growth": 2,
+   "watered": true
+  },
+  "11": {
+   "crop": "girassol",
+   "growth": 2,
+   "watered": true
+  },
+  "5": {
+   "crop": "rosa",
+   "growth": 2,
+   "watered": true
+  },
+  "4": {
+   "crop": "abobora",
+   "growth": 2,
+   "watered": true
+  }
+ },
+ "forage": [
+  [
+   "city",
+   47,
+   45,
+   "concha"
+  ],
+  [
+   "city",
+   58,
+   45,
+   "estrela_mar"
+  ],
+  [
+   "city",
+   57,
+   45,
+   "vidro_mar"
+  ],
+  [
+   "city",
+   10,
+   45,
+   "concha"
+  ],
+  [
+   "city",
+   44,
+   45,
+   "concha"
+  ],
+  [
+   "city",
+   27,
+   46,
+   "concha"
+  ],
+  [
+   "city",
+   41,
+   47,
+   "vidro_mar"
+  ],
+  [
+   "city",
+   23,
+   45,
+   "concha"
+  ],
+  [
+   "city",
+   41,
+   46,
+   "coral"
+  ],
+  [
+   "city",
+   32,
+   34,
+   "cogumelos"
+  ],
+  [
+   "city",
+   1,
+   31,
+   "amora"
+  ],
+  [
+   "city",
+   6,
+   28,
+   "cogumelos"
+  ],
+  [
+   "city",
+   23,
+   20,
+   "cogumelos"
+  ],
+  [
+   "city",
+   13,
+   37,
+   "cogumelos"
+  ],
+  [
+   "city",
+   3,
+   21,
+   "trevo4"
+  ]
+ ],
+ "forage_found": [
+  "amora",
+  "cogumelos",
+  "concha",
+  "coral",
+  "flor_silvestre",
+  "vidro_mar"
+ ],
+ "pet": null,
+ "rested": false,
+ "buffs": [],
+ "checkups": [],
+ "consult_today": false,
+ "donated_q": null,
+ "crowd": {
+  "x0": [
+   "beach",
+   "cafe",
+   "hospital",
+   "market"
+  ],
+  "x1": [
+   "cafe",
+   "catco",
+   "cinema",
+   "books"
+  ],
+  "x2": [
+   "hospital",
+   "cafe",
+   "trattoria",
+   "catco"
+  ],
+  "x3": [
+   "catco",
+   "books",
+   "hospital",
+   "trattoria"
+  ],
+  "x4": [
+   "catco",
+   "trattoria",
+   "market",
+   "bar"
+  ],
+  "x5": [
+   "hospital",
+   "catco",
+   "market",
+   "books"
+  ],
+  "x6": [
+   "park",
+   "market",
+   "books",
+   "cafe"
+  ],
+  "x7": [
+   "hospital",
+   "cafe",
+   "trattoria",
+   "bar"
+  ],
+  "x8": [
+   "cafe",
+   "catco",
+   "books",
+   "market"
+  ],
+  "x9": [
+   "books",
+   "catco",
+   "cafe",
+   "cinema"
+  ],
+  "x10": [
+   "hospital",
+   "market",
+   "cafe",
+   "trattoria"
+  ],
+  "x11": [
+   "catco",
+   "hospital",
+   "cafe",
+   "books"
+  ],
+  "x12": [
+   "trattoria",
+   "books",
+   "catco",
+   "hospital"
+  ],
+  "x13": [
+   "catco",
+   "books",
+   "trattoria",
+   "bar"
+  ],
+  "x14": [
+   "hospital",
+   "cinema",
+   "cafe",
+   "books"
+  ],
+  "x15": [
+   "market",
+   "catco",
+   "hospital",
+   "cafe"
+  ],
+  "x16": [
+   "hospital",
+   "market",
+   "cinema",
+   "books"
+  ],
+  "x17": [
+   "park",
+   "hospital",
+   "catco",
+   "trattoria"
+  ],
+  "x18": [
+   "books",
+   "hospital",
+   "cafe",
+   "cinema"
+  ],
+  "x19": [
+   "trattoria",
+   "park",
+   "hospital",
+   "books"
+  ]
+ }
+}
