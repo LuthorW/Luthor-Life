@@ -90,8 +90,8 @@ NPCS = {
     ),
     "jess": dict(
         name="Jess", short="Jess", role="Assistente executiva",
-        look=look((74, 42, 26), (204, 152, 120), (60, 132, 104), (240, 236, 226), (40, 40, 52), (30, 24, 30), "bun"),
-        portrait=None,
+        look=look((125, 118, 85), (226, 186, 156), (60, 132, 104), (240, 236, 226), (40, 40, 52), (30, 24, 30), "bun"),
+        portrait="jess.jpg",
         gifts=dict(love=["flores", "girassois", "bolo"], like=["expresso", "cappuccino", "rosquinha", "vinho", "panquecas"],
                    dislike=["lata", "jornal"]),
         schedule=dict(
@@ -124,7 +124,7 @@ NPCS = {
     "rafa": dict(
         name="Rafa", short="Rafa", role="Barista do Grão Nobre",
         look=look((222, 182, 92), (246, 206, 176), (236, 232, 224), (122, 82, 52), (122, 82, 52), (50, 36, 30), "short"),
-        portrait=None, shop="cafe", shop_map="cafe",
+        portrait="rafa.jpg", shop="cafe", shop_map="cafe",
         gifts=dict(love=["livro", "policial"], like=["flores", "sanduiche", "panquecas"], dislike=["expresso"]),
         schedule=dict(default=[(360, "cafe", 4, 3, "down"), (1320, None, 0, 0, "down")]),
         lines=dict(
@@ -297,7 +297,7 @@ NPCS = {
     "nia": dict(
         name="Nia Nal", short="Nia", role="Repórter da CatCo",
         look=look((40, 28, 30), (150, 100, 76), (70, 110, 170), (240, 220, 140), (40, 40, 60), (30, 24, 30), "long"),
-        portrait=None,
+        portrait="nia.jpg",
         gifts=dict(love=["livro", "policial", "girassois"], like=["cappuccino", "flores", "bolo", "tiramisu"],
                    dislike=["lata", "relatorio"]),
         schedule=dict(
@@ -327,7 +327,7 @@ NPCS = {
     "theo": dict(
         name="Theo", short="Theo", role="Livreiro da Bayside Books",
         look=look((60, 44, 40), (170, 120, 90), (130, 90, 60), (230, 220, 200), (60, 60, 70), (40, 30, 26), "short"),
-        portrait=None, shop="books", shop_map="books",
+        portrait="theo.jpg", shop="books", shop_map="books",
         gifts=dict(love=["livro", "cappuccino"], like=["policial", "croissant", "bolo"], dislike=["lata", "jornal"]),
         schedule=dict(default=[(360, None, 0, 0, "down"), (480, "books", 13, 4, "down"), (1260, None, 0, 0, "down")]),
         lines=dict(
@@ -346,7 +346,7 @@ NPCS = {
     "bea": dict(
         name="Bea", short="Bea", role="Dona do Mercado Central",
         look=look((180, 70, 50), (232, 186, 156), (220, 120, 60), (250, 240, 220), (60, 70, 90), (40, 30, 30), "bun"),
-        portrait=None, shop="market", shop_map="market",
+        portrait="bea.jpg", shop="market", shop_map="market",
         gifts=dict(love=["girassois", "bolo"], like=["flores", "panquecas", "cappuccino"], dislike=["lata"]),
         schedule=dict(default=[(360, None, 0, 0, "down"), (420, "market", 13, 4, "down"), (1200, None, 0, 0, "down")]),
         lines=dict(
@@ -365,7 +365,7 @@ NPCS = {
     "graca": dict(
         name="Dona Graça", short="Graça", role="Chef da Ricci Trattoria",
         look=look((96, 84, 86), (176, 120, 86), (240, 236, 230), (40, 130, 80), (60, 52, 56), (50, 40, 40), "bun"),
-        portrait=None, shop="trattoria", shop_map="trattoria",
+        portrait="graca.jpg", shop="trattoria", shop_map="trattoria",
         gifts=dict(love=["moqueca", "lasanha_nonna"], like=["manjericao", "tomate", "abobora", "cappuccino", "flores"],
                    dislike=["lata", "rosquinha", "sanduiche"]),
         schedule=dict(default=[(360, None, 0, 0, "down"), (540, "trattoria", 9, 4, "down"), (1380, None, 0, 0, "down")]),
@@ -390,7 +390,7 @@ NPCS = {
     "marco": dict(
         name="Marco", short="Marco", role="Barman do Noonan's",
         look=look((30, 26, 28), (190, 140, 110), (40, 40, 46), (200, 40, 60), (30, 30, 36), (20, 18, 22), "short"),
-        portrait=None, shop="bar", shop_map="bar",
+        portrait="marco.jpg", shop="bar", shop_map="bar",
         gifts=dict(love=["moqueca", "peixe_grelhado", "vinho"], like=["petiscos", "pizza", "atum"], dislike=["flores"]),
         schedule=dict(default=[(360, None, 0, 0, "down"), (960, "bar", 4, 3, "down"), (1530, None, 0, 0, "down")]),
         lines=dict(
@@ -409,7 +409,7 @@ NPCS = {
     "joca": dict(
         name="Seu Joca", short="Joca", role="Pescador do píer",
         look=look((220, 220, 220), (190, 140, 100), (60, 110, 160), (230, 200, 90), (90, 80, 60), (60, 50, 40), "cap"),
-        portrait=None, shop="bait", shop_map="city",
+        portrait="joca.jpg", shop="bait", shop_map="city",
         gifts=dict(love=["moqueca", "atum", "kryptoniano"], like=["peixe_grelhado", "expresso", "sardinha", "drink"],
                    dislike=["software", "relatorio"]),
         schedule=dict(default=[(360, "city", 62, 65, "down"), (1080, "bar", 11, 8, "left"), (1320, None, 0, 0, "down")],
