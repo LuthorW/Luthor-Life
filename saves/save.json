@@ -1,10 +1,11 @@
 {
  "version": 2,
- "day": 9,
+ "city_layout": 2,
+ "day": 10,
  "quarter": 1,
  "year": 2034,
  "minutes": 360,
- "money": 1550,
+ "money": 3551,
  "energy": 115,
  "inventory": [
   [
@@ -17,25 +18,31 @@
   ],
   [
    "lata",
-   1
+   2
   ],
+  null,
   [
-   "cogumelos",
-   4
+   "pizza",
+   1
   ],
   null,
   null,
   null,
   [
    "jornal",
-   1
+   2
   ],
   null,
   null,
   null,
-  null,
-  null,
-  null,
+  [
+   "manjericao",
+   6
+  ],
+  [
+   "cogumelos",
+   7
+  ],
   null,
   null,
   null,
@@ -47,53 +54,35 @@
   null,
   null
  ],
- "selected": 8,
+ "selected": 7,
  "stations": [
   {
    "unlocked": true,
-   "project": "software",
-   "progress": 4,
-   "worked": false
-  },
-  {
-   "unlocked": true,
-   "project": "software",
-   "progress": 4,
-   "worked": false
-  },
-  {
-   "unlocked": true,
-   "project": "software",
-   "progress": 4,
-   "worked": false
-  },
-  {
-   "unlocked": true,
-   "project": "software",
-   "progress": 4,
-   "worked": false
-  },
-  {
-   "unlocked": true,
-   "project": "athena",
-   "progress": 2,
-   "worked": false
-  },
-  {
-   "unlocked": true,
-   "project": "athena",
-   "progress": 2,
-   "worked": false
-  },
-  {
-   "unlocked": true,
-   "project": "athena",
-   "progress": 3,
+   "project": "nike",
+   "progress": 1,
    "worked": false
   },
   {
    "unlocked": true,
    "project": "nike",
+   "progress": 1,
+   "worked": false
+  },
+  {
+   "unlocked": true,
+   "project": "nike",
+   "progress": 1,
+   "worked": false
+  },
+  {
+   "unlocked": true,
+   "project": "nike",
+   "progress": 1,
+   "worked": false
+  },
+  {
+   "unlocked": true,
+   "project": "athena",
    "progress": 3,
    "worked": false
   },
@@ -101,6 +90,24 @@
    "unlocked": true,
    "project": "athena",
    "progress": 3,
+   "worked": false
+  },
+  {
+   "unlocked": true,
+   "project": "athena",
+   "progress": 4,
+   "worked": false
+  },
+  {
+   "unlocked": true,
+   "project": "nike",
+   "progress": 4,
+   "worked": false
+  },
+  {
+   "unlocked": true,
+   "project": "athena",
+   "progress": 4,
    "worked": false
   },
   {
@@ -123,18 +130,19 @@
   }
  ],
  "friendship": {
-  "sam": 148,
-  "brainy": 216,
+  "sam": 168,
+  "brainy": 236,
   "jess": 168,
   "rafa": 60,
-  "lucy": 634,
-  "vittoria": 286,
+  "lucy": 654,
+  "vittoria": 326,
   "nia": 140,
   "theo": 100,
   "bea": 60,
-  "marco": 20,
+  "graca": 20,
+  "marco": 190,
   "joca": 96,
-  "yang": 0,
+  "yang": 20,
   "meredith": 20,
   "milany": 20,
   "lexie": 0,
@@ -154,10 +162,13 @@
    "polvo": "neutral",
    "policial": "love"
   },
-  "vittoria": {},
+  "vittoria": {
+   "lasanha": "neutral"
+  },
   "nia": {},
   "theo": {},
   "bea": {},
+  "graca": {},
   "marco": {},
   "joca": {},
   "yang": {},
@@ -168,39 +179,33 @@
   "addison": {}
  },
  "flags": [
-  "book_energy",
-  "got_rod",
   "book_fish",
-  "book_stocks"
+  "got_rod",
+  "book_stocks",
+  "book_energy"
  ],
  "events_seen": [
   "lucy:2"
  ],
  "stats": {
-  "launched": 11,
-  "earned": 6901,
+  "launched": 15,
+  "earned": 9678,
   "hecate": 0,
-  "fish": 112,
+  "fish": 151,
   "arcade_best": 68,
   "karaoke_best": 54,
   "karaoke_s": 0,
-  "harvest": 0,
+  "harvest": 3,
   "movies": 1,
-  "forage": 32
+  "forage": 44
  },
- "stock": 92.86,
- "stock_prev": 94.85,
+ "stock": 92.02,
+ "stock_prev": 92.86,
  "shares": 15,
  "shipped": [],
- "request": {
-  "npc": "marco",
-  "item": "truta",
-  "qty": 1,
-  "reward": 209,
-  "deadline": 13
- },
+ "request": null,
  "weather": "chuva",
- "weather_tomorrow": "chuva",
+ "weather_tomorrow": "sol",
  "map": "home",
  "player": [
   112.0,
@@ -209,18 +214,18 @@
  ],
  "coffee_today": false,
  "fish_caught": [
-  "robalo",
   "carpa",
+  "truta",
   "tilapia",
-  "sardinha",
-  "lula",
   "polvo",
-  "truta"
+  "lula",
+  "robalo",
+  "sardinha"
  ],
  "aquarium": [
   "tilapia",
-  "truta",
-  "carpa"
+  "carpa",
+  "truta"
  ],
  "cooked": [],
  "dating": null,
@@ -235,7 +240,8 @@
    "Aqui só entra ingrediente fresco. Se não estiver fresco, não entra. Nem você, se estiver cansada.",
    "Você já almoçou? Não minta. Senta aí, eu faço um prato rápido.",
    "Minha nonna dizia: 'Cozinha é como amor. Se você não prova, não sabe se está bom.'",
-   "Tá vendo esse forno? Veio de Napoli em três caixas. Montei sozinha. Chorei duas vezes."
+   "Tá vendo esse forno? Veio de Napoli em três caixas. Montei sozinha. Chorei duas vezes.",
+   "Às três eu fujo pro parque. Cinco minutos de silêncio e depois volto pras reuniões."
   ],
   "lucy": [
    "Folga! Vou ler no parque, perto do lago. Se você aparecer, finjo que foi coincidência.",
@@ -243,14 +249,16 @@
    "A Nia diz que eu sou dura demais com você. A Nia é gentil demais com todo mundo.",
    "O lago do parque é o lugar mais calmo da cidade. Até os patos parecem jornalistas aposentados.",
    "Sabe qual é a pior parte de voltar pra National City? Todo mundo lembra de quem você era.",
-   "Você ainda não respondeu minhas perguntas sobre o apagão. Eu sou paciente. Mentira, não sou."
+   "Você ainda não respondeu minhas perguntas sobre o apagão. Eu sou paciente. Mentira, não sou.",
+   "Às vezes eu sento no parque só pra escrever à mão. A cidade soa diferente no papel."
   ],
   "brainy": [
    "Recalibrei as bancadas às 6h. Elas estão 0,4% mais felizes. Eu acho.",
    "O Terminal P&D foi atualizado. Agora ele também diz 'bom dia'. Fui eu.",
    "O parque à noite tem vagalumes. Bioluminescência é a coisa mais bonita que a natureza inventou.",
    "O laboratório está ficando enorme. Precisamos de mais tomadas. E de mais rosquinhas.",
-   "Calculei que você precisa de uma pausa. 78% de chance de estar certo. Vai tomar um café."
+   "Calculei que você precisa de uma pausa. 78% de chance de estar certo. Vai tomar um café.",
+   "O céu está limpo hoje. Ótimo para observar satélites. Os nossos, claro."
   ],
   "theo": [
    "O gato da vizinha dormiu na vitrine de novo. Vendeu dois livros de gato.",
@@ -261,7 +269,8 @@
    "Projetos de laboratório dão retorno, mas quem paga as contas no curto prazo são os relatórios.",
    "A reunião das 15h foi cancelada. Considere isso um presente.",
    "Relatórios de mercado são baratos e rápidos. Ótimos para manter o caixa respirando.",
-   "Três da tarde é a hora mais perigosa do expediente. Todo mundo quer café e ninguém quer trabalhar."
+   "Três da tarde é a hora mais perigosa do expediente. Todo mundo quer café e ninguém quer trabalhar.",
+   "Esqueci o guarda-chuva. De novo. A Jess me emprestou um roxo. Agora todo mundo acha que sou fã da marca."
   ],
   "joca": [
    "Linha forte, mão leve. Esse é o segredo.",
@@ -286,7 +295,8 @@
    "Recebi 47 e-mails pra você. 46 eram spam. O outro era da sua mãe."
   ],
   "marco": [
-   "Aqui todo mundo é igual. CEO, repórter, pescador. Todo mundo paga a conta."
+   "Aqui todo mundo é igual. CEO, repórter, pescador. Todo mundo paga a conta.",
+   "Você bateu o recorde do Meteoro! Tô pensando em colocar seu nome na parede."
   ],
   "rafa": [
    "Me contaram que você cantou no Noonan's. Quero ver ao vivo!",
@@ -305,140 +315,143 @@
   "addison": [
    "Elegância é saber exatamente o que fazer em uma emergência.",
    "Pediatria, ginecologia e obstetrícia: um andar inteiro de gente nascendo e crescendo."
+  ],
+  "graca": [
+   "A Vittoria passou aqui pra provar o molho. Disse que tá perfeito. Eu já sabia."
+  ],
+  "yang": [
+   "Você tem cara de quem ignora check-up. Agenda um."
   ]
  },
  "garden": {
-  "7": {
-   "crop": "manjericao",
-   "growth": 2,
-   "watered": true
-  },
-  "6": {
-   "crop": "manjericao",
-   "growth": 2,
-   "watered": true
-  },
-  "8": {
-   "crop": "manjericao",
-   "growth": 2,
-   "watered": true
-  },
   "9": {
    "crop": "tomate",
-   "growth": 2,
+   "growth": 3,
    "watered": true
   },
   "10": {
    "crop": "morango",
-   "growth": 2,
+   "growth": 3,
    "watered": true
   },
   "11": {
    "crop": "girassol",
-   "growth": 2,
+   "growth": 3,
    "watered": true
   },
   "5": {
    "crop": "rosa",
-   "growth": 2,
+   "growth": 3,
    "watered": true
   },
   "4": {
    "crop": "abobora",
-   "growth": 2,
+   "growth": 3,
    "watered": true
   }
  },
  "forage": [
   [
    "city",
-   47,
-   45,
+   22,
+   56,
    "concha"
   ],
   [
    "city",
-   58,
-   45,
-   "estrela_mar"
+   19,
+   59,
+   "vidro_mar"
+  ],
+  [
+   "city",
+   89,
+   55,
+   "concha"
   ],
   [
    "city",
    57,
-   45,
+   57,
+   "concha"
+  ],
+  [
+   "city",
+   69,
+   55,
+   "estrela_mar"
+  ],
+  [
+   "city",
+   102,
+   60,
+   "concha"
+  ],
+  [
+   "city",
+   63,
+   56,
    "vidro_mar"
   ],
   [
    "city",
-   10,
-   45,
+   40,
+   60,
    "concha"
   ],
   [
    "city",
-   44,
-   45,
+   30,
+   56,
    "concha"
   ],
   [
    "city",
-   27,
-   46,
-   "concha"
-  ],
-  [
-   "city",
-   41,
-   47,
-   "vidro_mar"
-  ],
-  [
-   "city",
-   23,
-   45,
-   "concha"
-  ],
-  [
-   "city",
-   41,
-   46,
-   "coral"
-  ],
-  [
-   "city",
-   32,
    34,
-   "cogumelos"
-  ],
-  [
-   "city",
-   1,
    31,
    "amora"
   ],
   [
    "city",
-   6,
-   28,
-   "cogumelos"
-  ],
-  [
-   "city",
-   23,
-   20,
-   "cogumelos"
-  ],
-  [
-   "city",
+   104,
    13,
-   37,
+   "flor_silvestre"
+  ],
+  [
+   "city",
+   5,
+   33,
    "cogumelos"
   ],
   [
    "city",
-   3,
-   21,
-   "trevo4"
+   1,
+   29,
+   "cogumelos"
+  ],
+  [
+   "city",
+   106,
+   6,
+   "cogumelos"
+  ],
+  [
+   "city",
+   15,
+   42,
+   "amora"
+  ],
+  [
+   "city",
+   99,
+   6,
+   "flor_silvestre"
+  ],
+  [
+   "city",
+   27,
+   36,
+   "cogumelos"
   ]
  ],
  "forage_found": [
@@ -446,10 +459,22 @@
   "cogumelos",
   "concha",
   "coral",
+  "estrela_mar",
   "flor_silvestre",
   "vidro_mar"
  ],
- "pet": null,
+ "pet": {
+  "kind": "gato",
+  "name": "Pandora",
+  "coat": [
+   150,
+   150,
+   164
+  ],
+  "love": 1,
+  "petted": false,
+  "map": "home"
+ },
  "rested": false,
  "buffs": [],
  "checkups": [],
@@ -457,124 +482,124 @@
  "donated_q": null,
  "crowd": {
   "x0": [
-   "beach",
    "cafe",
+   "ricci",
    "hospital",
-   "market"
+   "cinema"
   ],
   "x1": [
    "cafe",
-   "catco",
-   "cinema",
-   "books"
+   "market",
+   "ricci",
+   "hospital"
   ],
   "x2": [
    "hospital",
-   "cafe",
+   "ricci",
+   "catco",
+   "cinema"
+  ],
+  "x3": [
+   "hospital",
+   "ricci",
    "trattoria",
    "catco"
   ],
-  "x3": [
-   "catco",
-   "books",
-   "hospital",
-   "trattoria"
-  ],
   "x4": [
+   "cafe",
    "catco",
-   "trattoria",
-   "market",
-   "bar"
-  ],
-  "x5": [
    "hospital",
-   "catco",
-   "market",
    "books"
   ],
-  "x6": [
-   "park",
-   "market",
-   "books",
-   "cafe"
-  ],
-  "x7": [
-   "hospital",
+  "x5": [
    "cafe",
-   "trattoria",
+   "catco",
+   "ricci",
    "bar"
   ],
-  "x8": [
+  "x6": [
+   "ricci",
    "cafe",
-   "catco",
-   "books",
+   "hospital",
+   "bar"
+  ],
+  "x7": [
+   "cinema",
+   "trattoria",
+   "hospital",
    "market"
   ],
-  "x9": [
-   "books",
-   "catco",
-   "cafe",
-   "cinema"
-  ],
-  "x10": [
+  "x8": [
    "hospital",
+   "catco",
    "market",
+   "cafe"
+  ],
+  "x9": [
+   "ricci",
+   "books",
    "cafe",
    "trattoria"
   ],
+  "x10": [
+   "market",
+   "cinema",
+   "books",
+   "hospital"
+  ],
   "x11": [
-   "catco",
+   "cinema",
    "hospital",
-   "cafe",
+   "trattoria",
    "books"
   ],
   "x12": [
-   "trattoria",
+   "cafe",
    "books",
-   "catco",
-   "hospital"
+   "market",
+   "cinema"
   ],
   "x13": [
+   "market",
+   "cafe",
    "catco",
-   "books",
-   "trattoria",
    "bar"
   ],
   "x14": [
+   "trattoria",
    "hospital",
    "cinema",
-   "cafe",
    "books"
   ],
   "x15": [
-   "market",
-   "catco",
-   "hospital",
-   "cafe"
+   "trattoria",
+   "books",
+   "cinema",
+   "bar"
   ],
   "x16": [
+   "cafe",
    "hospital",
-   "market",
    "cinema",
-   "books"
+   "catco"
   ],
   "x17": [
-   "park",
+   "ricci",
    "hospital",
-   "catco",
+   "books",
    "trattoria"
   ],
   "x18": [
-   "books",
-   "hospital",
+   "ricci",
    "cafe",
-   "cinema"
+   "books",
+   "hospital"
   ],
   "x19": [
-   "trattoria",
-   "park",
-   "hospital",
-   "books"
+   "market",
+   "cafe",
+   "cinema",
+   "catco"
   ]
  }
 }
