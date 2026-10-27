@@ -562,10 +562,10 @@ SCENES = {
         ("fala", "lucy", "Conversar? Meu Deus! Você é a mesma Letícia Luthor de sempre?"),
         ("emote", "player", "reticencias"),
         ("esperar", 1.0),
-        ("fala", "lucy", "Achei que a próxima vez que eu fosse te ver seria em um porão, por saber segredos demais"),
+        ("fala", "lucy", "Achei que a próxima vez que eu fosse te ver seria em um porão, por saber segredos demais."),
         ("emote", "player", "gota"),
         ("esperar", 1.0),
-        ("fala", "lucy", "Essa não. Voccê está me olhando como me olhava na faculdade. Como se eu fosse um problema pra resolver."),
+        ("fala", "lucy", "Essa não. Você está me olhando como me olhava na faculdade. Como se eu fosse um problema pra resolver."),
         ("escolha", "O que responder?", [
             ("Você sempre foi o melhor problema da minha vida.", 60, "...Ok, Luthor. Essa foi boa. Não acostuma."),
             ("Eu só queria te entender.", 40, "Muita gente tentou. Pouca gente chegou perto."),
