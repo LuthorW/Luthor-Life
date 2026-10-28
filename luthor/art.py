@@ -1693,17 +1693,67 @@ def heart(full=True, k=3, color=(240, 80, 130)):
 # Retratos e imagens
 # ---------------------------------------------------------------------------
 
+PORTRAIT_BG = ((70, 46, 104), (34, 22, 54))     # fundo do quadro do retrato (degradê roxo)
+
+
+def _portrait_bg(size):
+    s = pygame.Surface((size, size))
+    top, bottom = PORTRAIT_BG
+    for y in range(size):
+        pygame.draw.line(s, mix(top, bottom, y / size), (0, y), (size, y))
+    return s
+
+
+def _clear_fake_bg(img):
+    """Apaga o fundo "de mentira" que encosta nas bordas: branco liso ou o xadrez cinza de
+    transparência desenhado na imagem. Só some o que está ligado às bordas, então o branco
+    dentro do desenho (olhos, roupa) fica intacto."""
+    w, h = img.get_size()
+    # sementes nas bordas de cima e dos lados (embaixo costuma encostar a roupa, que pode ser clara)
+    seeds = [(0, 0), (w - 1, 0), (w // 4, 0), (w // 2, 0), (3 * w // 4, 0),
+             (0, h // 4), (w - 1, h // 4), (0, h // 2), (w - 1, h // 2)]
+    if all(img.get_at(c).a < 20 for c in seeds[:2]):
+        return img                                      # já tem transparência de verdade
+    # tons claros e acinzentados (branco liso ou as duas cores do xadrez, com as bordas suavizadas)
+    bg = pygame.mask.from_threshold(img, (226, 226, 226, 255), (30, 30, 30, 255))
+    hole = pygame.mask.Mask((w, h))
+    for c in seeds:
+        col = img.get_at(c)
+        if bg.get_at(c) and max(col[:3]) - min(col[:3]) < 20:
+            hole.draw(bg.connected_component(c), (0, 0))
+    if hole.count() == 0:
+        return img
+    # sobras do xadrez: pontinhos soltos que não fazem parte do desenho principal
+    fig = hole.copy()
+    fig.invert()
+    keep = pygame.mask.Mask((w, h))
+    for comp in fig.connected_components(minimum=max(200, w * h // 2000)):
+        keep.draw(comp, (0, 0))
+    hole = keep
+    hole.invert()
+    out = img.copy()
+    out.blit(hole.to_surface(setcolor=(255, 255, 255, 255), unsetcolor=(0, 0, 0, 0)), (0, 0),
+             special_flags=pygame.BLEND_RGBA_SUB)
+    return out
+
+
 def portrait(filename, look, size=120):
     def make():
         if filename:
             path = os.path.join(ASSETS, "portraits", filename)
             if os.path.exists(path):
                 try:
-                    img = pygame.image.load(path).convert()
+                    img = pygame.image.load(path)
                     w, h = img.get_size()
                     side = min(w, h)
                     crop = img.subsurface((max(0, (w - side) // 2), 0, side, side)).copy()
-                    return pygame.transform.smoothscale(crop, (size, size))
+                    if filename.lower().endswith(".png"):
+                        # retrato em pixel art: mantém a transparência e põe o fundo do quadro atrás
+                        crop = _clear_fake_bg(crop.convert_alpha())
+                        out = _portrait_bg(size)
+                        out.blit(pygame.transform.smoothscale(crop, (size, size)), (0, 0))
+                        return out
+                    return pygame.transform.smoothscale(crop.convert(), (size, size))
                 except Exception:
                     pass
         frames = character_frames(look)
@@ -1718,6 +1768,40 @@ def portrait(filename, look, size=120):
         s.blit(big, (0, size - big.get_height()))
         return s
     return cached(("portrait", filename, tuple(sorted((k, str(v)) for k, v in look.items())), size), make)
+
+
+# humor -> sufixos procurados em assets/portraits (nome.png, nome_feliz.png, nome_ruim.png, nome_timido.png)
+MOOD_SUFFIXES = {"happy": ("feliz",), "smile": ("feliz",), "bad": ("ruim", "bravo", "brava"),
+                 "shy": ("timido", "timida"), "love": ("timido", "feliz")}
+
+
+def portrait_file(base, mood=None):
+    """Arquivo do retrato de uma personagem (pelo padrão de nomes), ou None se não houver."""
+    if not base:
+        return None
+    if mood:
+        for suf in MOOD_SUFFIXES.get(mood, (mood,)):
+            f = f"{base}_{suf}.png"
+            if portrait_exists(f):
+                return f
+    for f in (f"{base}.png", f"dra_{base}.png"):
+        if portrait_exists(f):
+            return f
+    return None
+
+
+def resolve_photo(name):
+    """Foto de cutscene: usa o arquivo pedido; se ele não existir mais, tenta o retrato equivalente
+    (ex.: lucy_apaixonada.jpg -> lucy_timido.png)."""
+    if portrait_exists(name):
+        return name
+    stem = os.path.splitext(name)[0]
+    base, _, suf = stem.partition("_")
+    alias = {"apaixonada": "love", "apaixonado": "love", "feliz": "happy", "sorridente": "smile", "ruim": "bad",
+             "timido": "shy", "timida": "shy"}.get(suf)
+    if portrait_exists(stem + ".png"):
+        return stem + ".png"
+    return portrait_file(base, alias)
 
 
 def portrait_exists(filename):

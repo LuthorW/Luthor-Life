@@ -1490,7 +1490,7 @@ def object_label(g, o):
 TELESCOPE_DAY = ["Você vê a sacada da CatCo. A Lucy está digitando furiosamente.",
                  "O letreiro da Luthor Corp brilha lá embaixo. Bonito, né? Foi você que aprovou.",
                  "Um barco do Seu Joca está voltando para o píer. Parece que pescou bem.",
-                 "Dá para ver a fila no Grão Nobre daqui. O Rafa está correndo de um lado pro outro."]
+                 "Dá para ver a fila no Grão Nobre daqui. O Harry está correndo de um lado pro outro."]
 TELESCOPE_NIGHT = ["Uma estrela cadente! ...Espera. Estrelas fazem curva?",
                    "A Lua está enorme hoje. Dá para ver as crateras.",
                    "As luzes de National City parecem um segundo céu.",

@@ -4,12 +4,12 @@ import random
 
 import pygame
 
-from . import art, scenery
+from . import art, scenery, nautical
 from .config import TILE, SCALE
 
-SOLID_TILES = {"wall", "wall_top", "glass", "water", "sea", "sea_foam", "fountain", "void"}
-WATER_TILES = {"water": "pond", "sea": "sea", "sea_foam": "sea"}
-ANIMATED = {"water", "sea", "sea_foam", "fountain"}
+SOLID_TILES = {"wall", "wall_top", "glass", "water", "sea", "sea_foam", "fountain", "void", "deep"}
+WATER_TILES = {"water": "pond", "sea": "sea", "sea_foam": "sea", "deep": "deep"}
+ANIMATED = {"water", "sea", "sea_foam", "fountain", "deep"}
 
 # kind: (largura, altura, sólido, camada). camada: obj | decal (chão) | wall (decoração de parede)
 OBJECT_DEFS = {
@@ -67,6 +67,7 @@ OBJECT_DEFS = {
     "lighthouse": (3, 2, True, "obj"), "towel": (2, 1, False, "decal"), "towel2": (2, 1, False, "decal"),
     "ricci_map": (2, 1, False, "wall"), "sandcastle": (1, 1, True, "obj"), "bench_l": (1, 1, True, "obj"), "bench_r": (1, 1, True, "obj"),
 }
+OBJECT_DEFS.update(nautical.OBJECT_DEFS)
 
 # Área que realmente bloqueia a jogadora (x, y, largura, altura em pixels de arte, a partir do canto
 # do objeto). Postes, bancos, árvores e arbustos ocupam só a base: dá para contornar sem enroscar.
@@ -80,6 +81,8 @@ HITBOXES = {
     "fence_v": (5, 0, 6, 16), "flowerpot": (3, 8, 10, 8), "flowerpot2": (3, 8, 10, 8), "sandcastle": (2, 7, 12, 9),
     "bench_r": (3, 7, 11, 9), "bench_l": (2, 7, 11, 9),
 }
+
+HITBOXES.update(nautical.HITBOXES)
 
 COUNTERS = {"ceo_desk", "desk", "desk_home", "desk_editor", "desk_news", "reception", "cafe_counter", "kitchen",
             "shop_counter", "counter_it", "bar_counter", "island"}
@@ -172,6 +175,8 @@ class GameMap:
                     if self.in_bounds(xx, yy) and self.tiles[yy][xx] not in SOLID_TILES                             and not self.building_at(xx, yy):
                         self.hitboxes[(xx, yy)] = r
         self.wall_decor = [o for o in self.objects if o.layer == "wall"]
+        # asfalto (sem as faixas de pedestres): NPCs desviam dele
+        self.road = {(x, y) for y in range(self.h) for x in range(self.w) if self.tiles[y][x].startswith("road")}
         self._build_floor()
 
     def _build_floor(self):
@@ -183,7 +188,7 @@ class GameMap:
             surf.fill((0, 0, 0))
         r = random.Random(self.name)
         variants = ("grass", "flowers", "pavement", "road", "dirt", "wood", "wood_dark", "carpet", "sand",
-                    "plaza", "boardwalk", "pier", "carpet_blue", "office", "terracotta")
+                    "plaza", "boardwalk", "pier", "carpet_blue", "office", "terracotta", "deck")
         for y in range(self.h):
             for x in range(self.w):
                 t = self.tiles[y][x]
@@ -224,6 +229,7 @@ class GameMap:
                 spr = art.object_sprite(o.kind)
                 surf.blit(spr, (o.x * TILE, (o.y + o.h) * TILE - spr.get_height()))
         scenery.decorate_floor(self, surf)
+        nautical.decorate_floor(self, surf)
         sh = pygame.Surface((TILE, TILE // 3), pygame.SRCALPHA)
         sh.fill((0, 0, 0, 55))
         for b in self.buildings:
@@ -259,6 +265,16 @@ class GameMap:
         return None
 
     def find_path(self, start, goal, max_nodes=16000):
+        """Caminho em tiles para NPCs. Na cidade, evitam o asfalto e atravessam só pelas faixas de
+        pedestres; se isso for impossível (ou começarem/terminarem na rua), usam qualquer caminho."""
+        road = getattr(self, "road", None)
+        if road and start not in road and goal not in road:
+            path = self._bfs(start, goal, max_nodes, road)
+            if path is not None:
+                return path
+        return self._bfs(start, goal, max_nodes, ())
+
+    def _bfs(self, start, goal, max_nodes, avoid):
         if start == goal:
             return []
         if self.is_solid(*goal) and goal not in self.doors:
@@ -274,7 +290,7 @@ class GameMap:
                 n = (nx, ny)
                 if n in prev:
                     continue
-                if self.is_solid(nx, ny) and n != goal:
+                if (self.is_solid(nx, ny) or n in avoid) and n != goal:
                     continue
                 prev[n] = cur
                 q.append(n)
@@ -294,10 +310,10 @@ class GameMap:
 # ---------------------------------------------------------------------------
 CITY_DOORS = {"home": (6, 15), "hq": (21, 15), "cafe": (35, 15), "catco": (48, 15),
               "books": (55, 31), "market": (64, 31), "trattoria": (81, 31), "bar": (55, 45), "cinema": (65, 45),
-              "hospital": (78, 15), "ricci": (64, 15)}
+              "hospital": (78, 15), "ricci": (64, 15), "marina": (90, 58)}
 INTERIOR_DOORS = {"home": (16, 15), "hq": (12, 17), "cafe": (7, 10), "catco": (11, 14),
                   "books": (8, 11), "market": (8, 11), "trattoria": (10, 12), "bar": (8, 11), "cinema": (10, 13),
-                  "hospital": (13, 16), "ricci": (10, 13)}
+                  "hospital": (13, 16), "ricci": (10, 13), "marina": (11, 11)}
 TERRACE_DOOR = (15, 1)      # porta da sala para o terraço (na cobertura)
 STATION_SLOTS = [(x, y) for y in (4, 7) for x in (12, 14, 16, 18, 20, 22)]
 HOME_BED = (3, 4)          # onde a jogadora acorda
@@ -489,7 +505,7 @@ def build_city():
     # --- Orla e praia ----------------------------------------------------------
     for x in (6, 18, 30, 51, 68, 79, 92, 104):
         m.add("lamp", x, 52)
-    for (px, py) in [(3, 55), (14, 56), (37, 55), (52, 56), (73, 55), (81, 56), (90, 56), (97, 55)]:
+    for (px, py) in [(3, 55), (14, 56), (37, 55), (52, 56), (73, 55), (81, 56), (99, 55)]:
         m.add("palm", px, py)
     for (ux, uy, k) in [(8, 59, "umbrella"), (21, 56, "umbrella2"), (32, 59, "umbrella"), (45, 59, "umbrella2"),
                         (66, 56, "umbrella"), (86, 59, "umbrella2")]:
@@ -506,6 +522,18 @@ def build_city():
     for (bx, by) in [(40, 72), (88, 70), (12, 76), (76, 77)]:    # barcos mais longe, em alto-mar
         m.add("boat", bx, by)
     m.add("lighthouse", 104, 56)
+
+    # --- Marina Luthor (ponta leste da praia) ----------------------------------
+    m.buildings.append(Building("Marina Luthor", "marina", 86, 54, 9, 5, 3, 90, "marina"))
+    m.fill(96, 55, 97, 70, "pier")              # cais entrando no mar
+    m.fill(92, 69, 101, 70, "pier")
+    m.add("yacht", 98, 66)                      # iate atracado
+    m.add("sailboat", 93, 67)
+    for (bx, by) in [(95, 60), (98, 60), (95, 64), (98, 64)]:
+        m.add("bollard", bx, by) if m.tiles[by][bx] == "pier" else None
+    for (bx, by) in [(91, 73), (103, 72), (88, 66), (106, 68)]:
+        m.add("buoy", bx, by)
+    m.add("lamp", 95, 59)
     for (rx, ry, k) in [(102, 57, "rock_big"), (108, 56, "rock"), (107, 58, "rock_big"), (101, 59, "rock")]:
         m.add(k, rx, ry)
 
@@ -580,7 +608,7 @@ def build_city():
     for key, (dx, dy) in CITY_DOORS.items():
         ix, iy = INTERIOR_DOORS[key]
         m.doors[(dx, dy)] = (key, ix, iy - 1, "up")
-    m.spawn_edges = [(0, 18), (W - 1, 19), (0, 50), (W - 1, 51)]
+    m.spawn_edges = [(1, 17), (W - 2, 20), (1, 49), (W - 2, 52)]      # calçadas (NPCs não entram pela rua)
     m.car_lanes = [(18, -1), (19, 1), (50, -1), (51, 1)]
     m.finalize()
     return m
@@ -1000,8 +1028,67 @@ def build_ricci():
     return m
 
 
+IAN_DESK = (17, 3)
+DECK_START = (20, 13)          # onde a jogadora chega no barco do alto-mar
+
+
+def build_marina():
+    """Clube da Marina Luthor: bar do clube, troféus, mesa do Ian e o balcão de passeios."""
+    rows = [
+        "WWWWWWWWWWWWWWWWWWWWWW",
+        "WWWWWWWWWWWWWWWWWWWWWW",
+        "WooooooooooGbbbbbbbbbW",
+        "WooooooooooGbbbbbbbbbW",
+        "WooooooooooGbbbbbbbbbW",
+        "WoooooooooooobbbbbbbbW",
+        "WoooooooooooobbbbbbbbW",
+        "WooooooooooobbbbbbbbbW",
+        "WooooooooooobbbbbbbbbW",
+        "WooooooooooobbbbbbbbbW",
+        "WooooooooooobbbbbbbbbW",
+        "WWWWWWWWWWWDWWWWWWWWWW",
+    ]
+    m = _interior("marina", rows, "Marina Luthor")
+    m.add("window_big", 2, 1); m.add("window_big", 7, 1); m.add("window_big", 18, 1)
+    m.add("ship_wheel", 10, 1); m.add("nautical_chart", 13, 1)
+    # bar do clube
+    m.add("bottle_shelf", 2, 2)
+    m.add("bar_counter", 2, 4)
+    for x in (2, 4, 6):
+        m.add("stool", x, 5)
+    m.add("table", 3, 8); m.add("chair", 2, 8); m.add("chair", 4, 8)
+    m.add("table", 8, 8); m.add("chair", 7, 8); m.add("chair", 9, 8)
+    # troféus de regata e mesa do Ian
+    m.add("trophy", 12, 2)
+    m.add("desk", 16, 4)
+    m.add("plant_big", 20, 2); m.add("plant_big", 1, 10)
+    # balcão de passeios (pesca em alto-mar, pôr do sol e regata)
+    m.add("charter", 13, 7)
+    m.add("sofa_grey", 16, 10)
+    m.add("rug_bed", 9, 9)
+    m.finalize()
+    return m
+
+
+def build_altomar():
+    """O barco da marina em alto-mar: convés de madeira no meio do oceano."""
+    W, H = 44, 26
+    m = GameMap("altomar", W, H, outdoor=True, label="Alto-mar")
+    m.fill(0, 0, W - 1, H - 1, "deep")
+    m.fill(14, 10, 29, 16, "deck")             # casco
+    m.fill(30, 11, 31, 15, "deck")             # proa
+    m.fill(32, 12, 33, 14, "deck")
+    m.fill(12, 11, 13, 15, "deck")             # popa
+    m.add("deck_cabin", 15, 10)
+    m.add("helm", 19, 11)
+    m.add("cooler_box", 27, 10); m.add("cooler_box", 13, 15)
+    m.finalize()
+    return m
+
+
 def build_world():
     return {"city": build_city(), "home": build_home(), "hq": build_hq(), "cafe": build_cafe(),
             "catco": build_catco(), "books": build_books(), "market": build_market(),
             "trattoria": build_trattoria(), "bar": build_bar(), "terrace": build_terrace(),
-            "cinema": build_cinema(), "hospital": build_hospital(), "ricci": build_ricci()}
+            "cinema": build_cinema(), "hospital": build_hospital(), "ricci": build_ricci(),
+            "marina": build_marina(), "altomar": build_altomar()}

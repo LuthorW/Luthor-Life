@@ -12,7 +12,8 @@ COMANDOS (cada um é uma tupla):
   ("pulo", nome)                      pulinho de alegria
   ("emote", nome, tipo)               balão: coracao, exclamacao, pergunta, reticencias, musica,
                                       gota, raiva, brilho, zzz, vergonha
-  ("fala", nome, "texto", humor)      fala com retrato (humor: None, "happy", "smile", "love")
+  ("fala", nome, "texto", humor)      fala com retrato (humor: None, "happy"/"feliz", "smile"/"sorriso",
+                                      "love"/"apaixonada", "bad"/"ruim", "shy"/"timido"; vale também para "player")
   ("narra", "texto")                  narração sem retrato
   ("escolha", "pergunta", [("opção", pontos, "resposta da personagem"), ...])
   ("camera", x, y)                    câmera desliza até o tile
@@ -38,7 +39,7 @@ from .entities import PLAYER_LOOK, draw_shadow, idle_frame, FOOT
 from .config import SCALE
 
 PLAYER_NAME = "Letícia"
-PLAYER_PORTRAIT = "leticia.jpg"
+PLAYER_PORTRAIT = "leticia.png"
 BAR_H = 64
 
 
@@ -284,9 +285,11 @@ class Cutscene(ui.Modal):
             self.i += 1
             self.exec(step)
 
-    def speaker(self, name):
+    def speaker(self, name, mood=None):
         if name == "player":
-            return PLAYER_NAME, art.portrait(PLAYER_PORTRAIT, PLAYER_LOOK, 112), "Letícia Luthor"
+            from .game import MOOD_ALIASES
+            fname = art.portrait_file("leticia", MOOD_ALIASES.get(mood, mood)) or PLAYER_PORTRAIT
+            return PLAYER_NAME, art.portrait(fname, PLAYER_LOOK, 112), "Letícia Luthor"
         d = NPCS[name]
         return d["name"], None, d["role"]
 
@@ -319,7 +322,7 @@ class Cutscene(ui.Modal):
         elif cmd == "fala":
             name, txt = args[0], args[1]
             mood = args[2] if len(args) > 2 else None
-            spk, portrait, sub = self.speaker(name)
+            spk, portrait, sub = self.speaker(name, mood)
             if portrait is None:
                 portrait = self.g.portrait_for(self.g.npcs[name], mood)
             self.sub = ui.Dialog(spk, [txt], portrait, subtitle=sub)
@@ -362,8 +365,9 @@ class Cutscene(ui.Modal):
         elif cmd == "legenda":
             self.caption = dict(text=args[0], t=args[1] if len(args) > 1 else 2.5, total=args[1] if len(args) > 1 else 2.5)
         elif cmd == "foto":
-            if art.portrait_exists(args[0]):
-                self.photo = art.portrait(args[0], PLAYER_LOOK, 420)
+            foto = art.resolve_photo(args[0])
+            if foto:
+                self.photo = art.portrait(foto, PLAYER_LOOK, 420)
         elif cmd == "efeito":
             kind, secs = args[0], args[1] if len(args) > 1 else 2.5
             if self.actors:
@@ -558,38 +562,48 @@ SCENES = {
         ("andar", "player", 11, 9),
         ("pulo", "lucy"),
         ("emote", "lucy", "exclamacao"),
-        ("esperar", 1.0),
+        ("esperar", 1.3),
         ("fala", "lucy", "Letícia Luthor na redação da CatCo depois do expediente. Isso vai dar o que falar."),
         ("fala", "player", "Vim em paz. Só... queria conversar."),
         ("emote", "lucy", "reticencias"),
-        ("esperar", 1.0),
+        ("esperar", 1.3),
         ("emote", "lucy", "musica"),
-        ("esperar", 1.0),
+        ("esperar", 1.3),
         ("fala", "lucy", "Conversar? Meu Deus! Você é a mesma Letícia Luthor de sempre?"),
         ("emote", "player", "reticencias"),
-        ("esperar", 1.0),
+        ("esperar", 1.3),
         ("fala", "lucy", "Achei que a próxima vez que eu fosse te ver seria em um porão, por saber segredos demais."),
         ("emote", "player", "gota"),
-        ("esperar", 1.0),
+        ("esperar", 1.3),
         ("fala", "lucy", "Essa não. Você está me olhando como me olhava na faculdade. Como se eu fosse um problema pra resolver."),
         ("escolha", "O que responder?", [
             ("Você sempre foi o melhor problema da minha vida.", 60, "...Ok, Luthor. Essa foi boa. Não acostuma."),
-            ("Eu só queria te entender.", 40, "Muita gente tentou. Pouca gente chegou perto."),
+            ("Eu só queria te entender.", 40, "Você me entendia! E você sabe disso."),
             ("Você está investigando a minha empresa, Lucy.", 0, "Justo. Mas não é só isso, e você sabe."),
         ]),
-        ("fala", "lucy", "Eu não sou um problema, Letícia. Eu sou... uma pergunta em aberto.", "smile"),
-        ("emote", "lucy", "brilho"),
-        ("fala", "lucy", "Primeiro, preciso que você me fale o que realmente aconteceu."),
-        
-        ("fala", "player", "Tudo o que você quiser saber. Eu vou te contar. Mas não aqui. Não agora."),
+        ("esperar", 2.0),
+        ("virar", "lucy", "right"),
+        ("esperar", 0.7),
+        ("fala", "lucy", "... como você continua tendo esse mesmo efeito sobre mim?"),
+        ("emote", "lucy", "gota"),
+        ("esperar", 1.3),
+        ("virar", "lucy", "down"),
+        ("fala", "lucy", "Certo. Primeiro, preciso que você me fale o que realmente aconteceu."),
+        ("fala", "player", "Tudo o que você quiser saber. Eu vou te contar. Mas não aqui."),
         ("emote", "lucy", "reticencias"),
-        ("esperar", 0.8),
+        ("esperar", 1.3),
+        ("fala", "lucy", "Mesmo que seja extremamente difícil de contar?"),
+        ("fala", "player", "Sim. Eu prometo contar o motivo das coisas terem acabado entre a gente. Mas não aqui."),
+        ("emote", "lucy", "reticencias"),
+        ("esperar", 1.3),
         ("fala", "lucy", "Tudo bem. Me encontra no Noonan's qualquer noite. Sem gravador. Prometo."),
         ("andar", "lucy", 15, 7),
         ("andar_", "lucy", 15, 13),
         ("virar", "player", "right"),
-        ("emote", "player", "musica"),
-        ("esperar", 1.0),
+        ("esperar", 3.0),
+        ("fala", "player", "... E você continua sendo a mesma Lucy Williams."),
+        ("emote", "player", "gota"),
+        ("esperar", 1.3),
         ("fade_out",),
     ]),
     "lucy_4": dict(map="books", time=18 * 60 + 30, npc="lucy", steps=[
@@ -972,6 +986,10 @@ def date_scene(key, place, game):
         ("legenda", "Mais tarde...", 1.6),
         ("fade_out",),
     ]
+    if m == "marina":
+        from .marina import date_scene_steps
+        steps = date_scene_steps(key) + steps[4:]
+        return dict(map="altomar", time=18 * 60 + 50, npc=key, steps=steps)
     if m == "cinema":
         steps.insert(-3, ("fala", key, "Shh, vai começar! Me passa a pipoca? ...A pipoca inteira, de preferência.", "happy"))
     if m == "trattoria" and key == "vittoria":

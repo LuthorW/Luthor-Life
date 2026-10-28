@@ -60,7 +60,9 @@ decide como gastar a sua energia.
 </tr>
 </table>
 
-E ainda: **cozinha** com receitas secretas, **coletáveis** na praia, no parque e no Bosque Bayside, **Cine National**, **aquário**,
+E ainda: a **Marina Luthor** (pesca em alto-mar, passeio ao pôr do sol, regata e encomendas náuticas),
+**presentes** que cada personagem ama, gosta ou não gosta (com retratos que mudam de expressão),
+**cozinha** com receitas secretas, **coletáveis** na praia, no parque e no Bosque Bayside, **Cine National**, **aquário**,
 **livros com bônus permanentes**, **pedidos** da cidade e **centenas de falas** que não se repetem.
 
 ## Como jogar
@@ -113,6 +115,8 @@ Luthor-Life/
     ├── art.py         # toda a pixel art, gerada por código
     ├── scenery.py     # árvores, grama, lagos e cenário no estilo Stardew
     ├── sprites.py     # personagens e roupas
+    ├── nautical.py    # arte da marina, dos barcos e do alto-mar
+    ├── marina.py      # Marina Luthor: passeios, regata e encomendas
     ├── characters.py  # personagens, rotinas, presentes e eventos
     ├── dialogue.py    # falas por período, clima, lugar e amizade
     ├── activities.py  # horta, coletáveis, bichinho, karaokê e cinema
@@ -138,8 +142,10 @@ Na lista: setas escolhem, Enter assiste e Esc fecha; durante o jogo, **F5** reab
 Cenas novas no dicionário `SCENES` (em `luthor/cutscenes.py`) aparecem sozinhas. Para dar um nome bonito
 na lista, adicione a chave em `scene_title` (em `luthor/game.py`).
 
-Para trocar os retratos, coloque as fotos em `assets/portraits/` e indique o nome do arquivo em
-`luthor/characters.py` (campo `portrait`).
+Retratos ficam em `assets/portraits/` com o padrão `nome.png`, `nome_feliz.png`, `nome_ruim.png`
+(ou `nome_bravo.png`) e `nome_timido.png`: o jogo encontra sozinho. O retrato "ruim" aparece com presentes
+que a personagem não gosta e o "tímido" com presentes que ela ama. Fundo branco ou xadrez de transparência
+desenhado na imagem é apagado automaticamente.
 
 ## Créditos
 

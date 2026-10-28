@@ -26,7 +26,13 @@ luthor/
   world.py       mapas (interiores desenhados em texto), OBJECT_DEFS, portas CITY_DOORS/INTERIOR_DOORS
   art.py         TODA a pixel art é procedural (tiles, prédios, objetos, personagens 16x32, ícones)
   sprites.py     personagens estilo Stardew (cabeça grande de 12 px, rosto do jogo original com nariz, cabelo em mechas); roupas por `look["outfit"]`
-                 (shirt, blazer, coat, chef, apron, vest, cardigan, fisher, blouse); substitui art._frames
+                 (shirt, blazer, coat, chef, apron, vest, cardigan, fisher, blouse, trench, peacoat, skirt_suit,
+                 patterned, breton, bartender, tech); extras: beard, glasses, hat; substitui art._frames
+  nautical.py    arte da Marina Luthor (clube, iate, veleiro, cais), tiles 'deep'/'deck' e o casco do alto-mar
+  marina.py      Marina Luthor: peixes de alto-mar, projetos náuticos, passeios, regata (minigame), encomendas do Ian
+                 (pagam 25% a mais que a Mesa de Contratos, pois são para a própria Luthor Corp)
+  gifts.py       presentes extras (12 itens nas lojas) e os gostos de cada personagem (ama/gosta/não gosta)
+  cenas_extras.py cutscenes novas (Ian, Barry, Dona Graça); as cenas originais de cutscenes.py não são mexidas
   scenery.py     cenário estilo Stardew: árvores grandes (copa some atrás), grama/terra, cantos e enfeites do chão
   entities.py    Player, NPC (rotina e caminho entre mapas), Car
   characters.py  NPCS (aparência, rotina, falas base, presentes, reações, eventos), NPC_ORDER, TEAM, ROMANCES
@@ -53,6 +59,11 @@ luthor/
 - **Ícones de item:** `art._icon(kind, color)`; módulos novos estendem via wrapper (ver `activities._icon_extra`).
 - **Cidade (mapa v2, 112x80; o mar vai até o fim para a câmera mostrar o oceano):** áreas verdes em `world.CITY_AREAS` (park, woods, garden, beach) — figurantes e
   coletáveis usam essas áreas. Saves antigos são convertidos por `world.old_city_xy` (campo `city_layout`).
+- **Retratos:** `assets/portraits/<chave>.png` + `_feliz`, `_ruim` (ou `_bravo`), `_timido`, achados por
+  `art.portrait_file` (o Harry usa `portrait_key="harry"`; a chave interna continua `rafa`). Humores: happy/smile ->
+  feliz, bad -> ruim, shy/love -> tímido. Presente amado = tímido, presente ruim = ruim. Fundo branco ou xadrez
+  desenhado é apagado por `art._clear_fake_bg`. Doutoras ainda usam `dra_*.jpg` até ganharem PNGs.
+- **Ruas:** NPCs evitam o asfalto (`GameMap.road`) e atravessam só pelas faixas; entram e saem pelas calçadas.
 - **Colisão:** `world.HITBOXES` define a parte que bloqueia a jogadora em objetos pequenos (poste, banco, árvore,
   arbusto...); NPCs desviam do tile inteiro. A jogadora escorrega pelas quinas (`Player._slide`).
 - **Mapas:** interiores são listas de strings (W parede, G vidro, o madeira, m mármore, t azulejo, c carpete,
@@ -86,8 +97,11 @@ luthor/
 - **Romance:** Lucy Williams (repórter da CatCo, Brie Larson) e Vittoria Ricci (Adria Arjona), dona do Gruppo Ricci,
   rede de restaurantes com sede em National City (o prédio que antes era o banco). Ela **não é chef**: quem cozinha
   e cuida da loja da Ricci Trattoria é a Dona Graça, chef brasileira veterana.
+- **Harry** (antes Rafa) é o barista do Grão Nobre. **Barry Allen**: fotógrafo da CatCo, amigo da Nia e da Lucy.
+  **Ian**: diretor da Marina Luthor, a divisão náutica da Luthor Corp. É **funcionário da Letícia** (como a Sam e o
+  Brainy), não sócio, e amigo de infância das férias no interior.
   Rosas aos 8 corações → namoro; pingente aos 10 → morar junto. Cutscenes nos eventos de coração.
-- **Ações LCORP:** variação noturna = aleatório + vendas de produtos/800 + bônus (Nia, doação).
+- **Ações LCORP:** variação noturna = aleatório + vendas de produtos/800 × `STOCK_PER_800` (2,5) + bônus (Nia, doação).
   Compra e venda com quantidade livre (`ui.NumberPrompt`) e "Vender todas".
 - **Desmaio às 2h:** acorda no leito do hospital (`HOSPITAL_BED`) com conta.
 - **Site:** roxo (#8a00e6 / #b84cff) como principal e verde (#6ee78c) como destaque. No site use só os sprites
@@ -125,3 +139,5 @@ substitua `pygame.key.get_pressed`. Antes de entregar uma mudança, rode alguns 
 7. Cidade ampliada (Bosque Bayside, Jardim do Mirante, farol), cenário estilo Stardew e colisão mais suave.
 8. Calçadão reorganizado (portas alinhadas ao desenho, bancos de lado), mar maior e personagens estilo Stardew.
 9. Sede do Gruppo Ricci no lugar do banco; Vittoria vira dona da rede e a Dona Graça assume a cozinha da Trattoria.
+10. Retratos em pixel art com 4 humores, Rafa vira Harry, Barry e Ian, Marina Luthor (alto-mar, pôr do sol, regata,
+    encomendas), bonequinhos de acordo com os retratos e NPCs fora da rua.

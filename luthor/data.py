@@ -281,6 +281,7 @@ SHOPS = {
 CAFE_STOCK = SHOPS["cafe"]["stock"]
 
 FLAG_LABELS = {
+    "marina_vip": "Regra do diretor da marina: a CEO paga metade do preço nos passeios.",
     "sam_bonus": "Contratos renegociados: +10% em tudo que você vende.",
     "hecate": "Projeto Hecate liberado no Terminal P&D.",
     "drone": "Drone de laboratório: trabalha nos projetos toda manhã.",

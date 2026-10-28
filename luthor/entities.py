@@ -14,8 +14,9 @@ from .world import CITY_DOORS, INTERIOR_DOORS
 
 DIRS = {"up": (0, -1), "down": (0, 1), "left": (-1, 0), "right": (1, 0)}
 
-PLAYER_LOOK = dict(hair=(32, 22, 34), skin=(240, 202, 172), cloth=(112, 40, 172), accent=(236, 228, 250),
-                   pants=(40, 30, 56), shoes=(22, 16, 26), style="long", eyes=(56, 168, 96), outfit="blazer")
+# de acordo com o retrato: cabelo escuro ondulado, casaco azul-marinho e cachecol
+PLAYER_LOOK = dict(hair=(42, 26, 24), skin=(236, 198, 170), cloth=(30, 36, 58), accent=(150, 130, 110),
+                   pants=(34, 30, 44), shoes=(22, 16, 26), style="wavy", eyes=(56, 168, 96), outfit="blazer")
 
 _shadow_cache = {}
 

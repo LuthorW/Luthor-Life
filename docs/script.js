@@ -10,13 +10,15 @@
     ["jess", "Jess", "Assistente executiva", "team"],
     ["lucy", "Lucy Williams", "Repórter da CatCo", "romance"],
     ["vittoria", "Vittoria Ricci", "Dona do Gruppo Ricci", "romance"],
-    ["rafa", "Rafa", "Barista do Grão Nobre", "city"],
+    ["rafa", "Harry", "Barista do Grão Nobre", "city"],
     ["nia", "Nia Nal", "Repórter da CatCo", "city"],
+    ["barry", "Barry Allen", "Fotógrafo da CatCo", "city"],
     ["theo", "Theo", "Livreiro da Bayside Books", "city"],
     ["bea", "Bea", "Dona do Mercado Central", "city"],
     ["graca", "Dona Graça", "Chef da Ricci Trattoria", "city"],
     ["marco", "Marco", "Barman do Noonan's", "city"],
     ["joca", "Seu Joca", "Pescador do píer", "city"],
+    ["ian", "Ian", "Diretor da Marina Luthor", "team"],
     ["milany", "Dra. Milany Moretti", "Centro Cardiovascular", "doc"],
     ["yang", "Dra. Cristina Yang", "Direção Médica", "doc"],
     ["meredith", "Dra. Meredith Grey", "Direção Médica", "doc"],
@@ -44,7 +46,7 @@
   // ---------------------------------------------------------------- desfile de sprites
   const track = document.querySelector(".parade .track");
   if (track) {
-    const order = ["leticia", "lucy", "cat", "sam", "brainy", "vittoria", "jess", "milany", "rafa", "nia", "dog",
+    const order = ["leticia", "lucy", "cat", "sam", "brainy", "vittoria", "jess", "milany", "rafa", "nia", "barry", "ian", "dog",
       "theo", "yang", "bea", "graca", "meredith", "marco", "lexie", "joca", "izzie", "addison"];
     const html = order.map((k) =>
       `<img class="${k === "cat" || k === "dog" ? "pet" : ""}" src="img/chars/${k}.png" alt="">`).join("");
@@ -63,6 +65,8 @@
     ["lab", "Laboratório da Luthor Corp"],
     ["dialog", "Conversa com a Vittoria na Trattoria"],
     ["ricci", "Sede do Gruppo Ricci, a empresa da Vittoria"],
+    ["marina", "Marina Luthor, o clube náutico na ponta da praia"],
+    ["regata", "Regata de fim de semana"],
     ["karaoke", "Karaokê no Noonan's"],
     ["movie", "Sessão no Cine National"],
     ["hospital", "Conti Moretti Hospitais"],

@@ -180,7 +180,11 @@ def _palette(look):
         "A": acc, "a": shade(acc, 0.74), "Z": (238, 238, 244), "z": (196, 196, 210), "T": (70, 74, 86),
         "P": pants, "R": mix(pants, (255, 255, 255), 0.16), "p": shade(pants, 0.7),
         "O": look["shoes"], "o": mix(look["shoes"], (255, 255, 255), 0.35), "U": shade(look["shoes"], 0.6),
-        "K": acc, "k": shade(acc, 0.7),
+        "K": acc, "k": shade(acc, 0.7), "J": (222, 180, 84), "E": (90, 230, 240),
+        # barba, óculos e chapéu
+        "Y": shade(look.get("beard_color", hair), 0.85), "y": mix(skin, look.get("beard_color", hair), 0.45),
+        "X": look.get("glasses_color", (34, 28, 34)),
+        "V": look.get("hat", (110, 90, 64)), "v": shade(look.get("hat", (110, 90, 64)), 0.68),
     }
 
 
@@ -204,6 +208,117 @@ class Grid:
             for x, ch in enumerate(line):
                 if ch != ".":
                     self.set(x, y, ch)
+
+
+# black power (Dona Graça)
+HAIR.update({
+    ("afro", "front"): [
+        "....HHhHHHH.....",
+        "..HHhhhHHHHHH...",
+        ".HHhhHHHhHHHHD..",
+        ".HhHHhHHHHHhHHD.",
+        "HHhHHHHhHHHHHHDD",
+        "HHHHhHHHHHhHHHDD",
+        "HhHHHHHhHHHHHDHD",
+        "HHHHHDHHHHDHHHDD",
+        "HHHD........DHDD",
+        "HHH..........HDD",
+        "HhH..........HDD",
+        ".HH..........HD.",
+        ".HD..........DD.",
+        "..D..........D..",
+    ],
+    ("afro", "back"): [
+        "....HHhHHHH.....",
+        "..HHhhhHHHHHH...",
+        ".HHhhHHHhHHHHD..",
+        "HHhHHhHHHHHhHHDD",
+        "HHHHHHHhHHHHHHDD",
+        "HhHHHHHHHHhHHHDD",
+        "HHHHhHHHHHHHHDHD",
+        "HHHHHHHHhHHHHHDD",
+        "HhHHHHHHHHHHhHDD",
+        "HHHHHhHHHHHHHHDD",
+        "HHHHHHHHHHhHHHDD",
+        "HHhHHHHHHHHHHDHD",
+        ".HHHHHHhHHHHHDD.",
+        "..HHHHHHHHHHDD..",
+        "....HHHHHHHD....",
+    ],
+    ("afro", "side"): [
+        "...HHHhHHH......",
+        "..HHhhHHHHHH....",
+        ".HHhHHHhHHHHH...",
+        "HHHHhHHHHHHHHD..",
+        "HhHHHHHhHHHHHD..",
+        "HHHHHhHHHHHHHD..",
+        "HHhHHHHHHhHHHD..",
+        "HHHHHHHHHDHHD...",
+        "HHHHHhHHHD......",
+        "HhHHHHHH........",
+        "HHHHHHH.........",
+        ".HhHHHH.........",
+        ".HHHHD..........",
+        "..HHD...........",
+    ],
+})
+
+
+# cabelo médio (até o queixo): Brainy, Ian
+HAIR.update({
+    ("medium", "front"): HAIR[("long", "front")][:13] + ["..HD........DD..", "..D..........D.."],
+    ("medium", "back"): _BACK_TOP + ["...HHDHHHDHHD...", "....HDHHHDHH...."],
+    ("medium", "side"): HAIR[("long", "side")][:14] + ["..HD............"],
+})
+
+
+def _extras(g, look, view):
+    """Barba, óculos, óculos de proteção na testa e chapéu de aba larga, por cima do rosto e do cabelo."""
+    if look.get("goggles"):
+        if view == "side":
+            g.row(6, 3, 12, "T"); g.set(10, 5, "E"); g.set(11, 5, "E"); g.set(10, 6, "E"); g.set(11, 6, "E")
+        else:
+            g.row(6, 2, 13, "T")
+            if view == "front":
+                for x in (4, 5, 10, 11):
+                    g.set(x, 5, "E"); g.set(x, 6, "E")
+                g.set(4, 5, "W")
+    beard = look.get("beard")
+    if beard and view != "back":
+        k = "Y" if beard == "full" else "y"
+        if view == "front":
+            for (x, y) in ((3, 11), (12, 11), (3, 12), (4, 12), (11, 12), (12, 12)):
+                g.set(x, y, k)
+            g.row(13, 3, 12, k)
+            g.row(14, 3, 6, k); g.row(14, 9, 12, k)
+            g.row(15, 4, 11, k)
+            if beard == "full":
+                g.row(16, 6, 9, k)
+        else:
+            for y in range(12, 16):
+                g.row(y, 9, 12, k)
+            g.set(13, 13, k)
+            g.set(13, 14, "M")
+    if look.get("glasses") and view != "back":
+        # armação fina: linha de baixo das lentes, cantinhos e ponte (os olhos continuam à mostra)
+        if view == "front":
+            for x0 in (3, 9):
+                g.row(12, x0 + 1, x0 + 2, "X")
+                g.set(x0, 11, "X"); g.set(x0 + 3, 11, "X")
+                g.set(x0, 10, "X"); g.set(x0 + 3, 10, "X")
+            g.set(7, 10, "X"); g.set(8, 10, "X")
+        else:
+            g.row(12, 11, 12, "X")
+            g.set(13, 10, "X"); g.set(13, 11, "X")
+            g.row(10, 8, 10, "X")
+    if look.get("hat"):
+        if view == "side":
+            g.row(0, 5, 10, "V"); g.row(1, 4, 11, "V"); g.row(2, 4, 11, "v"); g.row(3, 4, 11, "V")
+            g.row(4, 0, 15, "V"); g.row(5, 1, 14, "v")
+        else:
+            g.row(0, 4, 11, "V"); g.row(1, 3, 12, "V"); g.row(2, 3, 12, "v"); g.row(3, 3, 12, "V")
+            g.row(4, 0, 15, "V"); g.row(5, 1, 14, "v")
+            g.set(5, 0, "v"); g.set(10, 0, "v")
 
 
 def _hair(style, view):
@@ -454,6 +569,140 @@ def _body_side(g, outfit, frame):
             g.set(6 + dx, 21, "S"); g.set(7 + dx, 21, "s")
 
 
+# roupas especiais desenhadas por cima do corpo básico (base -> roupa usada para o tronco e os braços)
+OUTFIT_BASE = {"trench": "plain", "peacoat": "plain", "skirt_suit": "blazer", "patterned": "blazer",
+               "breton": "plain", "bartender": "vest", "tech": "plain", "labcoat": "coat"}
+
+
+def _outfit_overlay(g, outfit, view, frame):
+    side = view == "side"
+    if outfit == "trench":
+        # sobretudo comprido com cinto e cachecol (Vittoria)
+        x0, x1 = (4, 9) if side else (4, 11)
+        for y in range(23, 27):
+            g.row(y, x0, x1, "C")
+            g.set(x1 if not side else x0, y, "c")
+        g.row(27, x0 + 1, x1 - 1, "c") if not side else g.row(27, x0, x1 - 1, "c")
+        if side:
+            g.row(21, 5, 9, "c"); g.set(9, 21, "J")
+            g.row(16, 7, 9, "A"); g.row(17, 7, 9, "A")
+            g.set(9, 18, "A"); g.set(9, 19, "a"); g.set(10, 18, "a")
+        else:
+            g.row(21, 4, 11, "c")
+            if view == "front":
+                g.set(7, 21, "J"); g.set(8, 21, "J")
+                for y in range(22, 27):
+                    g.set(7, y, "c")                     # abertura do casaco
+                g.row(16, 6, 9, "A"); g.row(17, 5, 10, "A")
+                g.set(6, 18, "A"); g.set(6, 19, "A"); g.set(6, 20, "a")
+                g.set(9, 17, "a")
+                g.set(9, 19, "Q"); g.set(5, 23, "Q")
+            else:
+                g.row(16, 6, 9, "A"); g.row(17, 5, 10, "A")
+                g.set(7, 22, "c"); g.set(7, 23, "c"); g.set(7, 24, "c")
+    elif outfit == "peacoat":
+        # casaco de lã trespassado, gola larga e botões dourados (Lucy)
+        x0, x1 = (4, 9) if side else (4, 11)
+        for y in range(23, 25):
+            g.row(y, x0, x1, "C")
+        g.row(25, x0, x1, "c")
+        if side:
+            g.set(8, 17, "Q"); g.set(9, 17, "Q"); g.set(9, 18, "Q")
+            g.set(9, 20, "J"); g.set(9, 22, "J")
+        elif view == "front":
+            g.row(17, 4, 11, "Q"); g.set(7, 17, "N"); g.set(8, 17, "N")
+            g.set(5, 18, "Q"); g.set(10, 18, "Q"); g.set(6, 18, "A"); g.set(9, 18, "A")
+            for y in (19, 21, 23):
+                g.set(6, y, "J"); g.set(9, y, "J")
+            g.set(8, 20, "c"); g.set(8, 22, "c")
+        else:
+            g.row(17, 4, 11, "Q"); g.row(21, 5, 10, "c")
+            g.set(6, 21, "J"); g.set(9, 21, "J")
+    elif outfit == "skirt_suit":
+        # blazer + saia + meia-calça (Jess)
+        if side:
+            for y in range(23, 26):
+                g.row(y, 5, 9, "P")
+            g.set(5, 25, "p")
+        else:
+            for y in range(23, 26):
+                g.row(y, 4 if y == 25 else 5, 11 if y == 25 else 10, "P")
+                g.set(11 if y == 25 else 10, y, "p")
+            g.set(5, 23, "R")
+            if view == "front":
+                g.set(7, 18, "A"); g.set(8, 18, "A"); g.set(7, 19, "A"); g.set(8, 19, "a")
+        # meia-calça escura no lugar da calça
+        for (x, y), k in list(g.px.items()):
+            if y >= 26 and k in ("P", "R"):
+                g.px[(x, y)] = "p"
+    elif outfit == "labcoat":
+        # jaleco de cientista: sem estetoscópio, camisa escura por dentro e canetas no bolso (Brainy)
+        for (x, y), k in list(g.px.items()):
+            if k == "T":
+                g.px[(x, y)] = "A" if 6 <= x <= 9 and view == "front" else "C"
+        if view == "front":
+            g.set(10, 19, "E"); g.set(10, 20, "J"); g.set(10, 21, "c")
+            g.set(5, 23, "c"); g.set(5, 24, "c")
+        elif side:
+            g.set(8, 19, "E")
+    elif outfit == "breton":
+        # camiseta listrada de marinheiro, mangas listradas (Ian)
+        for (x, y), k in list(g.px.items()):
+            if 17 <= y <= 22 and k in ("C", "c", "Q"):
+                g.px[(x, y)] = ("Z" if k != "c" else "z") if y % 2 == 1 else ("C" if k != "c" else "c")
+        if view == "front":
+            g.row(17, 6, 9, "C"); g.set(7, 17, "N"); g.set(8, 17, "N")
+        elif side:
+            g.set(9, 17, "C")
+    elif outfit == "bartender":
+        # colete de barman: pano no ombro, corrente de relógio, gravata-borboleta (Marco)
+        if side:
+            g.set(9, 20, "J"); g.set(8, 21, "J")
+            g.set(6, 17, "Z"); g.set(6, 18, "Z"); g.set(5, 18, "z")
+        elif view == "front":
+            g.set(3, 17, "Z"); g.set(4, 17, "Z"); g.set(3, 18, "Z"); g.set(4, 18, "Z"); g.set(3, 19, "z")
+            g.set(4, 19, "A")
+            g.set(9, 20, "J"); g.set(10, 21, "J"); g.set(10, 20, "J")
+            g.set(6, 20, "c"); g.set(6, 22, "c")
+        else:
+            g.set(11, 17, "Z"); g.set(12, 17, "Z"); g.set(11, 18, "Z"); g.set(12, 18, "Z")
+            g.row(20, 6, 9, "c")
+    elif outfit == "tech":
+        # jaqueta tech preta: dragonas douradas e linhas de circuito brilhando (Brainy)
+        if side:
+            g.set(7, 17, "J"); g.set(8, 17, "J"); g.set(6, 17, "J")
+            for y in (19, 20, 21):
+                g.set(8, y, "E")
+            g.set(9, 21, "E")
+        elif view == "front":
+            g.row(17, 3, 5, "J"); g.row(17, 10, 12, "J")
+            g.set(3, 18, "J"); g.set(12, 18, "J")
+            for (x, y) in ((6, 19), (6, 20), (6, 21), (5, 21), (9, 18), (9, 19), (10, 19), (10, 21)):
+                g.set(x, y, "E")
+            g.set(7, 17, "N"); g.set(8, 17, "N"); g.set(7, 18, "A")
+        else:
+            g.row(17, 3, 5, "J"); g.row(17, 10, 12, "J")
+            for (x, y) in ((7, 19), (8, 19), (7, 20), (7, 21), (8, 21)):
+                g.set(x, y, "E")
+    elif outfit == "patterned":
+        # blazer preto estampado com flores vermelhas e colar dourado (Dona Graça)
+        if side:
+            for (x, y) in ((6, 18), (8, 20), (5, 21), (7, 22)):
+                g.set(x, y, "A")
+            g.set(9, 17, "J")
+        else:
+            flowers = [(5, 18), (10, 19), (6, 21), (9, 22), (11, 20), (4, 22)] if view == "front" else \
+                      [(5, 19), (9, 18), (7, 21), (10, 22), (6, 22)]
+            for (x, y) in flowers:
+                g.set(x, y, "A")
+                if g.px.get((x + 1, y)) in ("C", "c"):
+                    g.set(x + 1, y, "a")
+            if view == "front":
+                g.row(17, 6, 9, "J"); g.set(7, 17, "N"); g.set(8, 17, "N")
+                g.set(6, 18, "J"); g.set(9, 18, "J"); g.set(7, 18, "J"); g.set(8, 18, "J")
+                g.set(7, 19, "N"); g.set(8, 19, "N")
+
+
 def _render(g, pal):
     s = pygame.Surface((W, H), pygame.SRCALPHA)
     for (x, y), k in g.px.items():
@@ -476,7 +725,8 @@ def _render(g, pal):
 def _frames(look, blink=False):
     pal = _palette(look)
     style = look.get("style", "short")
-    outfit = look.get("outfit", "shirt")
+    outfit_full = look.get("outfit", "shirt")
+    outfit = OUTFIT_BASE.get(outfit_full, outfit_full)
     out = {}
     for d, view in (("down", "front"), ("up", "back"), ("right", "side")):
         hair = _hair(style, view)
@@ -488,8 +738,11 @@ def _frames(look, blink=False):
                 _body_side(g, outfit, fr)
             else:
                 _body_front(g, outfit, view, fr)
+            if outfit_full != outfit:
+                _outfit_overlay(g, outfit_full, view, fr)
             _head(g, view, style, blink)
             g.mask(hair, behind=False if view != "back" else None)
+            _extras(g, look, view)
             img = up(_render(g, pal))
             out[(d, i)] = img
             if d == "right":

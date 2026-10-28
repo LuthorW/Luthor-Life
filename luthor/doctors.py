@@ -78,7 +78,7 @@ DOCTORS = {
     "milany": dict(
         name="Dra. Milany Moretti", short="Milany", role="Centro Cardiovascular · Conti Moretti",
         look=_look((70, 44, 32), (226, 186, 156), COAT, COPPER, GREEN, (60, 30, 30), "long", (100, 70, 40)),
-        portrait="dra_milany.jpg",
+        portrait="milany.png",
         gifts=dict(love=["rosa_jardim", "tiramisu", "torta_morango"], like=["vinho", "flores", "cappuccino", "kit_cuidado"],
                    dislike=["rosquinha", "lata"]),
         lines=dict(
@@ -244,3 +244,7 @@ def schedule_for(key, day):
                 sch.append((t, m, x, y, d))
         sch.append((1200, None, 0, 0, "down"))
     return sch
+
+
+# aparência da Milany de acordo com o retrato (cabelo castanho, solto e ondulado)
+DOCTORS["milany"]["look"].update(hair=(112, 68, 42), style="wavy", skin=(236, 200, 172))

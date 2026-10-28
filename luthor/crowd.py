@@ -22,13 +22,13 @@ from .hospital import LEADERS
 
 # Horário de funcionamento (minutos do dia; fecha depois da meia-noite = > 1440)
 VENUES = {
-    "cafe": (7 * 60, 19 * 60), "catco": (8 * 60, 20 * 60), "ricci": (9 * 60, 18 * 60), "books": (9 * 60, 21 * 60),
+    "cafe": (7 * 60, 19 * 60), "catco": (8 * 60, 20 * 60), "ricci": (9 * 60, 18 * 60), "marina": (8 * 60, 20 * 60), "books": (9 * 60, 21 * 60),
     "market": (7 * 60, 19 * 60), "trattoria": (11 * 60 + 30, 23 * 60), "bar": (17 * 60, 25 * 60),
     "cinema": (12 * 60, 24 * 60), "hospital": (7 * 60, 22 * 60), "park": (6 * 60 + 30, 21 * 60),
     "beach": (7 * 60, 20 * 60),
 }
 WEEKEND_ONLY_CLOSED = {"catco", "ricci"}     # escritórios quase vazios no fim de semana
-ENTRIES = [(1, 17), (110, 20), (1, 49), (110, 52), (10, 17), (68, 21), (79, 49), (43, 46)]
+ENTRIES = [(1, 17), (110, 20), (1, 49), (110, 52), (10, 17), (68, 21), (79, 49), (42, 46)]
 
 HAIR = [(30, 22, 20), (70, 44, 30), (120, 80, 50), (200, 160, 90), (236, 210, 140), (150, 60, 40), (90, 90, 96),
         (20, 20, 30), (230, 230, 236), (120, 60, 140)]
@@ -140,7 +140,7 @@ class Crowd:
                     for xx in range(o.x, o.x + o.w):
                         out.append((xx, o.y + o.h, "up"))
         good = []
-        start = CITY_DOORS.get(mapn) if mapn != "city" else (43, 46)
+        start = CITY_DOORS.get(mapn) if mapn != "city" else (42, 46)
         door = None
         if mapn != "city":
             from .world import INTERIOR_DOORS

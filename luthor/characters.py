@@ -19,7 +19,7 @@ NPCS = {
     "sam": dict(
         name="Samantha Arias", short="Sam", role="CFO",
         look=look((104, 62, 40), (236, 192, 160), (44, 62, 112), (230, 230, 240), (34, 34, 48), (24, 20, 30), "long"),
-        portrait="sam.jpg",
+        portrait="sam.png",
         gifts=dict(love=["vinho", "bolo"], like=["flores", "livro", "relatorio", "risoto"], dislike=["rosquinha", "lata"]),
         schedule=dict(
             default=[(360, None, 0, 0, "down"), (510, "hq", 21, 11, "down"), (1020, "city", 16, 30, "up"),
@@ -53,7 +53,7 @@ NPCS = {
     "brainy": dict(
         name="Querl Dox", short="Brainy", role="CTO",
         look=look((44, 34, 36), (226, 186, 156), (30, 30, 42), (150, 90, 230), (28, 28, 36), (18, 16, 22), "short"),
-        portrait="brainy.jpg",
+        portrait="brainy.png",
         gifts=dict(love=["rosquinha", "athena", "hecate", "bolo"], like=["livro", "software", "artemis", "sushi"],
                    dislike=["flores", "girassois", "lata"]),
         schedule=dict(
@@ -91,7 +91,7 @@ NPCS = {
     "jess": dict(
         name="Jess", short="Jess", role="Assistente executiva",
         look=look((125, 118, 85), (226, 186, 156), (60, 132, 104), (240, 236, 226), (40, 40, 52), (30, 24, 30), "bun"),
-        portrait="jess.jpg",
+        portrait="jess.png",
         gifts=dict(love=["flores", "girassois", "bolo"], like=["expresso", "cappuccino", "rosquinha", "vinho", "panquecas"],
                    dislike=["lata", "jornal"]),
         schedule=dict(
@@ -122,9 +122,9 @@ NPCS = {
                                                    "Você vai sentir que tem muito mais energia. (+20 de energia máxima)"])},
     ),
     "rafa": dict(
-        name="Rafa", short="Rafa", role="Barista do Grão Nobre",
+        name="Harry", short="Harry", role="Barista do Grão Nobre",
         look=look((222, 182, 92), (246, 206, 176), (236, 232, 224), (122, 82, 52), (122, 82, 52), (50, 36, 30), "short"),
-        portrait="rafa.jpg", shop="cafe", shop_map="cafe",
+        portrait="harry.png", portrait_key="harry", shop="cafe", shop_map="cafe",
         gifts=dict(love=["livro", "policial"], like=["flores", "sanduiche", "panquecas"], dislike=["expresso"]),
         schedule=dict(default=[(360, "cafe", 4, 3, "down"), (1320, None, 0, 0, "down")]),
         lines=dict(
@@ -149,8 +149,7 @@ NPCS = {
     "lucy": dict(
         name="Lucy Williams", short="Lucy", role="Repórter da CatCo", romance=True,
         look=look((236, 200, 120), (244, 206, 180), (40, 44, 80), (190, 50, 60), (52, 64, 96), (40, 30, 30), "long"),
-        portrait="lucy.jpg",
-        moods=dict(happy="lucy_feliz.jpg", love="lucy_apaixonada.jpg", smile="lucy_sorridente.jpg"),
+        portrait="lucy.png",
         gifts=dict(love=["panquecas", "policial", "cappuccino", "moqueca"],
                    like=["livro", "expresso", "girassois", "bolo", "peixe_grelhado", "drink"],
                    dislike=["relatorio", "software", "athena", "lata"]),
@@ -222,8 +221,7 @@ NPCS = {
     "vittoria": dict(
         name="Vittoria Ricci", short="Vittoria", role="Dona do Gruppo Ricci", romance=True,
         look=look((58, 34, 26), (206, 156, 120), (128, 32, 48), (244, 236, 222), (40, 36, 44), (60, 30, 30), "long"),
-        portrait="vittoria.jpg",
-        moods=dict(happy="vittoria_feliz.jpg", love="vittoria_apaixonada.jpg"),
+        portrait="vittoria.png",
         gifts=dict(love=["girassois", "lasanha_nonna", "risoto", "vinho"],
                    like=["flores", "massa_pesto", "peixe_grelhado", "tiramisu", "moqueca", "polvo"],
                    dislike=["rosquinha", "sanduiche", "lata", "jornal"]),
@@ -253,7 +251,7 @@ NPCS = {
             rain=["Chuva! Dia perfeito para um risoto bem cremoso. Quer?"],
             weekend=["No fim de semana eu nado cedo, antes de abrir. O mar daqui é quase o Mediterrâneo. Quase."],
             partner=["Buongiorno, amore. Deixei uma coisinha pra você na cozinha. Não abre a geladeira antes do café!",
-                     "Ensinei o Rafa a fazer um cappuccino decente. Finalmente.",
+                     "Ensinei o Harry a fazer um cappuccino decente. Finalmente.",
                      "Ti amo, Letícia. Em italiano parece mais bonito, né?"],
             dating=["Minha namorada! Ainda não acredito. A nonna ia te adorar.",
                     "Já contei pra Bea, pro Marco, pro Joca... Sou italiana, não sei guardar segredo."],
@@ -297,7 +295,7 @@ NPCS = {
     "nia": dict(
         name="Nia Nal", short="Nia", role="Repórter da CatCo",
         look=look((40, 28, 30), (150, 100, 76), (70, 110, 170), (240, 220, 140), (40, 40, 60), (30, 24, 30), "long"),
-        portrait="nia.jpg",
+        portrait="nia.png",
         gifts=dict(love=["livro", "policial", "girassois"], like=["cappuccino", "flores", "bolo", "tiramisu"],
                    dislike=["lata", "relatorio"]),
         schedule=dict(
@@ -324,10 +322,43 @@ NPCS = {
                                                  "Spoiler: ela é positiva. Os investidores vão gostar.",
                                                  "Considere isso um voto de confiança. (A ação LCORP ganha impulso extra.)"])},
     ),
+    "barry": dict(
+        name="Barry Allen", short="Barry", role="Fotógrafo da CatCo",
+        look=look((96, 54, 32), (236, 196, 166), (150, 32, 44), (128, 128, 134), (50, 56, 80), (34, 30, 34), "short"),
+        portrait="barry.png",
+        gifts=dict(love=["cappuccino", "rosquinha", "pipoca"], like=["sanduiche", "croissant", "livro", "estrela_mar"],
+                   dislike=["lata", "relatorio"]),
+        schedule=dict(
+            default=[(360, None, 0, 0, "down"), (510, "catco", 14, 10, "up"), (750, "cafe", 12, 7, "up"),
+                     (840, "catco", 14, 10, "up"), (1080, "city", 30, 57, "down"), (1200, "bar", 9, 9, "up"),
+                     (1350, None, 0, 0, "down")],
+            weekend=[(360, None, 0, 0, "down"), (540, "city", 99, 38, "up"), (780, "cafe", 12, 7, "up"),
+                     (960, "city", 96, 26, "up"), (1140, "bar", 9, 9, "up"), (1350, None, 0, 0, "down")],
+            rain=[(360, None, 0, 0, "down"), (510, "catco", 14, 10, "up"), (1200, "bar", 9, 9, "up"),
+                  (1350, None, 0, 0, "down")],
+        ),
+        lines=dict(
+            low=["Oi! Barry, da fotografia da CatCo. Desculpa o atraso. Eu sempre chego atrasado. É um talento.",
+                 "A Nia escreve, a Lucy investiga e eu corro atrás com a câmera. Literalmente correndo.",
+                 "Posso tirar uma foto sua pra matéria da Lucy? Prometo que fica melhor que a da revista."],
+            mid=["O melhor horário pra fotografar a orla é às seis da tarde. A luz fica dourada e todo mundo fica bonito.",
+                 "A Nia me arrasta pra livraria toda semana. Eu finjo que reclamo. Saio sempre com um livro de ciência.",
+                 "A Lucy finge que é durona, mas ela guarda todas as fotos que eu tiro dela com você. Todas."],
+            high=["Você é tipo uma heroína pra essa cidade, sabia? Só que de terninho.",
+                  "Fiz uma exposição na minha cabeça: 'National City vista de perto'. Você está em metade das fotos."],
+            evening=["Fim de expediente! Agora é pizza, Noonan's e tentar não perder a câmera de novo."],
+            rain=["Chuva rende foto incrível. Reflexo no asfalto, guarda-chuva colorido... e câmera molhada."],
+        ),
+        reactions=dict(love="Sério?! Você acertou em cheio. Valeu mesmo!", like="Que demais, obrigado!",
+                       neutral="Ah, valeu!", dislike="Hm... vou guardar. Em algum lugar. Longe."),
+        events={3: dict(lines=["Revelei as fotos da semana. Olha essa sua no calçadão!",
+                               "A Lucy pediu uma cópia. Depois pediu outra. Eu não perguntei por quê.",
+                               "Se precisar de fotos pra Luthor Corp, é só chamar. Pros amigos é de graça."])},
+    ),
     "theo": dict(
         name="Theo", short="Theo", role="Livreiro da Bayside Books",
         look=look((60, 44, 40), (170, 120, 90), (130, 90, 60), (230, 220, 200), (60, 60, 70), (40, 30, 26), "short"),
-        portrait="theo.jpg", shop="books", shop_map="books",
+        portrait="theo.png", shop="books", shop_map="books",
         gifts=dict(love=["livro", "cappuccino"], like=["policial", "croissant", "bolo"], dislike=["lata", "jornal"]),
         schedule=dict(default=[(360, None, 0, 0, "down"), (480, "books", 13, 4, "down"), (1260, None, 0, 0, "down")]),
         lines=dict(
@@ -346,7 +377,7 @@ NPCS = {
     "bea": dict(
         name="Bea", short="Bea", role="Dona do Mercado Central",
         look=look((180, 70, 50), (232, 186, 156), (220, 120, 60), (250, 240, 220), (60, 70, 90), (40, 30, 30), "bun"),
-        portrait="bea.jpg", shop="market", shop_map="market",
+        portrait="bea.png", shop="market", shop_map="market",
         gifts=dict(love=["girassois", "bolo"], like=["flores", "panquecas", "cappuccino"], dislike=["lata"]),
         schedule=dict(default=[(360, None, 0, 0, "down"), (420, "market", 13, 4, "down"), (1200, None, 0, 0, "down")]),
         lines=dict(
@@ -365,7 +396,7 @@ NPCS = {
     "graca": dict(
         name="Dona Graça", short="Graça", role="Chef da Ricci Trattoria",
         look=look((96, 84, 86), (176, 120, 86), (240, 236, 230), (40, 130, 80), (60, 52, 56), (50, 40, 40), "bun"),
-        portrait="graca.jpg", shop="trattoria", shop_map="trattoria",
+        portrait="graca.png", shop="trattoria", shop_map="trattoria",
         gifts=dict(love=["moqueca", "lasanha_nonna"], like=["manjericao", "tomate", "abobora", "cappuccino", "flores"],
                    dislike=["lata", "rosquinha", "sanduiche"]),
         schedule=dict(default=[(360, None, 0, 0, "down"), (540, "trattoria", 9, 4, "down"), (1380, None, 0, 0, "down")]),
@@ -390,7 +421,7 @@ NPCS = {
     "marco": dict(
         name="Marco", short="Marco", role="Barman do Noonan's",
         look=look((30, 26, 28), (190, 140, 110), (40, 40, 46), (200, 40, 60), (30, 30, 36), (20, 18, 22), "short"),
-        portrait="marco.jpg", shop="bar", shop_map="bar",
+        portrait="marco.png", shop="bar", shop_map="bar",
         gifts=dict(love=["moqueca", "peixe_grelhado", "vinho"], like=["petiscos", "pizza", "atum"], dislike=["flores"]),
         schedule=dict(default=[(360, None, 0, 0, "down"), (960, "bar", 4, 3, "down"), (1530, None, 0, 0, "down")]),
         lines=dict(
@@ -409,7 +440,7 @@ NPCS = {
     "joca": dict(
         name="Seu Joca", short="Joca", role="Pescador do píer",
         look=look((220, 220, 220), (190, 140, 100), (60, 110, 160), (230, 200, 90), (90, 80, 60), (60, 50, 40), "cap"),
-        portrait="joca.jpg", shop="bait", shop_map="city",
+        portrait="joca.png", shop="bait", shop_map="city",
         gifts=dict(love=["moqueca", "atum", "kryptoniano"], like=["peixe_grelhado", "expresso", "sardinha", "drink"],
                    dislike=["software", "relatorio"]),
         schedule=dict(default=[(360, "city", 62, 65, "down"), (1080, "bar", 11, 8, "left"), (1320, None, 0, 0, "down")],
@@ -431,11 +462,41 @@ NPCS = {
                                                  "Tem um jeito de lançar a linha que atrai os peixes raros.",
                                                  "Pronto, agora você sabe. (Peixes raros aparecem mais.)"])},
     ),
+    "ian": dict(
+        name="Ian", short="Ian", role="Diretor da Marina Luthor",
+        look=look((66, 42, 30), (226, 184, 152), (26, 24, 30), (40, 38, 44), (40, 44, 60), (40, 32, 28), "medium"),
+        portrait="ian.png",
+        gifts=dict(love=["vinho", "atum", "peixe_grelhado"], like=["expresso", "robalo", "livro", "moqueca"],
+                   dislike=["rosquinha", "lata"]),
+        schedule=dict(
+            default=[(360, None, 0, 0, "down"), (480, "marina", 17, 3, "down"), (780, "trattoria", 15, 8, "left"),
+                     (870, "marina", 17, 3, "down"), (1140, "bar", 12, 4, "left"), (1320, None, 0, 0, "down")],
+            weekend=[(360, None, 0, 0, "down"), (420, "marina", 17, 3, "down"), (1200, None, 0, 0, "down")],
+        ),
+        lines=dict(
+            low=["Letícia! Quanto tempo. Bem-vinda à Marina Luthor. Ainda é estranho ver seu nome na placa e não o do seu pai?",
+                 "A divisão náutica é pequena, mas é a única parte da Luthor Corp que cheira a maresia.",
+                 "Se quiser sair pro mar, é só falar. Tenho barco, tenho tempo e tenho saudade de conversar com você."],
+            mid=["Pesca em alto-mar é outra coisa. Marlim, dourado, garoupa... peixe que não chega perto do píer.",
+                 "Fim de semana tem regata. Vento bom, boia no caminho e muita gente gritando. Você ia adorar.",
+                 "O laboratório de vocês faz motor melhor que qualquer estaleiro. Me traz um e eu pago bem."],
+            high=["A gente se conhece desde as férias no interior, quando a gente era criança. Veleiro de brinquedo no lago, lembra?",
+                  "No crachá você é a minha chefe. Fora dele, é a amiga mais antiga que eu tenho."],
+            evening=["O sol se pondo atrás do farol é o melhor quadro da cidade. E ninguém cobra ingresso."],
+            rain=["Dia de chuva é dia de cuidar dos barcos. E de café forte no clube."],
+        ),
+        reactions=dict(love="Você lembrou! Isso é a cara de quem me conhece há anos.", like="Boa escolha, Luthor!",
+                       neutral="Valeu, Letícia.", dislike="Hm. Vou deixar no barco. Alguém vai querer."),
+        events={3: dict(flag="marina_vip", lines=["Fechei o trimestre da marina no azul. E criei uma regra nova como diretor.",
+                                                  "A CEO paga metade do preço nos passeios. Você me deu autonomia, estou usando.",
+                                                  "(Pesca em alto-mar e passeio ao pôr do sol com 50% de desconto.)"])},
+    ),
 }
 
 EYES = {"sam": (110, 70, 40), "brainy": (60, 40, 34), "jess": (90, 60, 36), "rafa": (70, 130, 190),
         "lucy": (80, 150, 200), "vittoria": (96, 56, 30), "nia": (60, 36, 26), "theo": (70, 48, 30),
-        "bea": (90, 150, 90), "marco": (50, 36, 30), "joca": (90, 120, 150), "graca": (80, 52, 34)}
+        "bea": (90, 150, 90), "marco": (50, 36, 30), "joca": (90, 120, 150), "graca": (80, 52, 34),
+        "barry": (90, 130, 170), "ian": (110, 160, 200)}
 for _k, _e in EYES.items():
     NPCS[_k]["look"]["eyes"] = _e
 NPCS["vittoria"]["look"]["style"] = "wavy"
@@ -445,10 +506,44 @@ OUTFITS = {"sam": "blazer", "brainy": "blazer", "jess": "blouse", "rafa": "apron
 for _k, _o in OUTFITS.items():
     NPCS[_k]["look"]["outfit"] = _o
 
+# aparência dos bonequinhos de acordo com os retratos (assets/portraits)
+LOOK_UPDATES = {
+    "sam": dict(hair=(112, 74, 46), skin=(226, 182, 150), cloth=(98, 106, 62), accent=(242, 240, 234),
+                pants=(52, 58, 82), style="wavy", outfit="cardigan"),
+    "brainy": dict(hair=(52, 36, 28), skin=(222, 180, 148), cloth=(238, 240, 246), accent=(46, 46, 62),
+                   pants=(34, 34, 44), style="medium", outfit="labcoat", goggles=True),
+    "jess": dict(hair=(170, 118, 60), skin=(236, 198, 170), cloth=(30, 28, 34), accent=(150, 90, 200),
+                 pants=(60, 56, 68), style="long", outfit="skirt_suit", glasses=True),
+    "rafa": dict(hair=(190, 118, 52), skin=(236, 196, 160), cloth=(186, 122, 44), accent=(66, 66, 72),
+                 pants=(62, 52, 44), style="short", outfit="cardigan"),
+    "lucy": dict(hair=(212, 170, 100), skin=(240, 204, 178), cloth=(34, 42, 72), accent=(236, 232, 226),
+                 pants=(40, 44, 60), style="long", outfit="peacoat"),
+    "vittoria": dict(hair=(96, 60, 40), skin=(214, 166, 130), cloth=(184, 138, 92), accent=(128, 32, 48),
+                     pants=(52, 40, 44), style="wavy", outfit="trench"),
+    "nia": dict(hair=(36, 28, 32), skin=(238, 204, 182), cloth=(172, 178, 226), accent=(118, 140, 204),
+                style="long", outfit="blouse"),
+    "barry": dict(outfit="cardigan"),
+    "theo": dict(hair=(26, 20, 20), skin=(196, 146, 108), cloth=(226, 214, 180), accent=(196, 182, 146),
+                 style="short", outfit="shirt"),
+    "bea": dict(hair=(178, 84, 42), skin=(240, 196, 166), cloth=(128, 84, 50), accent=(96, 62, 36),
+                style="wavy", outfit="cardigan", hat=(122, 98, 70)),
+    "graca": dict(hair=(198, 190, 186), skin=(150, 96, 66), cloth=(30, 26, 30), accent=(204, 56, 44),
+                  style="afro", outfit="patterned"),
+    "marco": dict(hair=(24, 18, 18), skin=(112, 72, 52), cloth=(36, 32, 38), accent=(186, 36, 50),
+                  pants=(30, 30, 36), style="short", outfit="bartender"),
+    "joca": dict(hair=(198, 196, 192), skin=(206, 160, 126), cloth=(98, 74, 52), accent=(196, 180, 150),
+                 style="long", outfit="fisher", beard="full", beard_color=(214, 210, 204), hat=(104, 92, 72)),
+    "ian": dict(cloth=(34, 48, 96), accent=(34, 48, 96), pants=(196, 178, 140), shoes=(124, 82, 50),
+                outfit="breton"),
+}
+for _k, _u in LOOK_UPDATES.items():
+    NPCS[_k]["look"].update(_u)
+
 from .doctors import DOCTORS, DOCTOR_KEYS
 NPCS.update(DOCTORS)
-NPC_ORDER = ["sam", "brainy", "jess", "rafa", "lucy", "vittoria", "nia", "theo", "bea", "graca", "marco", "joca"] + DOCTOR_KEYS
-TEAM = ["sam", "brainy", "jess", "rafa"]
+NPC_ORDER = ["sam", "brainy", "jess", "rafa", "lucy", "vittoria", "nia", "barry", "theo", "bea", "graca", "marco",
+             "joca", "ian"] + DOCTOR_KEYS
+TEAM = ["sam", "brainy", "jess", "rafa", "ian"]      # equipe da Luthor Corp (meta de 3 corações e pedidos do laboratório)
 ROMANCES = ["lucy", "vittoria"]
 
 
@@ -471,5 +566,7 @@ for _k in ("sam", "jess", "nia", "lucy", "vittoria", "bea"):
 for _k, _g in _EXTRA_GIFTS.items():
     for _t, _items in _g.items():
         NPCS[_k]["gifts"].setdefault(_t, []).extend(i for i in _items if i not in NPCS[_k]["gifts"].get(_t, []))
+for _k in ROMANCES:
+    NPCS[_k]["date_places"].append(("marina", 9, 6, "left", "um passeio de iate ao pôr do sol"))
 for _k in ("lucy", "vittoria"):
     NPCS[_k]["date_places"].append(("cinema", 13, 5, "up", "uma sessão no Cine National"))

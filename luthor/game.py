@@ -21,6 +21,9 @@ from .minigames import Fishing, Arcade, Cooking, Inventory
 from .effects import Ambient
 from . import dialogue
 from . import activities
+from . import marina
+from . import gifts  # noqa: F401  (presentes extras)
+from . import cenas_extras
 from . import hospital
 from . import doctors
 from .crowd import Crowd, thought
@@ -35,6 +38,11 @@ SHADOW_KINDS = {"tree": 46, "tree2": 46, "tree3": 46, "palm": 30, "bush": 26, "b
 SHADOW_KINDS.update(scenery.SHADOWS)
 
 NO_GIFT = ("proposal", "tool", "bait", "seed", "treat")
+STOCK_PER_800 = 2.5         # quanto a ação LCORP sobe a cada $800 vendidos em produtos numa noite
+# humores dos retratos: os nomes em português também valem nas cutscenes
+MOOD_ALIASES = {"feliz": "happy", "sorriso": "smile", "sorrindo": "smile", "apaixonada": "love", "apaixonado": "love",
+                "ruim": "bad", "triste": "bad", "brava": "bad", "timido": "shy", "tímido": "shy", "timida": "shy",
+                "tímida": "shy"}
 
 HOTBAR_KEYS = {pygame.K_1: 0, pygame.K_2: 1, pygame.K_3: 2, pygame.K_4: 3, pygame.K_5: 4, pygame.K_6: 5,
                pygame.K_7: 6, pygame.K_8: 7, pygame.K_9: 8, pygame.K_0: 9, pygame.K_MINUS: 10,
@@ -189,6 +197,7 @@ class Game:
         self.lines_seen = {}
         self.request_nag = set()
         activities.init_state(self)
+        marina.init_state(self)
         hospital.init_state(self)
         if hasattr(self, "crowd"):
             self.crowd.reset_day()
@@ -328,7 +337,7 @@ class Game:
                   "brainy_5": "Brainy: o drone", "sam_3": "Sam: contratos", "namoro_lucy": "Namoro com a Lucy",
                   "namoro_vittoria": "Namoro com a Vittoria", "mudanca_lucy": "Lucy se muda",
                   "mudanca_vittoria": "Vittoria se muda"}
-        return titles.get(key, key)
+        return titles.get(key) or cenas_extras.TITLES.get(key, key)
 
     def open_scene_gallery(self):
         seen = list(self.scenes_seen)
@@ -350,9 +359,9 @@ class Game:
 
     def portrait_for(self, npc, mood=None):
         d = npc.data
-        fname = d.get("portrait")
-        if mood and d.get("moods", {}).get(mood) and art.portrait_exists(d["moods"][mood]):
-            fname = d["moods"][mood]
+        mood = MOOD_ALIASES.get(mood, mood)
+        # retratos pelo padrão de nomes (nome.png, nome_feliz.png...); se não houver, o campo "portrait"
+        fname = art.portrait_file(d.get("portrait_key", npc.key), mood) or d.get("portrait")
         return art.portrait(fname, d["look"], 112)
 
     def start_fade(self, cb):
@@ -583,7 +592,7 @@ class Game:
                 return f"{short} (já conversaram)"
             return f"Falar com {short}"
         k = t.kind
-        lab = activities.object_label(self, t) or hospital.object_label(self, t)
+        lab = activities.object_label(self, t) or hospital.object_label(self, t) or marina.target_label(self, t)
         if lab:
             return lab
         if k == "station":
@@ -626,7 +635,7 @@ class Game:
 
     def use_object(self, o):
         k = o.kind
-        if activities.use_object(self, o) or hospital.use_object(self, o):
+        if activities.use_object(self, o) or hospital.use_object(self, o) or marina.use_object(self, o):
             return
         if k == "station":
             self.use_station(o.data)
@@ -1142,6 +1151,7 @@ class Game:
             opts.append(f"Dar {ITEMS[item]['name']}"); acts.append(lambda: self.give_gift(npc, item))
         if key in (self.dating, self.partner) and not self.date and self.minutes < 19 * 60:
             opts.append("Convidar para um encontro hoje às 20h"); acts.append(lambda: self.invite_date(npc))
+        marina.talk_options(self, npc, opts, acts)
         if not opts:
             if blocked:
                 self.say_busy(npc)
@@ -1280,7 +1290,13 @@ class Game:
         if "ginecologia" in self.buffs and taste != "dislike":
             pts = int(pts * 1.25)
         self.add_friendship(key, pts)
-        mood = {"love": "love" if key in ROMANCES and self.hearts(key) >= 6 else "happy", "like": "happy"}.get(taste)
+        # presente amado: retrato tímido (se a personagem tiver); presente ruim: retrato "ruim"
+        if taste == "love" and art.portrait_file(d.get("portrait_key", key), "shy") not in (
+                None, art.portrait_file(d.get("portrait_key", key))):
+            mood = "shy"
+        else:
+            mood = {"love": "love" if key in ROMANCES and self.hearts(key) >= 6 else "happy", "like": "happy",
+                    "dislike": "bad"}.get(taste)
         self.push(ui.Dialog(npc.name, [d["reactions"][taste]], self.portrait_for(npc, mood),
                             on_close=lambda: self.check_events(key), subtitle=d["role"]))
 
@@ -1345,7 +1361,8 @@ class Game:
     def item_hint(self, item):
         if item in FISH:
             f = FISH[item]
-            where = "no mar (píer/praia)" if f["where"] == "sea" else "no lago do parque"
+            where = {"sea": "no mar (píer/praia)", "deep": "em alto-mar (passeio de pesca na Marina Luthor)"}.get(
+                f["where"], "nos lagos do parque e do bosque")
             a, b = f["hours"]
             when = "" if (a, b) == (360, 1560) else f", das {a // 60 % 24}h às {b // 60 % 24}h"
             return f"Peixe: pesque {where}{when}{', só com chuva' if f.get('weather') else ''}."
@@ -1582,7 +1599,8 @@ class Game:
             notes.append((f"{ready} projeto(s) pronto(s) para lançar no laboratório!", C_GREEN))
         self.stock_prev = self.stock
         product_earn = sum(v for i, n, v in table if ITEMS[i]["kind"] == "product")
-        change = random.gauss(0.05, 1.0) + product_earn / 800.0 + (0.25 if "nia_scoop" in self.flags else 0)
+        change = (random.gauss(0.05, 1.0) + product_earn / 800.0 * STOCK_PER_800
+                  + (0.25 if "nia_scoop" in self.flags else 0))
         self.stock = round(max(20.0, self.stock + change), 2)
         self.day += 1
         new_quarter = False
@@ -1631,6 +1649,7 @@ class Game:
                 notes.append((f"{NPCS[self.partner]['short']} deixou {ITEMS[gift]['name']} pra você. <3", C_PINK))
             self.add_friendship(self.partner, 10)
         activities.night(self, notes)
+        marina.night(self, notes)
         hospital.night(self)
         if "cmh_donation_pending" in self.flags:
             self.flags.discard("cmh_donation_pending")
@@ -1699,6 +1718,7 @@ class Game:
             talk_log=list(self.talk_log), lines_seen=self.lines_seen,
         )
         data.update(activities.save_state(self))
+        data.update(marina.save_state(self))
         data.update(hospital.save_state(self))
         data["crowd"] = self.crowd.to_save()
         tmp = SAVE_PATH + ".tmp"
@@ -1737,6 +1757,7 @@ class Game:
         self.talk_log = set(d.get("talk_log", []))
         self.lines_seen = dict(d.get("lines_seen", {}))
         activities.load_state(self, d)
+        marina.load_state(self, d)
         hospital.load_state(self, d)
         self.crowd.reset_day()
         self.crowd.load(d.get("crowd", {}))
@@ -2133,6 +2154,9 @@ class Game:
             ui.text(surf, "CINE NATIONAL", (cx, y + H - 52 * SCALE + 6), 20, (255, 230, 140), bold=True, center=True)
         elif b.style == "bank":
             ui.text(surf, "BANCO", (cx, y + 13 * SCALE), 15, (90, 80, 60), bold=True, center=True, shadow=False)
+        elif b.style == "marina":
+            ui.text(surf, "MARINA LUTHOR", (cx, y + 41 * SCALE - 1), 16, (240, 214, 140), bold=True, center=True,
+                    shadow=False)
         elif b.style == "ricci":
             ui.text(surf, "GRUPPO RICCI", (cx, y + H - 44 * SCALE + 1), 16, (240, 214, 140), bold=True, center=True,
                     shadow=False)
@@ -2171,6 +2195,12 @@ class Game:
                 ok = have >= rq["qty"]
                 ui.text(surf, f"Pedido {NPCS[rq['npc']]['short']}: {ITEMS[rq['item']]['name']} {have}/{rq['qty']}",
                         (SCREEN_W - 24, hy), 15, C_GREEN if ok else C_GOLD, bold=True, right=True)
+                hy += 20
+            mo = self.marina.get("order")
+            if mo:
+                ok = self.count_item(mo["item"]) >= mo["qty"]
+                ui.text(surf, marina.order_text(self), (SCREEN_W - 24, hy), 15, C_GREEN if ok else (120, 190, 240),
+                        bold=True, right=True)
             if not dialog_open:
                 ui.draw_hotbar(surf, self)
                 if not self.modals and not self.fade_dir and not self.fishing:
