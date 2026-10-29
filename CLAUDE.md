@@ -127,8 +127,9 @@ luthor/
 - **Atalhos:** I/Tab mochila, O objetivos, R relacionamentos (a mesma tecla fecha). Painéis longos usam
   `ui.InfoPanel(..., scroll=True)` (draw_fn devolve o y final) em vez de crescer.
 - **Desmaio às 2h:** acorda no leito do hospital (`HOSPITAL_BED`) com conta.
-- **Site:** roxo (#8a00e6 / #b84cff) como principal e verde (#6ee78c) como destaque. No site use só os sprites
-  em pixel art, não as fotos reais dos retratos.
+- **Site:** roxo (#8a00e6 / #b84cff) como principal e verde (#6ee78c) como destaque. As capturas de conversa,
+  cena e relacionamentos mostram os retratos de verdade (pedido da dona); a lista de personagens do site usa os
+  bonequinhos em pixel art (docs/img/chars).
 
 ## Como testar
 
