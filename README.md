@@ -15,7 +15,7 @@ Simulação de vida em pixel art, no estilo Stardew Valley, feita em Python.
 
 <img src="docs/img/title.png" width="820" alt="Tela de título do Luthor Life">
 
-<img src="docs/img/chars/leticia.png" height="72"> <img src="docs/img/chars/lucy.png" height="72"> <img src="docs/img/chars/sam.png" height="72"> <img src="docs/img/chars/brainy.png" height="72"> <img src="docs/img/chars/vittoria.png" height="72"> <img src="docs/img/chars/jess.png" height="72"> <img src="docs/img/chars/cat.png" height="34"> <img src="docs/img/chars/milany.png" height="72"> <img src="docs/img/chars/nia.png" height="72"> <img src="docs/img/chars/rafa.png" height="72"> <img src="docs/img/chars/dog.png" height="34"> <img src="docs/img/chars/joca.png" height="72">
+<img src="docs/img/chars/leticia.png" height="76"> <img src="docs/img/chars/lucy.png" height="76"> <img src="docs/img/chars/vittoria.png" height="76"> <img src="docs/img/chars/sam.png" height="76"> <img src="docs/img/chars/brainy.png" height="76"> <img src="docs/img/chars/jess.png" height="76"> <img src="docs/img/chars/cat.png" height="34"> <img src="docs/img/chars/ian.png" height="76"> <img src="docs/img/chars/barry.png" height="76"> <img src="docs/img/chars/nia.png" height="76"> <img src="docs/img/chars/rafa.png" height="76"> <img src="docs/img/chars/dog.png" height="34"> <img src="docs/img/chars/milany.png" height="76"> <img src="docs/img/chars/joca.png" height="76">
 
 ### [🌐 Conheça o jogo no site](https://luthorw.github.io/Luthor-Life/)
 
@@ -89,6 +89,7 @@ O jogo salva sozinho toda noite, quando você dorme (em `saves/save.json`).
 | `1`–`0`, `-`, `=` / roda do mouse | Escolher item da barra |
 | `F` / botão direito | Comer, beber ou ler |
 | `I` / `Tab` | Mochila |
+| `O` / `R` | Objetivos / relacionamentos |
 | `Esc` | Menu: objetivos, relacionamentos, coleções e cenas |
 | setas ou `D` `F` `J` `K` | Karaokê |
 | `F11` | Tela cheia |
