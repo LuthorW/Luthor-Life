@@ -301,7 +301,6 @@ FLAG_LABELS = {
     "cmh_discount": "Dra. Milany: consultas no Conti Moretti pela metade do preço.",
     "cmh_care": "Dra. Meredith: se desmaiar, o hospital não cobra nada.",
     "cmh_contract": "Dra. Cristina: contrato de manutenção, +$200 toda segunda.",
-    "lexie_focus": "Dra. Lexie: trabalhar no laboratório gasta 5 a menos de energia.",
 }
 
 NEWS = [

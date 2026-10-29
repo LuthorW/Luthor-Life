@@ -22,7 +22,6 @@
     ["milany", "Dra. Milany Moretti", "Centro Cardiovascular", "doc"],
     ["yang", "Dra. Cristina Yang", "Direção Médica", "doc"],
     ["meredith", "Dra. Meredith Grey", "Direção Médica", "doc"],
-    ["lexie", "Dra. Lexie Grey", "Neurociências", "doc"],
     ["izzie", "Dra. Izzie Stevens", "Oncologia", "doc"],
     ["addison", "Dra. Addison Montgomery", "Materno-Infantil", "doc"],
   ];
@@ -47,7 +46,7 @@
   const track = document.querySelector(".parade .track");
   if (track) {
     const order = ["leticia", "lucy", "cat", "sam", "brainy", "vittoria", "jess", "milany", "rafa", "nia", "barry", "ian", "dog",
-      "theo", "yang", "bea", "graca", "meredith", "marco", "lexie", "joca", "izzie", "addison"];
+      "theo", "yang", "bea", "graca", "meredith", "marco", "joca", "izzie", "addison"];
     const html = order.map((k) =>
       `<img class="${k === "cat" || k === "dog" ? "pet" : ""}" src="img/chars/${k}.png" alt="">`).join("");
     track.innerHTML = html + html;

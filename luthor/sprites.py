@@ -38,31 +38,33 @@ _TOP = [
     ".HHHHHHHDHHHHHD.",
     ".HHHHDHHHHHDHHD.",              # franja (linha 8)
 ]
-_TIPS = ".HHD..H..D..DHD."            # pontas da franja, sem cobrir os olhos
+_TIPS = ".HHD........DHD."            # pontas da franja só nos cantos: a testa e os olhos ficam livres
+_FRINGE = ".HHHHD....DHHHD."          # franja aberta no meio: aparece um pedaço da testa
 HAIR = {
-    ("long", "front"): _TOP + [_TIPS] + [".HH..........HD."] * 4 + [".HD..........DD."] * 3 + [
-        ".HD..........DD.", ".HD..........DD.", ".HD..........DD.", ".HD..........DD.", ".HD..........DD.",
-        "..D..........D.."],
+    # mechas laterais por fora do rosto (colunas 0-1 e 14-15), para o rosto inteiro aparecer
+    ("long", "front"): _TOP[:8] + [_FRINGE, "HHD..........DHD"] + ["HH............HD"] * 3 + ["HD............DD"] * 3 + [
+        "HD............DD", "HD............DD", ".H............D.", ".H............D.", ".D............D.",
+        "................"],
     ("wavy", "front"): _TOP[:5] + [
         "HHhhHHHHHHHHHHDD",
         "HHhHHHHHHDHHHHDD",
         "HHHHHHHHDHHHHHDD",
-        ".HHHHDHHHHHDHHD.",
-        "HHHD..H..D..DHDD",
-        "HHH..........HDD",
-        ".HH..........DHD",
-        "HHD..........HDD",
-        ".HH..........DHD",
-        "HHD..........HDD",
-        ".HH..........DHD",
-        "HHD..........HDD",
-        ".HH..........DHD",
-        "HHD..........HDD",
-        ".HD..........DD.",
-        "HHD..........HDD",
-        ".HD..........DD.",
+        "HHHHHD....DHHHDD",
+        "HHD..........DHD",
+        "HHD..........DHD",
+        "HH............DH",
+        ".HH..........HD.",
+        "HH............DH",
+        ".HH..........HD.",
+        "HH............DH",
+        ".H............D.",
+        "HH............DH",
+        ".H............D.",
+        "HD............DD",
+        ".H............D.",
+        "HD............DD",
     ],
-    ("short", "front"): _TOP + [_TIPS, "..D..........D.."],
+    ("short", "front"): _TOP[:8] + [_FRINGE, ".HD..........DD.", "..D..........D.."],
     ("bun", "front"): [
         "......HhHD......",
         ".....HhHHHD.....",
@@ -571,7 +573,8 @@ def _body_side(g, outfit, frame):
 
 # roupas especiais desenhadas por cima do corpo básico (base -> roupa usada para o tronco e os braços)
 OUTFIT_BASE = {"trench": "plain", "peacoat": "plain", "skirt_suit": "blazer", "patterned": "blazer",
-               "breton": "plain", "bartender": "vest", "tech": "plain", "labcoat": "coat"}
+               "breton": "plain", "bartender": "vest", "tech": "plain", "labcoat": "coat",
+               "leather": "plain", "captain": "blazer"}
 
 
 def _outfit_overlay(g, outfit, view, frame):
@@ -684,6 +687,41 @@ def _outfit_overlay(g, outfit, view, frame):
             g.row(17, 3, 5, "J"); g.row(17, 10, 12, "J")
             for (x, y) in ((7, 19), (8, 19), (7, 20), (7, 21), (8, 21)):
                 g.set(x, y, "E")
+    elif outfit == "leather":
+        # jaqueta de couro curta e aberta, camiseta por baixo, zíper prateado e gola larga (Lucy)
+        if side:
+            g.set(8, 17, "Q"); g.set(9, 17, "Q"); g.set(9, 18, "A")
+            for y in (19, 20, 21):
+                g.set(9, y, "z")
+            g.row(22, 5, 9, "c")
+        elif view == "front":
+            for y in range(17, 22):
+                g.set(7, y, "A"); g.set(8, y, "A")
+            g.set(7, 17, "N"); g.set(8, 17, "N")
+            g.set(6, 17, "Q"); g.set(9, 17, "Q"); g.set(5, 17, "Q"); g.set(10, 17, "Q")
+            g.set(6, 18, "Q"); g.set(9, 18, "Q")
+            for y in (19, 20, 21):
+                g.set(6, y, "z")
+            g.set(10, 20, "z")                                # zíper do bolso
+            g.row(22, 5, 10, "c")
+        else:
+            g.row(17, 4, 11, "Q")
+            g.set(6, 20, "c"); g.set(9, 20, "c")
+            g.row(22, 5, 10, "c")
+    elif outfit == "captain":
+        # casaco de capitão trespassado: dragonas e botões dourados, galão nos punhos (Ian)
+        if side:
+            g.row(17, 6, 8, "J")
+            g.set(9, 19, "J"); g.set(9, 21, "J")
+        else:
+            g.row(17, 3, 5, "J"); g.row(17, 10, 12, "J")
+            if view == "front":
+                for y in (19, 21):
+                    g.set(6, y, "J"); g.set(9, y, "J")
+                g.set(9, 19, "J")
+        for (x, y), k in list(g.px.items()):
+            if y == 21 and (x <= 4 or x >= 11) and k in ("C", "c", "Q"):
+                g.px[(x, y)] = "J"
     elif outfit == "patterned":
         # blazer preto estampado com flores vermelhas e colar dourado (Dona Graça)
         if side:
@@ -703,12 +741,66 @@ def _outfit_overlay(g, outfit, view, frame):
                 g.set(7, 19, "N"); g.set(8, 19, "N")
 
 
-def _render(g, pal):
-    s = pygame.Surface((W, H), pygame.SRCALPHA)
+def _broaden(g):
+    """Ombros largos: o tronco (e o que desce dos ombros, como mãos e jaleco) ganha 1 px de cada lado.
+
+    Divide a linha ao meio e repete a coluna central de cada metade; as pernas (x 5..10) não mudam.
+    """
+    px = {}
+    rows = {}
+    for (x, y), k in g.px.items():
+        rows.setdefault(y, []).append(x)
+    for (x, y), k in g.px.items():
+        xs = rows[y]
+        if 17 <= y <= 27 and (y <= 22 or min(xs) <= 4 or max(xs) >= 11):
+            if x <= 7:
+                px[(x - 1, y)] = k
+                if x == 7:
+                    px[(7, y)] = k
+            else:
+                px[(x + 1, y)] = k
+                if x == 8:
+                    px[(8, y)] = k
+        else:
+            px[(x, y)] = k
+    g.px = px
+
+
+TALL_ROWS = [25, 19, 26]         # linhas repetidas para quem é mais alta (meio da perna, meio do tronco)
+SHORT_ROWS = [25, 19]            # linhas tiradas de quem é mais baixa
+
+
+def _resize(g, dh):
+    """Altura própria de cada personagem (como no Stardew): dh pixels a mais ou a menos.
+
+    A figura cresce para cima (os pés continuam no chão); retorna a nova altura do quadro.
+    """
+    if not dh:
+        return H
+    px = {}
+    if dh > 0:
+        dups = TALL_ROWS[:dh]
+        for (x, y), k in g.px.items():
+            ny = y + sum(1 for r in dups if r < y)
+            px[(x, ny)] = k
+            if y in dups:
+                px[(x, ny + 1)] = k
+    else:
+        rem = SHORT_ROWS[:-dh]
+        for (x, y), k in g.px.items():
+            if y in rem:
+                continue
+            px[(x, y - sum(1 for r in rem if r < y) - dh)] = k
+    g.px = px
+    return H + max(0, dh)
+
+
+def _render(g, pal, h=H):
+    s = pygame.Surface((W, h), pygame.SRCALPHA)
     for (x, y), k in g.px.items():
         s.set_at((x, y), pal.get(k, (255, 0, 255)))
-    out = pygame.Surface((W, H), pygame.SRCALPHA)
-    for y in range(H):
+    out = pygame.Surface((W, h), pygame.SRCALPHA)
+    for y in range(h):
         for x in range(W):
             if (x, y) in g.px:
                 continue
@@ -734,16 +826,21 @@ def _frames(look, blink=False):
             g = Grid()
             if view != "back":
                 g.mask(hair, behind=True)          # cabelo comprido atrás do corpo
+            body = Grid()                          # corpo à parte, para alargar os ombros sem mexer no cabelo
             if view == "side":
-                _body_side(g, outfit, fr)
+                _body_side(body, outfit, fr)
             else:
-                _body_front(g, outfit, view, fr)
+                _body_front(body, outfit, view, fr)
             if outfit_full != outfit:
-                _outfit_overlay(g, outfit_full, view, fr)
+                _outfit_overlay(body, outfit_full, view, fr)
+            if look.get("broad") and view != "side":
+                _broaden(body)
+            g.px.update(body.px)
             _head(g, view, style, blink)
             g.mask(hair, behind=False if view != "back" else None)
             _extras(g, look, view)
-            img = up(_render(g, pal))
+            h = _resize(g, look.get("height", 0))
+            img = up(_render(g, pal, h))
             out[(d, i)] = img
             if d == "right":
                 out[("left", i)] = pygame.transform.flip(img, True, False)

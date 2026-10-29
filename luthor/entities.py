@@ -14,9 +14,10 @@ from .world import CITY_DOORS, INTERIOR_DOORS
 
 DIRS = {"up": (0, -1), "down": (0, 1), "left": (-1, 0), "right": (1, 0)}
 
-# de acordo com o retrato: cabelo escuro ondulado, casaco azul-marinho e cachecol
-PLAYER_LOOK = dict(hair=(42, 26, 24), skin=(236, 198, 170), cloth=(30, 36, 58), accent=(150, 130, 110),
-                   pants=(34, 30, 44), shoes=(22, 16, 26), style="wavy", eyes=(56, 168, 96), outfit="blazer")
+# de acordo com o retrato: cabelo escuro ondulado, casaco caramelo por cima de blusa branca
+PLAYER_LOOK = dict(hair=(36, 24, 24), skin=(236, 198, 170), cloth=(194, 148, 104), accent=(244, 240, 232),
+                   pants=(34, 30, 44), shoes=(22, 16, 26), style="wavy", eyes=(56, 168, 96), outfit="blazer",
+                   height=1)
 
 _shadow_cache = {}
 
@@ -332,8 +333,18 @@ class NPC:
             if random.random() < 0.5:
                 self.dir = self.goal[3]
 
+    def current_frames(self):
+        """Médicas trocam de roupa ao sair do hospital (look_off)."""
+        if not self.data.get("look_off"):
+            return self.frames
+        if self.map != getattr(self, "_frames_map", None):
+            m = self.map.name if hasattr(self.map, "name") else self.map
+            look = self.data["look"] if m == "hospital" else self.data["look_off"]
+            self._frames_cur, self._frames_map = art.character_frames(look), self.map
+        return self._frames_cur
+
     def draw(self, surf, cam):
-        img, bob = idle_frame(self.frames, self.dir, self.moving, self.anim, self.phase)
+        img, bob = idle_frame(self.current_frames(), self.dir, self.moving, self.anim, self.phase)
         cx = (self.fx + 0.5) * TILE - cam[0]
         cy = self.base_y - cam[1]
         draw_shadow(surf, int(cx), int(cy) + SCALE)

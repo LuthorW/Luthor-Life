@@ -12,8 +12,7 @@ COMANDOS (cada um é uma tupla):
   ("pulo", nome)                      pulinho de alegria
   ("emote", nome, tipo)               balão: coracao, exclamacao, pergunta, reticencias, musica,
                                       gota, raiva, brilho, zzz, vergonha
-  ("fala", nome, "texto", humor)      fala com retrato (humor: None, "happy"/"feliz", "smile"/"sorriso",
-                                      "love"/"apaixonada", "bad"/"ruim", "shy"/"timido"; vale também para "player")
+  ("fala", nome, "texto", humor)      fala com retrato 
   ("narra", "texto")                  narração sem retrato
   ("escolha", "pergunta", [("opção", pontos, "resposta da personagem"), ...])
   ("camera", x, y)                    câmera desliza até o tile
@@ -34,7 +33,7 @@ import pygame
 
 from . import art, ui
 from .config import SCREEN_W, SCREEN_H, TILE, C_TEXT, C_LILAC, C_PINK, C_MUTED, C_GOLD
-from .characters import NPCS
+from .characters import NPCS, look_for
 from .entities import PLAYER_LOOK, draw_shadow, idle_frame, FOOT
 from .config import SCALE
 
@@ -50,9 +49,9 @@ BAR_H = 64
 class Actor:
     SPEED = 2.6
 
-    def __init__(self, name, x, y, d):
+    def __init__(self, name, x, y, d, map_name=None):
         self.name = name
-        look = PLAYER_LOOK if name == "player" else NPCS[name]["look"]
+        look = PLAYER_LOOK if name == "player" else look_for(name, map_name)
         self.frames = art.character_frames(look)
         self.fx, self.fy = float(x), float(y)
         self.dir = d
@@ -289,7 +288,7 @@ class Cutscene(ui.Modal):
         if name == "player":
             from .game import MOOD_ALIASES
             fname = art.portrait_file("leticia", MOOD_ALIASES.get(mood, mood)) or PLAYER_PORTRAIT
-            return PLAYER_NAME, art.portrait(fname, PLAYER_LOOK, 112), "Letícia Luthor"
+            return PLAYER_NAME, art.portrait(fname, PLAYER_LOOK, art.PORTRAIT_SIZE), "Letícia Luthor"
         d = NPCS[name]
         return d["name"], None, d["role"]
 
@@ -297,7 +296,7 @@ class Cutscene(ui.Modal):
         cmd, args = step[0], step[1:]
         if cmd == "ator":
             name, x, y, d = args
-            self.actors[name] = Actor(name, x, y, d)
+            self.actors[name] = Actor(name, x, y, d, self.map.name)
         elif cmd == "sai":
             self.actors.pop(args[0], None)
         elif cmd in ("andar", "andar_"):
@@ -332,11 +331,16 @@ class Cutscene(ui.Modal):
             question, options = args[0], args[1]
 
             def pick(i, options=options):
-                txt, pts, reply = options[i]
+                txt, pts, reply = options[i][:3]
                 if self.npc and pts:
                     self.g.add_friendship(self.npc, pts)
                 if reply and self.npc:
-                    mood = "love" if pts >= 50 else ("smile" if pts > 0 else None)
+                    # 4º item opcional: o humor do retrato na resposta ("happy", "mad", "love"...);
+                    # sem ele: 50+ pontos = love (tímido), acima de 0 = happy, negativo = mad, 0 = normal
+                    if len(options[i]) > 3:
+                        mood = options[i][3]
+                    else:
+                        mood = "love" if pts >= 50 else ("happy" if pts > 0 else ("mad" if pts < 0 else None))
                     self.steps.insert(self.i, ("fala", self.npc, reply, mood))
             self.sub = ui.Choice(question, [o[0] for o in options], pick)
         elif cmd == "camera":
@@ -488,7 +492,7 @@ class Cutscene(ui.Modal):
             surf.blit(veil, (0, 0))
             r = self.photo.get_rect(center=(SCREEN_W // 2, SCREEN_H // 2 - 10))
             pygame.draw.rect(surf, (250, 246, 240), r.inflate(28, 60), border_radius=6)
-            surf.blit(self.photo, r)
+            ui.blit_portrait(surf, self.photo, r.topleft)
             hrt = art.heart(True, 4)
             surf.blit(hrt, (r.centerx - hrt.get_width() // 2, r.bottom + 10))
         if bh > 20:
@@ -553,7 +557,7 @@ SCENES = {
     ]),
 
     # ----------------------------------------------------------- Lucy
-    "lucy_2": dict(map="catco", time=19 * 60 + 30, npc="lucy", steps=[
+    "lucy_1": dict(map="catco", time=19 * 60 + 30, npc="lucy", steps=[
         ("ator", "lucy", 11, 7, "down"),
         ("ator", "player", 11, 13, "up"),
         ("camera_ja", 11, 9),
@@ -699,30 +703,59 @@ SCENES = {
     ]),
 
     # ----------------------------------------------------------- Vittoria
-    "vittoria_2": dict(map="trattoria", time=14 * 60, npc="vittoria", steps=[
+    "vittoria_1": dict(map="trattoria", time=14 * 60, npc="vittoria", steps=[
         ("ator", "vittoria", 9, 4, "down"),
         ("ator", "graca", 4, 3, "down"),
-        ("ator", "player", 10, 11, "up"),
+        ("ator", "player", 10, 12, "up"),
         ("camera_ja", 9, 7),
         ("fade_in",),
         ("legenda", "Ricci Trattoria", 1.6),
-        ("andar", "player", 10, 6),
+        ("andar", "player", 10, 11),
+        ("andar", "player", 9, 10),
         ("andar", "player", 9, 6),
+        ("virar", "player", "up"),
         ("emote", "vittoria", "exclamacao"),
+        ("pulo", "vittoria"),
         ("fala", "vittoria", "Você de novo! Vou começar a reservar sua mesa.", "happy"),
         ("fala", "vittoria", "Graça! A Letícia chegou. Aquela, da torre roxa.", "happy"),
         ("emote", "graca", "musica"),
         ("pulo", "graca"),
         ("narra", "Na cozinha, a Dona Graça gira a massa no ar, uma, duas, três vezes. A pizza aterrissa perfeita."),
         ("fala", "graca", "Margherita, como em Napoli. Com um tiquinho de manjericão da Bea. Segredo de cozinheira!"),
-        ("fala", "vittoria", "Por conta da casa. A dona aqui sou eu, então eu posso. Não conta pros outros clientes, eh?", "happy"),
+        ("fala", "vittoria", "Por conta da casa. A dona aqui sou eu, então eu posso. Não conta pros outros clientes, ok?"),
         ("escolha", "O que dizer?", [
-            ("Que lugar incrível, Vittoria.", 60, "Eu só escolho as pessoas certas. A Graça faz a mágica. Grazie!"),
-            ("Que cheiro incrível!", 40, "É o manjericão da Bea e o forno a lenha da Graça. E um pouco de amor."),
+            ("Que lugar incrível, Vittoria.", 60, "Eu só escolho as pessoas certas. A Graça faz a mágica.", "timido"),
+            ("Que cheiro incrível!", 40, "É o manjericão da Bea e o forno a lenha da Graça. E um pouco de amor.", "happy"),
             ("Tem versão sem glúten?", -5, "...Vou fingir que não ouvi isso. E a Graça também. Mangia!"),
         ]),
+        ("fala", "vittoria", "Vamos nos sentar?"),
+        ("emote", "player", "musica"),
+        ("esperar", 1.3),
+        ("fade_out",),
+        ("esperar", 1.5),
+        ("ator", "player", 8, 8, "left"),
+        ("ator", "vittoria", 6, 8, "right"),
+        ("fade_in",),
+        ("andar", "graca", 4, 5),
+        ("andar", "graca", 5, 7),
+        ("andar", "graca", 7, 7),
+        ("virar", "graca", "down"),
+        ("narra", "A pizza chega à mesa. O queijo derrete, o manjericão perfuma, a massa estala. E o sorriso da Vittoria ilumina tudo."),
         ("efeito", "brilhos", 1.6),
-        ("esperar", 1.4),
+        ("fala", "graca", "Bom apetite, garotas! Mangia, mangia!"),
+        ("emote", "vittoria", "coracao"),
+        ("esperar", 1.3),
+        ("fade_out",),
+        ("ator", "graca", 4, 3, "up"),
+        ("esperar", 1.0),
+        ("fade_in",),
+        ("fala", "vittoria", "E então? O que achou da pizza?"),
+        ("fala", "player", "Acho que nunca comi uma pizza tão boa."),
+        ("fala", "vittoria", "Ah, pare! Você é muito gentil.", "happy"),
+        ("fala", "player", "É a verdade.", "happy"),
+        ("fala", "vittoria", "Sendo assim, passe aqui sempre que estiver com fome. A Graça vai adorar te ver."),
+        ("emote", "player", "coracao"),
+        ("esperar", 1.3),
         ("fade_out",),
     ]),
     "vittoria_4": dict(map="market", time=7 * 60 + 10, npc="vittoria", steps=[
@@ -897,7 +930,130 @@ SCENES = {
             ("emote", "milany", "coracao"),
             ("esperar", 1.0),
             ("fade_out",),
+    ]),
+    "ian_3": dict(map="marina", time=10 * 60, npc="ian", steps=[
+        ("ator", "ian", 17, 3, "down"),
+        ("ator", "player", 11, 10, "up"),
+        ("camera_ja", 14, 6),
+        ("fade_in",),
+        ("legenda", "Marina Luthor", 1.6),
+        ("andar", "player", 11, 6),
+        ("andar", "player", 15, 6),
+        ("andar", "player", 15, 3),
+        ("virar", "player", "right"),
+        ("virar", "ian", "left"),
+        ("emote", "ian", "exclamacao"),
+        ("fala", "ian", "Chefe! Chegou na hora certa. Acabei de fechar o relatório do trimestre da marina.", "feliz"),
+        ("fala", "ian", "Divisão náutica no azul pela primeira vez. Passeios lotados, frota revisada e zero acidentes."),
+        ("fala", "player", "Bom trabalho, Ian. Eu sabia que podia deixar a marina nas suas mãos.", "feliz"),
+        ("fala", "ian", "E como diretor, criei uma regra nova: a CEO paga metade do preço nos passeios. Pra sempre.", "feliz"),
+        ("fala", "ian", "Você me deu autonomia pra tocar a divisão. Estou usando. Não discute com o seu diretor."),
+        ("escolha", "O que dizer?", [
+            ("Você não precisava, Ian.", 50, "Precisava sim. Você confiou esse lugar a mim. É o mínimo."),
+            ("Desconto na minha própria empresa?", 30, "Exatamente. É a decisão mais cara que eu já tomei como diretor."),
+            ("Só aceito se você correr a regata comigo.", 60, "Fechado. E eu não vou pegar leve. Nem com a chefe."),
         ]),
+        ("efeito", "brilhos", 1.6),
+        ("esperar", 1.2),
+        ("fade_out",),
+    ]),
+    "ian_6": dict(map="altomar", time=18 * 60 + 40, npc="ian", steps=[
+        ("ator", "ian", 31, 13, "right"),
+        ("ator", "player", 26, 13, "right"),
+        ("camera_ja", 28, 13),
+        ("fade_in",),
+        ("legenda", "Alto-mar, fim de tarde", 1.8),
+        ("andar", "player", 30, 13),
+        ("esperar", 0.8),
+        ("virar", "ian", "left"),
+        ("fala", "ian", "Lembra das férias no interior? A casa do lago, a gente com uns dez anos?"),
+        ("fala", "player", "Lembro de você jurando que sabia velejar. E da gente nadando de volta pra margem.", "feliz"),
+        ("emote", "ian", "musica"),
+        ("fala", "ian", "Eu sabia velejar. O barco é que não sabia boiar.", "feliz"),
+        ("narra", "O sol encosta no mar. Por um instante, os dois ficam em silêncio, como naquele verão."),
+        ("fala", "ian", "Toda vez que eu saio com o barco, eu penso naquela época. Era fácil ser feliz."),
+        ("fala", "ian", "Toma. São as minhas luvas de vela. As da primeira regata que eu ganhei. Quero que fiquem com você."),
+        ("escolha", "O que dizer?", [
+            ("Ainda é fácil, Ian. Olha onde a gente está.", 70, "...É. Você tem razão. Como sempre, aliás."),
+            ("Eu guardo, mas você me ensina a velejar direito.", 55, "Combinado. Desta vez com colete salva-vidas."),
+            ("Você está ficando sentimental.", 20, "Culpa do pôr do sol. E da companhia."),
+        ]),
+        ("efeito", "brilhos", 2.0),
+        ("esperar", 1.6),
+        ("fade_out",),
+    ]),
+    # ----------------------------------------------------------- Barry
+    "barry_3": dict(map="catco", time=17 * 60, npc="barry", steps=[
+        ("ator", "barry", 14, 10, "down"),
+        ("ator", "player", 11, 13, "up"),
+        ("camera_ja", 13, 11),
+        ("fade_in",),
+        ("legenda", "CatCo, fim de expediente", 1.8),
+        ("andar", "player", 14, 13),
+        ("andar", "player", 14, 11),
+        ("virar", "player", "up"),
+        ("emote", "barry", "exclamacao"),
+        ("fala", "barry", "Letícia! Chegou bem na hora. Acabei de revelar as fotos da semana.", "feliz"),
+        ("pulo", "barry"),
+        ("narra", "Ele espalha as fotos na mesa: o calçadão de manhã, o farol, o píer... e você, rindo no Grão Nobre."),
+        ("fala", "barry", "Essa aqui é a melhor. Você nem percebeu que eu estava lá."),
+        ("fala", "barry", "A Lucy pediu uma cópia. Depois pediu outra. Eu não perguntei por quê.", "timido"),
+        ("escolha", "O que dizer?", [
+            ("Ficou linda, Barry. Você tem talento.", 60, "Sério? Vou emoldurar esse elogio. E a foto."),
+            ("A Lucy pediu duas?", 40, "Duas. Uma pra mesa e uma pra carteira, eu acho. Não conta que eu contei!"),
+            ("Você me fotografou sem pedir?", 10, "É jornalismo! ...Tá bom, é que a luz estava perfeita. Desculpa."),
+        ]),
+        ("efeito", "brilhos", 1.4),
+        ("esperar", 1.2),
+        ("fade_out",),
+    ]),
+    "barry_6": dict(map="city", time=18 * 60 + 10, npc="barry", steps=[
+        ("ator", "barry", 30, 58, "up"),
+        ("ator", "nia", 32, 58, "up"),
+        ("ator", "lucy", 28, 58, "up"),
+        ("ator", "player", 30, 53, "down"),
+        ("camera_ja", 30, 56),
+        ("fade_in",),
+        ("legenda", "A orla no fim de tarde", 1.8),
+        ("andar", "player", 30, 56),
+        ("fala", "barry", "Chegou a nossa CEO! Agora sim, a foto do grupo fica completa.", "feliz"),
+        ("fala", "nia", "Ele está planejando essa foto há uma semana. Fez até desenho.", "feliz"),
+        ("fala", "lucy", "Fica do meu lado, Luthor. Ninguém sai bem do lado do Barry, ele não para quieto."),
+        ("andar", "player", 29, 56),
+        ("virar", "player", "down"),
+        ("fala", "barry", "Todo mundo sorrindo! Três, dois, um...", "feliz"),
+        ("efeito", "brilhos", 1.2),
+        ("narra", "Clique! A luz dourada da tarde pega os quatro de uma vez."),
+        ("emote", "lucy", "vergonha"),
+        ("fala", "barry", "Ficou perfeita. Vou guardar o negativo. E toma, um filme novo: tira umas fotos suas por aí.", "feliz"),
+        ("efeito", "coracoes", 1.6),
+        ("esperar", 1.4),
+        ("fade_out",),
+    ]),
+    # ----------------------------------------------------------- Dona Graça
+    "graca_3": dict(map="trattoria", time=15 * 60 + 30, npc="graca", steps=[
+        ("ator", "graca", 9, 4, "down"),
+        ("ator", "player", 10, 11, "up"),
+        ("camera_ja", 9, 7),
+        ("fade_in",),
+        ("legenda", "Ricci Trattoria, entre o almoço e o jantar", 2.0),
+        ("andar", "player", 10, 6),
+        ("andar", "player", 9, 6),
+        ("virar", "player", "up"),
+        ("fala", "graca", "Ah, chegou a minha cliente preferida! Vem cá, filha, senta um pouquinho."),
+        ("narra", "Um cheiro de dendê e coentro toma conta da cozinha italiana."),
+        ("fala", "graca", "Fiz uma moqueca do jeito da minha mãe, lá em Salvador. Não conta pra Vittoria que não é italiano.", "feliz"),
+        ("emote", "graca", "musica"),
+        ("fala", "graca", "Leva pra casa. Esquenta devagar, não deixa ferver. E volta pra me dizer se ficou boa."),
+        ("escolha", "O que dizer?", [
+            ("Que cheiro maravilhoso, Dona Graça!", 60, "É o dendê, filha. E trinta anos de fogão."),
+            ("A senhora sente saudade da Bahia?", 50, "Todo dia. Mas aqui eu cozinho e a saudade vira tempero."),
+            ("Não é contra as regras da casa?", 20, "Regra da casa é comida boa. O resto é detalhe."),
+        ]),
+        ("efeito", "brilhos", 1.4),
+        ("esperar", 1.2),
+        ("fade_out",),
+    ]),
 }
 
 

@@ -22,10 +22,9 @@ from .effects import Ambient
 from . import dialogue
 from . import activities
 from . import marina
-from . import gifts  # noqa: F401  (presentes extras)
-from . import cenas_extras
+from . import gifts  # presentes extras e falas de "não gostei"
 from . import hospital
-from . import doctors
+from .characters import DOCTOR_KEYS, setup_doctor_spots, doctor_schedule
 from .crowd import Crowd, thought
 from .cutscenes import Cutscene, SCENES, dating_scene, move_in_scene, date_scene
 from . import scenery
@@ -41,8 +40,8 @@ NO_GIFT = ("proposal", "tool", "bait", "seed", "treat")
 STOCK_PER_800 = 2.5         # quanto a ação LCORP sobe a cada $800 vendidos em produtos numa noite
 # humores dos retratos: os nomes em português também valem nas cutscenes
 MOOD_ALIASES = {"feliz": "happy", "sorriso": "smile", "sorrindo": "smile", "apaixonada": "love", "apaixonado": "love",
-                "ruim": "bad", "triste": "bad", "brava": "bad", "timido": "shy", "tímido": "shy", "timida": "shy",
-                "tímida": "shy"}
+                "ruim": "bad", "triste": "bad", "brava": "bad", "bravo": "bad", "mad": "bad", "angry": "bad",
+                "timido": "shy", "tímido": "shy", "timida": "shy", "tímida": "shy"}
 
 HOTBAR_KEYS = {pygame.K_1: 0, pygame.K_2: 1, pygame.K_3: 2, pygame.K_4: 3, pygame.K_5: 4, pygame.K_6: 5,
                pygame.K_7: 6, pygame.K_8: 7, pygame.K_9: 8, pygame.K_0: 9, pygame.K_MINUS: 10,
@@ -102,7 +101,7 @@ class Game:
         self.clock = pygame.time.Clock()
         self.world = build_world()
         self.crowd = Crowd(self.world)
-        doctors.setup_spots(self.crowd)
+        setup_doctor_spots(self.crowd)
         self.player = Player()
         self.npcs = {k: NPC(k, NPCS[k]) for k in NPC_ORDER}
         self.modals = []
@@ -141,22 +140,58 @@ class Game:
             pass
 
     def _make_display(self, fullscreen):
-        flags = pygame.SCALED
-        if fullscreen:
-            flags |= pygame.FULLSCREEN
+        """Janela de 1280x720 ou tela cheia na resolução do monitor.
+
+        O jogo sempre desenha num quadro de 1280x720 (self.screen); present() amplia esse quadro para a
+        janela e redesenha os retratos na resolução real, para não ficarem serrilhados.
+        """
         try:
-            return pygame.display.set_mode((SCREEN_W, SCREEN_H), flags)
+            if fullscreen:
+                self.window = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)
+            else:
+                self.window = pygame.display.set_mode((SCREEN_W, SCREEN_H))
         except Exception:
-            return pygame.display.set_mode((SCREEN_W, SCREEN_H))
+            self.window = pygame.display.set_mode((SCREEN_W, SCREEN_H))
+        if getattr(self, "screen", None) is None or self.screen.get_size() != (SCREEN_W, SCREEN_H):
+            self.screen = pygame.Surface((SCREEN_W, SCREEN_H)).convert()
+        self._scaled = None
+        return self.screen
+
+    def present(self):
+        """Mostra o quadro de 1280x720 na janela; em telas maiores, retratos em alta resolução."""
+        win = self.window
+        ww, wh = win.get_size()
+        if (ww, wh) == (SCREEN_W, SCREEN_H):
+            win.blit(self.screen, (0, 0))
+            return
+        k = min(ww / SCREEN_W, wh / SCREEN_H)
+        sw, sh = int(SCREEN_W * k), int(SCREEN_H * k)
+        ox, oy = (ww - sw) // 2, (wh - sh) // 2
+        if self._scaled is None or self._scaled.get_size() != (sw, sh):
+            self._scaled = pygame.Surface((sw, sh)).convert()
+            win.fill((0, 0, 0))
+        pygame.transform.scale(self.screen, (sw, sh), self._scaled)
+        win.blit(self._scaled, (ox, oy))
+        for src, r, clip, bg, after in ui.HD:
+            # se algo foi desenhado por cima do retrato depois (escurecer, aviso...), fica a versão normal
+            if pygame.image.tobytes(self.screen.subsurface(clip), "RGB") != pygame.image.tobytes(after, "RGB"):
+                continue
+            x0, y0 = ox + round(clip.x * k), oy + round(clip.y * k)
+            x1, y1 = ox + round(clip.right * k), oy + round(clip.bottom * k)
+            win.blit(pygame.transform.scale(bg, (x1 - x0, y1 - y0)), (x0, y0))
+            try:
+                img = art.portrait_hd(src, (round(r.w * k), round(r.h * k)))
+            except Exception:
+                continue
+            win.set_clip(pygame.Rect(x0, y0, x1 - x0, y1 - y0))
+            win.blit(img, (ox + round(r.x * k), oy + round(r.y * k)))
+            win.set_clip(None)
 
     def toggle_fullscreen(self):
         fs = not self.settings.get("fullscreen", False)
         self.settings["fullscreen"] = fs
         self.save_settings()
-        try:
-            pygame.display.toggle_fullscreen()
-        except Exception:
-            self.screen = self._make_display(fs)
+        self.screen = self._make_display(fs)
         self.toasts.push("Tela cheia ativada (F11 alterna)" if fs else "Modo janela (F11 alterna)", C_LILAC)
 
     # ------------------------------------------------------------------
@@ -177,6 +212,8 @@ class Game:
         self.talked, self.gifted = set(), set()
         self.gift_known = {k: {} for k in NPC_ORDER}
         self.flags, self.events_seen = set(), set()
+        self.event_hinted = set()
+        self.scene_check_pending = False
         self.stats = dict(launched=0, earned=0, hecate=0, fish=0, arcade_best=0, karaoke_best=0, karaoke_s=0,
                           harvest=0, movies=0, forage=0)
         self.fish_caught, self.aquarium, self.cooked = set(), set(), set()
@@ -313,8 +350,8 @@ class Game:
             if self.date and self.date["npc"] == key and not self.date.get("done"):
                 date = (self.date["map"], self.date["x"], self.date["y"], self.date["dir"])
             npc.plan_day(self.weekday, self.weather, partner=(key == self.partner), date=date)
-            if key in doctors.DOCTOR_KEYS:
-                npc.schedule = doctors.schedule_for(key, self.abs_day())
+            if key in DOCTOR_KEYS:
+                npc.schedule = doctor_schedule(key, self.abs_day())
             if snap:
                 npc.snap_to_schedule(self.minutes)
 
@@ -336,8 +373,10 @@ class Game:
                   "vittoria_10": "Vittoria: manhã na praia", "brainy_3": "Brainy: Projeto Hecate",
                   "brainy_5": "Brainy: o drone", "sam_3": "Sam: contratos", "namoro_lucy": "Namoro com a Lucy",
                   "namoro_vittoria": "Namoro com a Vittoria", "mudanca_lucy": "Lucy se muda",
-                  "mudanca_vittoria": "Vittoria se muda"}
-        return titles.get(key) or cenas_extras.TITLES.get(key, key)
+                  "mudanca_vittoria": "Vittoria se muda", "ian_3": "Ian: o relatório da marina",
+                  "ian_6": "Ian: as férias no interior", "barry_3": "Barry: as fotos da semana",
+                  "barry_6": "Barry: a foto do grupo", "graca_3": "Dona Graça: a moqueca de Salvador"}
+        return titles.get(key, key)
 
     def open_scene_gallery(self):
         seen = list(self.scenes_seen)
@@ -362,7 +401,7 @@ class Game:
         mood = MOOD_ALIASES.get(mood, mood)
         # retratos pelo padrão de nomes (nome.png, nome_feliz.png...); se não houver, o campo "portrait"
         fname = art.portrait_file(d.get("portrait_key", npc.key), mood) or d.get("portrait")
-        return art.portrait(fname, d["look"], 112)
+        return art.portrait(fname, d["look"], art.PORTRAIT_SIZE)
 
     def start_fade(self, cb):
         if self.fade_dir:
@@ -375,6 +414,7 @@ class Game:
             self.map_name = target
             self.player.place_tile(x, y, d)
             self.fishing = None
+            self.scene_check_pending = True
         self.start_fade(go)
 
     # ------------------------------------------------------------------
@@ -384,6 +424,7 @@ class Game:
         while self.running:
             dt = min(self.clock.tick(FPS) / 1000.0, 0.05)
             self.step(dt, pygame.event.get())
+            self.present()
             pygame.display.flip()
         pygame.quit()
 
@@ -392,6 +433,7 @@ class Game:
         for ev in events:
             self.handle(ev)
         self.update(dt)
+        ui.HD.clear()
         self.draw(self.screen)
 
     def handle(self, ev):
@@ -451,6 +493,9 @@ class Game:
             self.fade = max(0.0, self.fade - dt * 4)
             if self.fade <= 0:
                 self.fade_dir = 0
+                if self.scene_check_pending:        # chegou num lugar novo: tem cena esperando aqui?
+                    self.scene_check_pending = False
+                    self.check_scene_events()
         self.toasts.update(dt)
         if self.modals:
             self.modals[-1].update(dt)
@@ -514,6 +559,7 @@ class Game:
     def on_tick(self):
         for npc in self.npcs.values():
             npc.check_schedule(self.minutes)
+        self.check_scene_events()
         self.crowd.tick(self)
         if self.date and not self.date.get("done") and self.minutes == 19 * 60 and "date_warn" not in self.warned:
             self.warned.add("date_warn")
@@ -744,7 +790,7 @@ class Game:
         if self.energy < WORK_ENERGY:
             self.toasts.push("Você está exausta demais. Coma algo ou vá dormir.", C_RED)
             return
-        cost = WORK_ENERGY - (5 if "lexie_focus" in self.flags else 0)
+        cost = WORK_ENERGY
         self.energy -= cost // 2 if "neurologia" in self.buffs else cost
         st["worked"] = True
         left = p["days"] - st["progress"] - 1
@@ -1297,34 +1343,114 @@ class Game:
         else:
             mood = {"love": "love" if key in ROMANCES and self.hearts(key) >= 6 else "happy", "like": "happy",
                     "dislike": "bad"}.get(taste)
-        self.push(ui.Dialog(npc.name, [d["reactions"][taste]], self.portrait_for(npc, mood),
+        text = d["reactions"][taste]
+        if taste == "dislike":
+            text = gifts.dislike_line(key, item) or text
+        self.push(ui.Dialog(npc.name, [text], self.portrait_for(npc, mood),
                             on_close=lambda: self.check_events(key), subtitle=d["role"]))
 
-    def check_events(self, key):
+    def _event_done(self, ev):
+        if ev.get("flag"):
+            self.flags.add(ev["flag"])
+            if ev["flag"] in FLAG_LABELS:
+                self.toasts.push(FLAG_LABELS[ev["flag"]], C_GOLD)
+            if ev["flag"] == "jess_energy":
+                self.energy += 20
+        if ev.get("gift"):
+            self.add_item(ev["gift"])
+            self.toasts.push(f"Ganhou: {ITEMS[ev['gift']]['name']}", C_GREEN, ev["gift"])
+
+    def next_event(self, key):
+        """Próximo evento de coração liberado e ainda não visto (um de cada vez, em ordem)."""
         for h, ev in sorted(NPCS[key].get("events", {}).items()):
             tag = f"{key}:{h}"
-            if self.hearts(key) >= h and tag not in self.events_seen:
-                if h == 10 and key in ROMANCES and self.dating != key:
-                    continue
-                self.events_seen.add(tag)
-                npc = self.npcs[key]
+            if tag in self.events_seen:
+                continue
+            if self.hearts(key) < h or (h == 10 and key in ROMANCES and self.dating != key):
+                return None
+            return h, ev
+        return None
 
-                def done(ev=ev):
-                    if ev.get("flag"):
-                        self.flags.add(ev["flag"])
-                        if ev["flag"] in FLAG_LABELS:
-                            self.toasts.push(FLAG_LABELS[ev["flag"]], C_GOLD)
-                        if ev["flag"] == "jess_energy":
-                            self.energy += 20
-                    if ev.get("gift"):
-                        self.add_item(ev["gift"])
-                        self.toasts.push(f"Ganhou: {ITEMS[ev['gift']]['name']}", C_GREEN, ev["gift"])
-                if ev.get("scene") in SCENES:
-                    self.play_scene(ev["scene"], on_end=done)
-                else:
-                    self.push(ui.Dialog(npc.name, ev["lines"], self.portrait_for(npc, ev.get("mood")), on_close=done,
-                                        subtitle=f"evento de {h} corações"))
-                return
+    def check_events(self, key):
+        """Chamado depois de conversas e presentes. Eventos sem cena aparecem na hora; eventos com cena
+        ficam pendentes até a jogadora ir ao lugar da cena no horário certo (como no Stardew Valley)."""
+        nxt = self.next_event(key)
+        if not nxt:
+            return
+        h, ev = nxt
+        npc = self.npcs[key]
+        if ev.get("scene") in SCENES:
+            tag = f"{key}:{h}"
+            if tag not in self.event_hinted:
+                self.event_hinted.add(tag)
+                where, a, b = self.scene_place(ev["scene"])
+                self.toasts.push(f"Novo evento com {NPCS[key]['short']}: {where}, entre {self.fmt_hour(a)} e {self.fmt_hour(b)}.",
+                                 C_PINK)
+            self.check_scene_events()
+            return
+        self.events_seen.add(f"{key}:{h}")
+        self.push(ui.Dialog(npc.name, ev["lines"], self.portrait_for(npc, ev.get("mood")),
+                            on_close=lambda ev=ev: self._event_done(ev), subtitle=f"evento de {h} corações"))
+
+    SCENE_TRIGGER_MAP = {"altomar": "marina"}       # cenas no barco começam na marina
+    SCENE_WINDOW = 180                              # minutos antes e depois do horário da cena
+
+    def scene_place(self, scene_key):
+        """(onde, das, até) em que um evento com cena pode acontecer."""
+        sc = SCENES[scene_key]
+        mapn = self.SCENE_TRIGGER_MAP.get(sc["map"], sc["map"])
+        t = sc.get("time", 12 * 60)
+        a = max(DAY_START, t - self.SCENE_WINDOW)
+        b = min(DAY_END - 30, t + self.SCENE_WINDOW)
+        if mapn == "city":
+            legend = next((s[1] for s in sc["steps"] if s[0] == "legenda"), "na cidade")
+            where = legend[0].lower() + legend[1:]
+        else:
+            where = self.world[mapn].label
+        return where, a, b
+
+    def _scene_anchor(self, scene_key):
+        sc = SCENES[scene_key]
+        for s in sc["steps"]:
+            if s[0] == "ator" and s[1] == sc.get("npc"):
+                return s[2], s[3]
+        for s in sc["steps"]:
+            if s[0] in ("camera_ja", "camera"):
+                return s[1], s[2]
+        return None
+
+    @staticmethod
+    def fmt_hour(m):
+        m %= 24 * 60
+        return f"{m // 60}h{m % 60:02d}" if m % 60 else f"{m // 60}h"
+
+    def pending_scene_events(self):
+        out = []
+        for key in NPC_ORDER:
+            nxt = self.next_event(key)
+            if nxt and nxt[1].get("scene") in SCENES:
+                out.append((key, nxt[0], nxt[1]))
+        return out
+
+    def check_scene_events(self):
+        """Toca a cena de um evento pendente quando a jogadora está no lugar e no horário da cena."""
+        if self.scene != "play" or self.modals or self.fishing or self.fade_dir:
+            return
+        for key, h, ev in self.pending_scene_events():
+            sc = SCENES[ev["scene"]]
+            mapn = self.SCENE_TRIGGER_MAP.get(sc["map"], sc["map"])
+            _, a, b = self.scene_place(ev["scene"])
+            if self.map_name != mapn or not (a <= self.minutes <= b):
+                continue
+            if mapn == "city":
+                anchor = self._scene_anchor(ev["scene"])
+                if anchor:
+                    tx, ty = self.player.tile
+                    if abs(tx - anchor[0]) + abs(ty - anchor[1]) > 14:
+                        continue
+            self.events_seen.add(f"{key}:{h}")
+            self.play_scene(ev["scene"], on_end=lambda ev=ev: self._event_done(ev))
+            return
 
     # --- Encontros -----------------------------------------------------
     def invite_date(self, npc):
@@ -1749,6 +1875,7 @@ class Game:
             if k in self.gift_known:
                 self.gift_known[k] = {i: t for i, t in v.items() if i in ITEMS}
         self.flags, self.events_seen = set(d.get("flags", [])), set(d.get("events_seen", []))
+        self.event_hinted = set()
         self.stats.update(d.get("stats", {}))
         self.fish_caught = set(d.get("fish_caught", []))
         self.aquarium = set(d.get("aquarium", []))
@@ -2201,6 +2328,12 @@ class Game:
                 ok = self.count_item(mo["item"]) >= mo["qty"]
                 ui.text(surf, marina.order_text(self), (SCREEN_W - 24, hy), 15, C_GREEN if ok else (120, 190, 240),
                         bold=True, right=True)
+                hy += 20
+            for key, h, ev in self.pending_scene_events()[:2]:
+                where, a, b = self.scene_place(ev["scene"])
+                ui.text(surf, f"Evento {NPCS[key]['short']}: {where} ({self.fmt_hour(a)} a {self.fmt_hour(b)})",
+                        (SCREEN_W - 24, hy), 15, C_PINK, bold=True, right=True)
+                hy += 20
             if not dialog_open:
                 ui.draw_hotbar(surf, self)
                 if not self.modals and not self.fade_dir and not self.fishing:

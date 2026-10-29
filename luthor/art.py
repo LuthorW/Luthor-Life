@@ -1694,6 +1694,8 @@ def heart(full=True, k=3, color=(240, 80, 130)):
 # ---------------------------------------------------------------------------
 
 PORTRAIT_BG = ((70, 46, 104), (34, 22, 54))     # fundo do quadro do retrato (degradê roxo)
+PORTRAIT_SIZE = 236                              # tamanho do retrato na caixa de fala (igual ao ui.Dialog)
+PORTRAIT_SRC = {}                                # id da imagem do retrato -> arquivo (para redesenhar em alta)
 
 
 def _portrait_bg(size):
@@ -1748,12 +1750,13 @@ def portrait(filename, look, size=120):
                     side = min(w, h)
                     crop = img.subsurface((max(0, (w - side) // 2), 0, side, side)).copy()
                     if filename.lower().endswith(".png"):
-                        # retrato em pixel art: mantém a transparência e põe o fundo do quadro atrás
+                        # retrato: só o desenho, com transparência (sem quadrado de fundo)
                         crop = _clear_fake_bg(crop.convert_alpha())
-                        out = _portrait_bg(size)
-                        out.blit(pygame.transform.smoothscale(crop, (size, size)), (0, 0))
-                        return out
-                    return pygame.transform.smoothscale(crop.convert(), (size, size))
+                        out = pygame.transform.smoothscale(crop, (size, size))
+                    else:
+                        out = pygame.transform.smoothscale(crop.convert(), (size, size))
+                    PORTRAIT_SRC[id(out)] = filename
+                    return out
                 except Exception:
                     pass
         frames = character_frames(look)
@@ -1772,7 +1775,30 @@ def portrait(filename, look, size=120):
 
 # humor -> sufixos procurados em assets/portraits (nome.png, nome_feliz.png, nome_ruim.png, nome_timido.png)
 MOOD_SUFFIXES = {"happy": ("feliz",), "smile": ("feliz",), "bad": ("ruim", "bravo", "brava"),
-                 "shy": ("timido", "timida"), "love": ("timido", "feliz")}
+                 "shy": ("timido", "timida"), "love": ("timido", "timida", "feliz")}
+
+
+def portrait_hd(filename, size):
+    """O mesmo retrato, mas no tamanho real da tela (tela cheia maior que 1280x720).
+
+    Usa o original de assets/portraits_hd quando ele existe (melhor qualidade); senão, o de assets/portraits.
+    """
+    def make():
+        path = os.path.join(ASSETS, "portraits", filename)
+        hd = os.path.join(ASSETS, "portraits_hd", filename)
+        img = pygame.image.load(hd if os.path.exists(hd) else path)
+        w, h = img.get_size()
+        side = min(w, h)
+        crop = img.subsurface((max(0, (w - side) // 2), 0, side, side)).copy()
+        if filename.lower().endswith(".png"):
+            crop = _clear_fake_bg(crop.convert_alpha())
+        else:
+            crop = crop.convert()
+        # reduz em etapas (metade por vez) para não serrilhar
+        while crop.get_width() > size[0] * 2:
+            crop = pygame.transform.smoothscale(crop, (crop.get_width() // 2, crop.get_height() // 2))
+        return pygame.transform.smoothscale(crop, size)
+    return cached(("portrait_hd", filename, size), make)
 
 
 def portrait_file(base, mood=None):
@@ -1784,7 +1810,7 @@ def portrait_file(base, mood=None):
             f = f"{base}_{suf}.png"
             if portrait_exists(f):
                 return f
-    for f in (f"{base}.png", f"dra_{base}.png"):
+    for f in (f"{base}.png",):
         if portrait_exists(f):
             return f
     return None

@@ -62,7 +62,7 @@ decide como gastar a sua energia.
 
 E ainda: a **Marina Luthor** (pesca em alto-mar, passeio ao pôr do sol, regata e encomendas náuticas),
 **presentes** que cada personagem ama, gosta ou não gosta (com retratos que mudam de expressão),
-**cozinha** com receitas secretas, **coletáveis** na praia, no parque e no Bosque Bayside, **Cine National**, **aquário**,
+**cozinha** com receitas secretas, **coletáveis** na praia, no parque e no Bosque Bayside (dá para presentear, mas cuidado: tem quem odeie), **Cine National**, **aquário**,
 **livros com bônus permanentes**, **pedidos** da cidade e **centenas de falas** que não se repetem.
 
 ## Como jogar
@@ -117,13 +117,12 @@ Luthor-Life/
     ├── sprites.py     # personagens e roupas
     ├── nautical.py    # arte da marina, dos barcos e do alto-mar
     ├── marina.py      # Marina Luthor: passeios, regata e encomendas
-    ├── characters.py  # personagens, rotinas, presentes e eventos
+    ├── characters.py  # personagens e médicas: rotinas, presentes e eventos
     ├── dialogue.py    # falas por período, clima, lugar e amizade
     ├── activities.py  # horta, coletáveis, bichinho, karaokê e cinema
     ├── hospital.py    # Conti Moretti Hospitais
-    ├── doctors.py     # as médicas e suas rotinas
     ├── crowd.py       # moradores que circulam pela cidade
-    ├── cutscenes.py   # motor de cutscenes
+    ├── cutscenes.py   # motor de cutscenes e todas as cenas
     ├── scenetest.py   # modo de teste de cenas (--cenas)
     ├── minigames.py   # pesca, fliperama, fogão e mochila
     └── data.py        # itens, peixes, receitas, livros e lojas
@@ -146,6 +145,9 @@ Retratos ficam em `assets/portraits/` com o padrão `nome.png`, `nome_feliz.png`
 (ou `nome_bravo.png`) e `nome_timido.png`: o jogo encontra sozinho. O retrato "ruim" aparece com presentes
 que a personagem não gosta e o "tímido" com presentes que ela ama. Fundo branco ou xadrez de transparência
 desenhado na imagem é apagado automaticamente.
+
+Depois de colocar retratos novos, rode `py reduzir_retratos.py`: ele guarda o original em alta resolução em
+`assets/portraits_hd/` (fora do git), limpa o fundo e reduz para 512 px, o tamanho que o jogo usa.
 
 ## Créditos
 

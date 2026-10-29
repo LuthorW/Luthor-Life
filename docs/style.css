@@ -226,7 +226,7 @@ a { color: var(--purple-3); }
 /* faixa de personagens andando */
 .parade { overflow: hidden; padding: 30px 0 10px; mask-image: linear-gradient(90deg, transparent, #000 10%, #000 90%, transparent); }
 .parade .track { display: flex; gap: 34px; width: max-content; animation: walk 40s linear infinite; align-items: flex-end; }
-.parade img { height: 96px; width: auto; image-rendering: pixelated; filter: drop-shadow(0 6px 0 rgba(0,0,0,.35)); }
+.parade img { height: 102px; width: auto; image-rendering: pixelated; filter: drop-shadow(0 6px 0 rgba(0,0,0,.35)); }
 .parade img.pet { height: 44px; }
 @keyframes walk { to { transform: translateX(-50%); } }
 
@@ -312,7 +312,7 @@ h3 { font-family: var(--pixel); font-weight: 400; font-size: 32px; line-height: 
   height: 120px; display: grid; place-items: end center; margin-bottom: 12px;
   background: radial-gradient(60px 14px at 50% 100%, rgba(0, 0, 0, .45), transparent 70%);
 }
-.person img { height: 112px; width: auto; image-rendering: pixelated; transition: transform .25s; }
+.person img { height: 119px; width: auto; image-rendering: pixelated; transition: transform .25s; }
 .person:hover img { transform: translateY(-6px); }
 .person h4 { font-family: var(--pixel); font-weight: 400; font-size: 25px; margin: 0; line-height: 1.05; }
 .person span { display: block; font-size: 13px; color: var(--muted); margin-top: 4px; }

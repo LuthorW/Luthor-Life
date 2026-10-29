@@ -18,14 +18,13 @@ CMH_GREEN = (110, 200, 160)
 # ---------------------------------------------------------------------------
 # Lideranças clínicas (como no site) e especialidades
 # ---------------------------------------------------------------------------
-from .characters import NPCS
-from .doctors import DOCTOR_KEYS
+from .characters import NPCS, DOCTOR_KEYS
 LEADERS = {k: NPCS[k] for k in DOCTOR_KEYS}
 # especialidade: (nome, líder, descrição do site, conselho, chave do efeito do dia, texto do efeito)
 SPECIALTIES = [
     ("cardiologia", "Cardiologia", "milany", "Prevenção, diagnóstico e acompanhamento cardiovascular com cuidado integrado.",
      "Seu coração está ótimo. Caminhe mais, ande menos de elevador.", "Coração em dia: você anda 10% mais rápido hoje."),
-    ("neurologia", "Neurologia", "lexie", "Avaliação especializada do sistema nervoso, memória, movimento e qualidade de vida.",
+    ("neurologia", "Neurologia", "milany", "Avaliação especializada do sistema nervoso, memória, movimento e qualidade de vida.",
      "Foco é treino. Uma tarefa de cada vez.", "Foco total: trabalhar no laboratório gasta metade da energia hoje."),
     ("ortopedia", "Ortopedia", "meredith", "Diagnóstico, tratamento e reabilitação para mobilidade, trauma e saúde musculoesquelética.",
      "Sua postura na cadeira de CEO é um crime. Alongue a cada hora.", "Coluna alinhada: pescar não gasta energia hoje."),
@@ -43,7 +42,7 @@ SPECIALTIES = [
      "Protetor solar. Até dentro do escritório. Sim, eu sei das janelas.", "Brilho próprio: gorjetas do karaokê 50% maiores hoje."),
     ("urologia", "Urologia", "yang", "Cuidado do trato urinário e saúde masculina com abordagem preventiva e especializada.",
      "Beba água. Café não conta como água.", "Hidratada: se desmaiar hoje, o hospital não cobra nada."),
-    ("oftalmologia", "Oftalmologia", "lexie", "Avaliação da saúde ocular, prevenção e acompanhamento de alterações da visão.",
+    ("oftalmologia", "Oftalmologia", "yang", "Avaliação da saúde ocular, prevenção e acompanhamento de alterações da visão.",
      "Visão perfeita. Agora tire os olhos do monitor de vez em quando.", "Olhar atento: você nota mais coletáveis na praia e no parque hoje."),
     ("psiquiatria", "Psiquiatria", "meredith", "Cuidado em saúde mental com escuta qualificada, acompanhamento e integração assistencial.",
      "Você carrega uma cidade nas costas. Pode pedir ajuda. Inclusive pra gente.", "Mente leve: conversas rendem 50% mais amizade hoje."),
@@ -56,7 +55,7 @@ def consult_price(g):
     return CONSULT_PRICE // 2 if "cmh_discount" in g.flags else CONSULT_PRICE
 
 
-def leader_portrait(L, size=112):
+def leader_portrait(L, size=art.PORTRAIT_SIZE):
     return art.portrait(L.get("portrait"), L["look"], size)
 DONATION = 1000
 

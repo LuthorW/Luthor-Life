@@ -7,6 +7,23 @@ from . import art
 from .config import (ASSETS, SCREEN_W, SCREEN_H, C_PANEL, C_PANEL_2, C_BORDER, C_BORDER_DIM, C_ACCENT, C_ACCENT_2,
                      C_TEXT, C_MUTED, C_LILAC, C_GOLD, C_GREEN, C_RED, C_ENERGY, HEART_POINTS, MAX_HEARTS)
 from .data import ITEMS
+
+# Retratos desenhados neste quadro, para a tela cheia redesenhar em alta resolução (Game.present):
+# (arquivo, retângulo, área visível, fundo antes do retrato, como ficou depois)
+HD = []
+
+
+def blit_portrait(surf, img, pos):
+    """Desenha um retrato e o registra para ser redesenhado nítido em telas maiores que 1280x720."""
+    r = pygame.Rect(pos, img.get_size())
+    clip = r.clip(surf.get_rect())
+    src = art.PORTRAIT_SRC.get(id(img))
+    if not src or surf.get_size() != (SCREEN_W, SCREEN_H) or clip.w <= 0 or clip.h <= 0:
+        surf.blit(img, pos)
+        return
+    bg = surf.subsurface(clip).copy()
+    surf.blit(img, pos)
+    HD.append((src, r, clip, bg, surf.subsurface(clip).copy()))
 from .config import HOTBAR_SIZE
 
 CONFIRM = (pygame.K_e, pygame.K_SPACE, pygame.K_RETURN, pygame.K_KP_ENTER)
@@ -178,16 +195,27 @@ class Dialog(Modal):
         self.t += dt
         self.shown = min(len(self.current), self.shown + dt * 55)
 
+    H = 224                 # altura da caixa de fala (5% menor que a anterior, de 236)
+    PORTRAIT = art.PORTRAIT_SIZE   # retrato grande e solto, ao lado da caixa (não fica por cima dela)
+
     def draw(self, surf):
-        rect = pygame.Rect(30, SCREEN_H - 196, SCREEN_W - 60, 172)
-        panel(surf, rect)
-        tx = rect.x + 24
+        """Retrato grande à esquerda, fora da caixa; a caixa de texto começa ao lado dele, com o nome em cima."""
+        bottom = SCREEN_H - 18
+        x0 = 24
         if self.portrait is not None:
             p = self.portrait
-            pr = pygame.Rect(rect.x + 20, rect.y + 22, p.get_width() + 8, p.get_height() + 8)
-            pygame.draw.rect(surf, C_ACCENT, pr, border_radius=8)
-            surf.blit(p, (pr.x + 4, pr.y + 4))
-            tx = pr.right + 22
+            has_alpha = bool(p.get_flags() & pygame.SRCALPHA)
+            size = self.PORTRAIT
+            if p.get_width() != size:
+                p = pygame.transform.smoothscale(p, (size, size))
+            px, py = x0, bottom - size
+            if not has_alpha:            # foto quadrada (sem transparência): ganha moldura
+                pygame.draw.rect(surf, C_ACCENT, (px - 4, py - 4, size + 8, size + 8), border_radius=8)
+            blit_portrait(surf, p, (px, py))
+            x0 = px + size + 14
+        rect = pygame.Rect(x0, bottom - self.H, SCREEN_W - 24 - x0, self.H)
+        panel(surf, rect)
+        tx = rect.x + 28
         if self.speaker:
             tag = name_tag(surf, tx - 4, rect.y - 18, self.speaker)
             if self.subtitle:
@@ -195,14 +223,14 @@ class Dialog(Modal):
         elif self.subtitle:
             text(surf, self.subtitle, (tx, rect.y + 14), 16, C_MUTED)
         visible = self.current[: int(self.shown)]
-        y = rect.y + 34
-        for line in wrap(visible, 20, rect.right - tx - 30):
-            text(surf, line, (tx, y), 20)
-            y += 28
+        y = rect.y + 32
+        for line in wrap(visible, 24, rect.right - tx - 34):
+            text(surf, line, (tx, y), 24)
+            y += 34
         if self.shown >= len(self.current) and int(self.t * 2) % 2 == 0:
-            pygame.draw.polygon(surf, C_ACCENT_2, [(rect.right - 34, rect.bottom - 26),
-                                                   (rect.right - 20, rect.bottom - 26),
-                                                   (rect.right - 27, rect.bottom - 18)])
+            pygame.draw.polygon(surf, C_ACCENT_2, [(rect.right - 36, rect.bottom - 28),
+                                                   (rect.right - 20, rect.bottom - 28),
+                                                   (rect.right - 28, rect.bottom - 19)])
 
 
 class Choice(Modal):
@@ -490,7 +518,10 @@ def draw_hud(surf, g):
     panel(surf, m, alpha=225, border=(200, 160, 80))
     text(surf, "$", (m.x + 16, m.y + 9), 22, C_GOLD, bold=True)
     text(surf, f"{g.money:,}".replace(",", "."), (m.right - 16, m.y + 9), 22, C_GOLD, bold=True, right=True)
-    # Energia
+    # Energia (escondida enquanto uma fala está aberta, para não ficar atrás do retrato)
+    if any(isinstance(m, Dialog) for m in g.modals):
+        text(surf, g.current_map.label, (SCREEN_W - 24, 186), 15, C_MUTED, right=True)
+        return
     e = pygame.Rect(SCREEN_W - 46, SCREEN_H - 214, 32, 180)
     panel(surf, e, alpha=225, radius=10)
     inner = pygame.Rect(e.x + 7, e.y + 26, e.w - 14, e.h - 34)

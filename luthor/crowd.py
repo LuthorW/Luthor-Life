@@ -36,7 +36,7 @@ SKIN = [(250, 222, 200), (236, 196, 160), (210, 160, 120), (170, 120, 86), (130,
 CLOTH = [(200, 60, 70), (60, 110, 200), (240, 200, 80), (90, 170, 110), (240, 240, 240), (40, 40, 50),
          (230, 130, 170), (130, 90, 200), (240, 150, 70), (80, 160, 170), (150, 120, 90)]
 PANTS = [(40, 40, 60), (60, 80, 140), (30, 30, 36), (120, 100, 80), (200, 190, 170), (80, 60, 100)]
-STYLES = ["short", "long", "cap", "bun", "wavy", "short", "long"]
+STYLES = ["short", "long", "cap", "wavy", "wavy", "short", "long"]   # sem cabelo preso
 EYES = [(70, 50, 30), (60, 120, 190), (60, 150, 90), (110, 80, 50), (40, 30, 30)]
 
 NAMES = ["Ana", "Bruno", "Carla", "Diego", "Elisa", "Fábio", "Gabi", "Hugo", "Iara", "João", "Kátia", "Leo",
@@ -46,7 +46,8 @@ NAMES = ["Ana", "Bruno", "Carla", "Diego", "Elisa", "Fábio", "Gabi", "Hugo", "I
 def _look(rnd):
     return dict(hair=rnd.choice(HAIR), skin=rnd.choice(SKIN), cloth=rnd.choice(CLOTH), accent=rnd.choice(CLOTH),
                 pants=rnd.choice(PANTS), shoes=(30, 26, 30), style=rnd.choice(STYLES), eyes=rnd.choice(EYES),
-                outfit=rnd.choice(["shirt", "shirt", "blouse", "cardigan", "blazer"]))
+                outfit=rnd.choice(["shirt", "shirt", "blouse", "cardigan", "blazer"]),
+                height=rnd.choice([-1, 0, 0, 1, 2]), broad=rnd.random() < 0.4)
 
 
 class Extra(NPC):
@@ -275,7 +276,6 @@ class Crowd:
     STAFF_SPOTS = {"yang": [(21, 5, "up"), (13, 9, "down"), (15, 2, "down"), (25, 5, "up")],
                    "meredith": [(23, 5, "up"), (9, 2, "down"), (18, 13, "left"), (3, 2, "down")],
                    "milany": [(3, 2, "down"), (8, 13, "left"), (21, 5, "up")],
-                   "lexie": [(9, 2, "down"), (25, 5, "up"), (18, 10, "down")],
                    "izzie": [(15, 2, "down"), (23, 5, "up"), (25, 13, "left")],
                    "addison": [(25, 5, "up"), (3, 2, "down"), (9, 10, "down")]}
 
