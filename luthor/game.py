@@ -13,7 +13,8 @@ from .config import (SCALE, TITLE, SCREEN_W, SCREEN_H, FPS, TILE, SAVE_DIR, SAVE
                      HEART_POINTS, MAX_HEARTS, ROMANCE_CAP_HEARTS, TALK_POINTS, GIFT_POINTS, START_STATIONS,
                      MAX_STATIONS, INVENTORY_SIZE, HOTBAR_SIZE, C_TEXT, C_MUTED, C_LILAC, C_GOLD, C_GREEN, C_RED,
                      C_ACCENT, C_ACCENT_2, C_PINK)
-from .data import (PROJECTS, ITEMS, FISH, JUNK, RECIPES, BOOKS, SHOPS, SELLABLE, FLAG_LABELS, NEWS, TIPS, GOALS)
+from .data import (PROJECTS, ITEMS, FISH, JUNK, RECIPES, BOOKS, SHOPS, SELLABLE, FLAG_LABELS, NEWS, TIPS, GOALS,
+                   FORAGE)
 from .characters import NPCS, NPC_ORDER, TEAM, ROMANCES
 from .entities import Player, NPC, Car, DIRS, draw_shadow
 from .world import build_world, COUNTERS, WATER_TILES, STATION_SLOTS, HOME_BED, HOSPITAL_BED
@@ -396,12 +397,12 @@ class Game:
                 self.push(Cutscene(self, sc))
         self.push(ui.Choice("Rever cenas", [self.scene_title(k) for k in seen] + ["Voltar"], pick))
 
-    def portrait_for(self, npc, mood=None):
+    def portrait_for(self, npc, mood=None, size=None):
         d = npc.data
         mood = MOOD_ALIASES.get(mood, mood)
         # retratos pelo padrão de nomes (nome.png, nome_feliz.png...); se não houver, o campo "portrait"
         fname = art.portrait_file(d.get("portrait_key", npc.key), mood) or d.get("portrait")
-        return art.portrait(fname, d["look"], art.PORTRAIT_SIZE)
+        return art.portrait(fname, d["look"], size or art.PORTRAIT_SIZE)
 
     def start_fade(self, cb):
         if self.fade_dir:
@@ -472,6 +473,10 @@ class Game:
                 self.open_pause()
             elif ev.key in (pygame.K_i, pygame.K_TAB):
                 self.push(Inventory(self))
+            elif ev.key == pygame.K_o:
+                self.open_goals()
+            elif ev.key == pygame.K_r:
+                self.open_relationships()
             elif ev.key in HOTBAR_KEYS:
                 self.select(HOTBAR_KEYS[ev.key])
         elif ev.type == pygame.MOUSEWHEEL:
@@ -1381,7 +1386,7 @@ class Game:
         npc = self.npcs[key]
         if ev.get("scene") in SCENES:
             tag = f"{key}:{h}"
-            if tag not in self.event_hinted:
+            if tag not in self.event_hinted and h > 0:      # eventos de 0 corações são surpresa: sem aviso
                 self.event_hinted.add(tag)
                 where, a, b = self.scene_place(ev["scene"])
                 self.toasts.push(f"Novo evento com {NPCS[key]['short']}: {where}, entre {self.fmt_hour(a)} e {self.fmt_hour(b)}.",
@@ -1554,7 +1559,7 @@ class Game:
             if o == "Mochila":
                 self.push(Inventory(self))
             elif o == "Objetivos":
-                self.push(ui.InfoPanel("Objetivos", self.draw_goals))
+                self.open_goals()
             elif o == "Relacionamentos":
                 self.open_relationships()
             elif o == "Coleções":
@@ -1587,7 +1592,7 @@ class Game:
             "partner": (bool(self.partner), NPCS[self.partner]["short"] if self.partner else "-"),
             "arcade": (self.stats["arcade_best"] >= 40, f"recorde {self.stats['arcade_best']}"),
             "garden": (self.stats["harvest"] >= 15, f"{min(15, self.stats['harvest'])}/15"),
-            "forage": (len(self.forage_found) >= 7, f"{len(self.forage_found)}/7"),
+            "forage": (len(self.forage_found) >= len(FORAGE), f"{len(self.forage_found)}/{len(FORAGE)}"),
             "pet": (self.pet is not None, self.pet.name if self.pet else "-"),
             "karaoke": (bool(self.stats["karaoke_s"]), f"melhor {self.stats['karaoke_best']}%"),
             "cinema": (self.stats["movies"] >= 5, f"{min(5, self.stats['movies'])}/5"),
@@ -1596,7 +1601,11 @@ class Game:
 
     def draw_goals(self, surf, rect):
         y = rect.y + 66
+        # contagens que mudam conforme o jogo cresce (peixes de alto-mar, coletáveis novos)
+        names = {"aquarium": f"Completar o aquário ({len(FISH)} peixes)",
+                 "forage": f"Encontrar todos os {len(FORAGE)} coletáveis"}
         for key, label in GOALS:
+            label = names.get(key, label)
             ok, prog = self.goal_status(key)
             box = pygame.Rect(rect.x + 30, y + 3, 18, 18)
             pygame.draw.rect(surf, C_GREEN if ok else (60, 50, 80), box, border_radius=5)
@@ -1612,11 +1621,14 @@ class Game:
         perks = [FLAG_LABELS[f] for f in FLAG_LABELS if f in self.flags]
         if not perks:
             perks = ["Nenhum ainda. Amizades (3 corações) e livros desbloqueiam benefícios."]
-        for p in perks[:4]:
-            ui.text(surf, "• " + p, (rect.x + 34, y), 15, C_MUTED)
-            y += 21
-        if len(perks) > 4:
-            ui.text(surf, f"+ {len(perks) - 4} outros", (rect.x + 34, y), 15, C_MUTED)
+        for p in perks:                  # com rolagem, cabem todos
+            for line in ui.wrap("- " + p, 15, rect.w - 80):
+                ui.text(surf, line, (rect.x + 34, y), 15, C_MUTED)
+                y += 21
+        return y
+
+    def open_goals(self):
+        self.push(ui.InfoPanel("Objetivos", self.draw_goals, scroll=True, close_keys=(pygame.K_o,)))
 
     def draw_collections(self, surf, rect):
         y = rect.y + 70
@@ -1656,9 +1668,9 @@ class Game:
 
         def draw_row(surf, r, key, sel):
             npc = self.npcs[key]
-            p = pygame.transform.smoothscale(self.portrait_for(npc), (70, 70))
+            p = self.portrait_for(npc, size=70)
             pygame.draw.rect(surf, C_PINK if key in ROMANCES else C_ACCENT, (r.x + 8, r.y + 8, 74, 74), border_radius=6)
-            surf.blit(p, (r.x + 10, r.y + 10))
+            ui.blit_portrait(surf, p, (r.x + 10, r.y + 10))     # nítido também na tela cheia
             ui.text(surf, npc.name, (r.x + 96, r.y + 8), 19, C_TEXT, bold=True)
             role = npc.data["role"]
             if key == self.partner:
@@ -1680,7 +1692,8 @@ class Game:
             done = "conversou hoje" if key in self.talked else "ainda não conversou hoje"
             ui.text(surf, done, (r.right - 14, r.y + 10), 13, C_GREEN if key in self.talked else C_MUTED, right=True)
         self.push(ui.ScrollPanel("Relacionamentos", rows, draw_row, 96,
-                                 "Converse todo dia e dê presentes. Romances: rosas aos 8 corações, pingente aos 10."))
+                                 "Converse todo dia e dê presentes. Romances: rosas aos 8 corações, pingente aos 10.",
+                                 close_keys=(pygame.K_r,)))
 
     # ------------------------------------------------------------------
     # Fim do dia
@@ -2329,7 +2342,7 @@ class Game:
                 ui.text(surf, marina.order_text(self), (SCREEN_W - 24, hy), 15, C_GREEN if ok else (120, 190, 240),
                         bold=True, right=True)
                 hy += 20
-            for key, h, ev in self.pending_scene_events()[:2]:
+            for key, h, ev in [e for e in self.pending_scene_events() if e[1] > 0][:2]:   # 0 corações: escondido
                 where, a, b = self.scene_place(ev["scene"])
                 ui.text(surf, f"Evento {NPCS[key]['short']}: {where} ({self.fmt_hour(a)} a {self.fmt_hour(b)})",
                         (SCREEN_W - 24, hy), 15, C_PINK, bold=True, right=True)
@@ -2428,6 +2441,7 @@ def draw_controls(surf, rect):
         ("1-9, 0, -, =", "Escolher item da barra"),
         ("Roda do mouse", "Trocar item da barra"),
         ("I / Tab", "Abrir a mochila (24 espaços)"),
+        ("O / R", "Objetivos / relacionamentos"),
         ("F / botão direito", "Comer, beber ou ler o item escolhido"),
         ("Esc", "Menu: objetivos, relacionamentos, coleções, opções"),
         ("F11", "Tela cheia"),

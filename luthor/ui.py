@@ -16,7 +16,7 @@ HD = []
 def blit_portrait(surf, img, pos):
     """Desenha um retrato e o registra para ser redesenhado nítido em telas maiores que 1280x720."""
     r = pygame.Rect(pos, img.get_size())
-    clip = r.clip(surf.get_rect())
+    clip = r.clip(surf.get_clip())          # respeita o recorte (listas com rolagem)
     src = art.PORTRAIT_SRC.get(id(img))
     if not src or surf.get_size() != (SCREEN_W, SCREEN_H) or clip.w <= 0 or clip.h <= 0:
         surf.blit(img, pos)
@@ -347,13 +347,31 @@ class Shop(Modal):
 class InfoPanel(Modal):
     """Painel genérico de leitura (objetivos, relacionamentos, controles, e-mails)."""
 
-    def __init__(self, title, draw_fn, on_close=None):
+    TOP, BOTTOM = 60, 48            # área rolável: entre o título e a linha de "fechar"
+
+    def __init__(self, title, draw_fn, on_close=None, scroll=False, close_keys=()):
+        """scroll=True: draw_fn desenha numa folha alta e devolve até onde desenhou (y); setas/roda rolam."""
         self.title = title
         self.draw_fn = draw_fn
         self.on_close = on_close
+        self.scroll = scroll
+        self.close_keys = close_keys
+        self.off = 0
+        self.max_off = 0
 
     def handle(self, ev):
-        if ev.type == pygame.KEYDOWN and (ev.key in CONFIRM or ev.key in CANCEL):
+        if self.scroll:
+            step = 0
+            if ev.type == pygame.MOUSEWHEEL:
+                step = -ev.y * 50
+            elif ev.type == pygame.KEYDOWN and ev.key in (pygame.K_UP, pygame.K_w):
+                step = -50
+            elif ev.type == pygame.KEYDOWN and ev.key in (pygame.K_DOWN, pygame.K_s):
+                step = 50
+            if step:
+                self.off = max(0, min(self.max_off, self.off + step))
+                return
+        if ev.type == pygame.KEYDOWN and (ev.key in CONFIRM or ev.key in CANCEL or ev.key in self.close_keys):
             self.done = True
             if self.on_close:
                 self.on_close()
@@ -363,7 +381,25 @@ class InfoPanel(Modal):
         rect.center = (SCREEN_W // 2, SCREEN_H // 2)
         panel(surf, rect)
         text(surf, self.title, (rect.x + 28, rect.y + 18), 28, C_LILAC, bold=True)
-        self.draw_fn(surf, rect)
+        if not self.scroll:
+            self.draw_fn(surf, rect)
+            text(surf, "Esc / E: fechar", (rect.right - 24, rect.bottom - 34), 16, C_MUTED, right=True)
+            return
+        # conteúdo numa folha alta; mostra só a janela entre o título e o rodapé
+        sheet = pygame.Surface((rect.w, 2000), pygame.SRCALPHA)
+        end = self.draw_fn(sheet, pygame.Rect(0, 0, rect.w, rect.h)) or rect.h
+        view_h = rect.h - self.TOP - self.BOTTOM
+        self.max_off = max(0, end + 10 - self.TOP - view_h)
+        self.off = min(self.off, self.max_off)
+        surf.blit(sheet, (rect.x, rect.y + self.TOP), (0, self.TOP + self.off, rect.w, view_h))
+        if self.max_off:
+            # barrinha de rolagem
+            bar = pygame.Rect(rect.right - 14, rect.y + self.TOP, 4, view_h)
+            pygame.draw.rect(surf, (60, 50, 80), bar, border_radius=2)
+            kh = max(24, int(view_h * view_h / (view_h + self.max_off)))
+            ky = bar.y + int((view_h - kh) * self.off / self.max_off)
+            pygame.draw.rect(surf, C_ACCENT_2, (bar.x, ky, 4, kh), border_radius=2)
+            text(surf, "Setas / roda: rolar", (rect.x + 28, rect.bottom - 34), 16, C_MUTED)
         text(surf, "Esc / E: fechar", (rect.right - 24, rect.bottom - 34), 16, C_MUTED, right=True)
 
 
@@ -570,23 +606,28 @@ def draw_hotbar(surf, g):
 class ScrollPanel(Modal):
     """Lista rolável: rows_fn() -> lista; draw_row(surf, rect, row, selected)."""
 
-    def __init__(self, title, rows_fn, draw_row, row_h=96, subtitle=""):
+    def __init__(self, title, rows_fn, draw_row, row_h=96, subtitle="", close_keys=()):
+        self.close_keys = close_keys
         self.title = title
         self.subtitle = subtitle
         self.rows_fn = rows_fn
         self.draw_row = draw_row
         self.row_h = row_h
         self.sel = 0
+        self.off = 0.0                  # rolagem suave (em pixels)
 
     def handle(self, ev):
+        n = max(1, len(self.rows_fn()))
+        if ev.type == pygame.MOUSEWHEEL:
+            self.sel = max(0, min(n - 1, self.sel - ev.y))
+            return
         if ev.type != pygame.KEYDOWN:
             return
-        n = max(1, len(self.rows_fn()))
         if ev.key in (pygame.K_UP, pygame.K_w):
             self.sel = (self.sel - 1) % n
         elif ev.key in (pygame.K_DOWN, pygame.K_s):
             self.sel = (self.sel + 1) % n
-        elif ev.key in CONFIRM or ev.key in CANCEL:
+        elif ev.key in CONFIRM or ev.key in CANCEL or ev.key in self.close_keys:
             self.done = True
 
     def draw(self, surf):
@@ -598,14 +639,30 @@ class ScrollPanel(Modal):
         if self.subtitle:
             text(surf, self.subtitle, (rect.x + 30, rect.y + 54), 16, C_MUTED)
         top = rect.y + 84
-        visible = max(1, (rect.h - 130) // self.row_h)
-        start = max(0, min(self.sel - visible // 2, len(rows) - visible))
-        for i in range(start, min(len(rows), start + visible)):
-            r = pygame.Rect(rect.x + 20, top + (i - start) * self.row_h, rect.w - 40, self.row_h - 6)
+        view = pygame.Rect(rect.x + 8, top, rect.w - 16, rect.h - 130)
+        total = len(rows) * self.row_h
+        max_off = max(0, total - view.h)
+        # a linha escolhida fica sempre à vista; a lista desliza até ela
+        want = min(max(self.off, (self.sel + 1) * self.row_h - view.h), self.sel * self.row_h)
+        want = max(0, min(max_off, want))
+        self.off += (want - self.off) * 0.35
+        if abs(want - self.off) < 1:
+            self.off = want
+        surf.set_clip(view)
+        first = int(self.off // self.row_h)
+        for i in range(first, min(len(rows), first + view.h // self.row_h + 2)):
+            r = pygame.Rect(rect.x + 20, top + i * self.row_h - int(self.off), rect.w - 48, self.row_h - 6)
             if i == self.sel:
                 pygame.draw.rect(surf, C_PANEL_2, r, border_radius=10)
                 pygame.draw.rect(surf, C_ACCENT_2, r, 2, border_radius=10)
             self.draw_row(surf, r, rows[i], i == self.sel)
-        if len(rows) > visible:
+        surf.set_clip(None)
+        if max_off:
+            bar = pygame.Rect(rect.right - 18, top, 4, view.h)
+            pygame.draw.rect(surf, (60, 50, 80), bar, border_radius=2)
+            kh = max(24, int(view.h * view.h / total))
+            ky = bar.y + int((view.h - kh) * self.off / max_off)
+            pygame.draw.rect(surf, C_ACCENT_2, (bar.x, ky, 4, kh), border_radius=2)
             text(surf, f"{self.sel + 1}/{len(rows)}", (rect.x + 30, rect.bottom - 34), 15, C_MUTED)
-        text(surf, "Setas: rolar   Esc / E: fechar", (rect.right - 24, rect.bottom - 34), 16, C_MUTED, right=True)
+        text(surf, "Setas / roda: rolar   Esc / E: fechar", (rect.right - 24, rect.bottom - 34), 16, C_MUTED,
+             right=True)

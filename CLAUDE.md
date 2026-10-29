@@ -115,7 +115,8 @@ luthor/
   Rosas aos 8 corações → namoro; pingente aos 10 → morar junto. Cutscenes nos eventos de coração.
 - **Eventos de coração com cena** não tocam na hora: ficam pendentes (aviso + linha rosa no HUD) até a jogadora
   estar no mapa da cena (barco do alto-mar começa na marina) entre 3h antes e 3h depois do horário da cena; na
-  cidade, também perto do ponto da cena (`Game.check_scene_events`, `scene_place`). Eventos sem cena aparecem na hora.
+  cidade, também perto do ponto da cena (`Game.check_scene_events`, `scene_place`). Eventos sem cena aparecem na hora. Eventos de **0 corações** são surpresa:
+  tocam no lugar e horário certos, mas sem aviso nem linha rosa no HUD.
 - **Tela e retratos nítidos:** o jogo desenha num quadro de 1280x720 (`Game.screen`); `Game.present` amplia
   para a janela (tela cheia = resolução do monitor) e redesenha os retratos em alta (`ui.blit_portrait` registra,
   `art.portrait_hd`). Retrato novo na interface: use `ui.blit_portrait`.
@@ -123,6 +124,8 @@ luthor/
   começa ao lado, com texto maior e o nome em cima, na borda. PNG sem quadro, fotos .jpg com moldura.
 - **Ações LCORP:** variação noturna = aleatório + vendas de produtos/800 × `STOCK_PER_800` (2,5) + bônus (Nia, doação).
   Compra e venda com quantidade livre (`ui.NumberPrompt`) e "Vender todas".
+- **Atalhos:** I/Tab mochila, O objetivos, R relacionamentos (a mesma tecla fecha). Painéis longos usam
+  `ui.InfoPanel(..., scroll=True)` (draw_fn devolve o y final) em vez de crescer.
 - **Desmaio às 2h:** acorda no leito do hospital (`HOSPITAL_BED`) com conta.
 - **Site:** roxo (#8a00e6 / #b84cff) como principal e verde (#6ee78c) como destaque. No site use só os sprites
   em pixel art, não as fotos reais dos retratos.
