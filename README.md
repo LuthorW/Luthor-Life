@@ -146,8 +146,8 @@ Retratos ficam em `assets/portraits/` com o padrão `nome.png`, `nome_feliz.png`
 que a personagem não gosta e o "tímido" com presentes que ela ama. Fundo branco ou xadrez de transparência
 desenhado na imagem é apagado automaticamente.
 
-Depois de colocar retratos novos, rode `py reduzir_retratos.py`: ele guarda o original em alta resolução em
-`assets/portraits_hd/` (fora do git), limpa o fundo e reduz para 512 px, o tamanho que o jogo usa.
+Se um retrato novo vier com fundo branco ou xadrez, rode `py limpar_retratos.py`: ele apaga o fundo e mantém
+a resolução original (o jogo reduz sozinho na hora de mostrar).
 
 ## Créditos
 

@@ -15,9 +15,9 @@ A dona do projeto fala português do Brasil: responda, comente o código e escre
 main.py              inicia Game().run()
 Jogar.bat            acha o Python, instala pygame-ce e abre o jogo (cuidado: redirecionamentos >nul)
 assets/fonts/        Jersey10.ttf (OFL) — fonte pixel da interface
-assets/portraits/    retratos (nome.png + _feliz/_ruim/_timido), 512 px, inclusive das médicas (sem dra_)
-assets/portraits_hd/ originais em alta resolução (fora do git, ver .gitignore)
-reduzir_retratos.py  guarda o original em portraits_hd, apaga fundo branco/xadrez e reduz para 512 px
+assets/portraits/    retratos em ALTA resolução (nome.png + _feliz/_ruim/_timido), inclusive das médicas (sem dra_);
+                     a dona prefere a qualidade boa: NÃO reduza a resolução para economizar espaço
+limpar_retratos.py   apaga fundo branco/xadrez desenhado nos PNGs, sem mudar a resolução
 assets/cmh.png       logo do Conti Moretti Hospitais
 assets/lexcorp.png   logo da Luthor Corp
 saves/               save.json e settings (fora do git)
@@ -66,8 +66,8 @@ luthor/
   feliz, bad -> ruim, shy/love -> tímido. Presente amado = tímido, presente ruim = ruim. Fundo branco ou xadrez
   desenhado é apagado por `art._clear_fake_bg`. Médicas seguem o mesmo padrão
   (a Cristina, chave interna `yang`, usa `portrait_key="cristina"`).
-  **Retrato novo:** coloque o PNG em assets/portraits e rode `py reduzir_retratos.py` (usa numpy; limpa o fundo
-  pelo padrão do xadrez e reduz para 512 px). `--todos` refaz tudo a partir de assets/portraits_hd.
+  **Retrato novo:** coloque o PNG em assets/portraits e rode `py limpar_retratos.py` se ele tiver fundo (usa numpy;
+  limpa pelo padrão do xadrez). O jogo reduz em etapas na hora de mostrar (`art._shrink`).
 - **Ruas:** NPCs evitam o asfalto (`GameMap.road`) e atravessam só pelas faixas; entram e saem pelas calçadas.
 - **Colisão:** `world.HITBOXES` define a parte que bloqueia a jogadora em objetos pequenos (poste, banco, árvore,
   arbusto...); NPCs desviam do tile inteiro. A jogadora escorrega pelas quinas (`Player._slide`).
@@ -118,7 +118,7 @@ luthor/
   cidade, também perto do ponto da cena (`Game.check_scene_events`, `scene_place`). Eventos sem cena aparecem na hora.
 - **Tela e retratos nítidos:** o jogo desenha num quadro de 1280x720 (`Game.screen`); `Game.present` amplia
   para a janela (tela cheia = resolução do monitor) e redesenha os retratos em alta (`ui.blit_portrait` registra,
-  `art.portrait_hd` usa assets/portraits_hd quando existe). Retrato novo na interface: use `ui.blit_portrait`.
+  `art.portrait_hd`). Retrato novo na interface: use `ui.blit_portrait`.
 - **Caixa de fala:** retrato grande solto à esquerda, **fora** da caixa (a caixa não fica atrás dele); a caixa de texto
   começa ao lado, com texto maior e o nome em cima, na borda. PNG sem quadro, fotos .jpg com moldura.
 - **Ações LCORP:** variação noturna = aleatório + vendas de produtos/800 × `STOCK_PER_800` (2,5) + bônus (Nia, doação).

@@ -1,16 +1,13 @@
-"""Reduz os retratos em PNG para o tamanho que o jogo usa e limpa o fundo.
+"""Limpa o fundo dos retratos em PNG, sem mudar a resolução.
 
-Uso (na pasta do jogo):   py reduzir_retratos.py          (só os retratos novos/grandes)
-                          py reduzir_retratos.py --todos  (refaz todos a partir de assets/portraits_hd)
+Uso (na pasta do jogo):   py limpar_retratos.py
 
-Para cada PNG em assets/portraits/:
-  1. guarda o original em alta resolução em assets/portraits_hd/ (essa pasta não vai para o git);
-  2. apaga o fundo branco ou o xadrez de "transparente" desenhado na imagem, inclusive os pedaços
-     presos entre mechas de cabelo, e a franjinha clara que sobra em volta do desenho;
-  3. reduz para 512 x 512 px (o jogo mostra no máximo 420 px, nas fotos de tela cheia).
+Para cada PNG em assets/portraits que ainda tenha fundo (branco liso ou xadrez de "transparente" desenhado na
+imagem), apaga esse fundo, inclusive os pedaços presos entre mechas de cabelo e a franjinha clara em volta do
+desenho. Retratos que já têm transparência ficam como estão. A imagem continua com o mesmo tamanho e a mesma
+qualidade (o jogo reduz sozinho, em etapas, na hora de mostrar).
 """
 import os
-import shutil
 import sys
 
 os.environ.setdefault("SDL_VIDEODRIVER", "dummy")
@@ -18,8 +15,6 @@ import pygame  # noqa: E402
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 PORTRAITS = os.path.join(BASE, "assets", "portraits")
-HD = os.path.join(BASE, "assets", "portraits_hd")
-SIZE = 512
 
 
 def _shift(a, dx, dy):
@@ -147,54 +142,35 @@ def _load(path, tries=5):
     return None
 
 
-def process(path, src):
-    img = _load(src)
-    w, h = img.get_size()
-    side = min(w, h)
-    img = img.subsurface(((w - side) // 2, 0, side, side)).convert_alpha()
-    img = clean_background(img)
-    img = pygame.transform.smoothscale(img, (SIZE, SIZE))
-    import time
-    for attempt in range(8):            # o Windows às vezes segura o arquivo por um instante
-        try:
-            pygame.image.save(img, path)
-            return True
-        except (pygame.error, OSError):
-            time.sleep(0.6)
-    return False
-
-
 def main():
-    todos = "--todos" in sys.argv
     pygame.init()
     pygame.display.set_mode((1, 1))
-    os.makedirs(HD, exist_ok=True)
-    before = after = n = 0
+    n = 0
     for name in sorted(os.listdir(PORTRAITS)):
         if not name.lower().endswith(".png"):
             continue
         path = os.path.join(PORTRAITS, name)
-        hd = os.path.join(HD, name)
         img = _load(path)
         if img is None:
             print(f"  {name}: não consegui abrir (arquivo em uso?), pulei")
             continue
-        if max(img.get_size()) > SIZE:
-            shutil.copy2(path, hd)      # imagem grande na pasta = original novo: substitui o guardado
-        elif not (todos and os.path.exists(hd)):
-            continue
-        if not process(path, hd):
+        img = img.convert_alpha()
+        clean = clean_background(img)
+        if clean is img:
+            continue                     # já tinha fundo transparente
+        import time
+        for _ in range(8):               # o Windows às vezes segura o arquivo por um instante
+            try:
+                pygame.image.save(clean, path)
+                break
+            except (pygame.error, OSError):
+                time.sleep(0.6)
+        else:
             print(f"  {name}: não consegui salvar (arquivo em uso?), pulei")
             continue
-        before += os.path.getsize(hd)
-        after += os.path.getsize(path)
         n += 1
         print(f"  {name}")
-    if n:
-        print(f"{n} retrato(s) prontos: {before / 1e6:.1f} MB (originais) -> {after / 1e6:.1f} MB "
-              f"(originais guardados em assets/portraits_hd)")
-    else:
-        print("Nenhum retrato para reduzir.")
+    print(f"{n} retrato(s) com o fundo limpo." if n else "Nenhum retrato com fundo para limpar.")
 
 
 if __name__ == "__main__":

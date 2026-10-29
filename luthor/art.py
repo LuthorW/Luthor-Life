@@ -1752,9 +1752,9 @@ def portrait(filename, look, size=120):
                     if filename.lower().endswith(".png"):
                         # retrato: só o desenho, com transparência (sem quadrado de fundo)
                         crop = _clear_fake_bg(crop.convert_alpha())
-                        out = pygame.transform.smoothscale(crop, (size, size))
                     else:
-                        out = pygame.transform.smoothscale(crop.convert(), (size, size))
+                        crop = crop.convert()
+                    out = _shrink(crop, (size, size))
                     PORTRAIT_SRC[id(out)] = filename
                     return out
                 except Exception:
@@ -1778,15 +1778,17 @@ MOOD_SUFFIXES = {"happy": ("feliz",), "smile": ("feliz",), "bad": ("ruim", "brav
                  "shy": ("timido", "timida"), "love": ("timido", "timida", "feliz")}
 
 
-def portrait_hd(filename, size):
-    """O mesmo retrato, mas no tamanho real da tela (tela cheia maior que 1280x720).
+def _shrink(img, size):
+    """Reduz em etapas (metade por vez) e só no fim para o tamanho final: fica nítido, sem serrilhado."""
+    while img.get_width() > size[0] * 2:
+        img = pygame.transform.smoothscale(img, (img.get_width() // 2, img.get_height() // 2))
+    return pygame.transform.smoothscale(img, size)
 
-    Usa o original de assets/portraits_hd quando ele existe (melhor qualidade); senão, o de assets/portraits.
-    """
+
+def portrait_hd(filename, size):
+    """O mesmo retrato, mas no tamanho real da tela (tela cheia maior que 1280x720)."""
     def make():
-        path = os.path.join(ASSETS, "portraits", filename)
-        hd = os.path.join(ASSETS, "portraits_hd", filename)
-        img = pygame.image.load(hd if os.path.exists(hd) else path)
+        img = pygame.image.load(os.path.join(ASSETS, "portraits", filename))
         w, h = img.get_size()
         side = min(w, h)
         crop = img.subsurface((max(0, (w - side) // 2), 0, side, side)).copy()
@@ -1794,10 +1796,7 @@ def portrait_hd(filename, size):
             crop = _clear_fake_bg(crop.convert_alpha())
         else:
             crop = crop.convert()
-        # reduz em etapas (metade por vez) para não serrilhar
-        while crop.get_width() > size[0] * 2:
-            crop = pygame.transform.smoothscale(crop, (crop.get_width() // 2, crop.get_height() // 2))
-        return pygame.transform.smoothscale(crop, size)
+        return _shrink(crop, size)
     return cached(("portrait_hd", filename, size), make)
 
 
