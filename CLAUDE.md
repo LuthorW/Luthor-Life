@@ -44,6 +44,7 @@ luthor/
   crowd.py       figurantes (moradores sem conversa) que circulam pela cidade
   activities.py  horta do terraço, coletáveis, bichinho, karaokê, cinema, céu do terraço
   cutscenes.py   motor de cutscenes (comandos em tuplas) e TODAS as cenas (as do Ian, Barry e Dona Graça no fim)
+  timetest.py    modo de teste de dia/horário: `python main.py --teste` (F6 abre o painel; não salva nada)
   scenetest.py   modo de teste de cenas: `python main.py --cenas` / `--cena chave` (não salva nada)
   minigames.py   pesca, fliperama Meteoro, fogão, mochila
   effects.py     borboletas, vagalumes, pétalas, brilho na água, luz de janela
@@ -144,6 +145,8 @@ luthor/
 
 Para ver uma cutscene sem progresso: `python main.py --cenas` (lista, F5 reabre) ou `python main.py --cena lucy_6`.
 Nesse modo `Game.save` é desligado. Títulos da lista vêm de `Game.scene_title`.
+Para testar outro dia/horário/estação/clima: `python main.py --teste` (abre o save sem gravar; F6 abre o painel,
+que também funciona no modo `--cenas`; dá para parar o relógio).
 
 Não há suíte de testes no repositório. Para checar sem abrir janela, rode o jogo em modo headless:
 
