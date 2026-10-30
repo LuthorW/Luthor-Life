@@ -14,6 +14,7 @@ from .art import new, up, R, P, shade, mix, cached
 from .config import (SCALE, TILE, SCREEN_W, SCREEN_H, C_TEXT, C_MUTED, C_LILAC, C_GOLD, C_GREEN, C_RED, C_PINK,
                      C_ACCENT, C_ACCENT_2, C_PANEL_2)
 from .data import ITEMS, CROPS, FORAGE, FORAGE_EXTRA
+from . import audio
 from .characters import NPCS
 from .world import PLOT_SLOTS, in_area
 
@@ -623,8 +624,9 @@ def spawn_forage(g):
         return (not city.is_solid(x, y) and city.object_at(x, y) is None
                 and all((f[1], f[2]) != (x, y) for f in out))
 
-    beach = [k for k, f in FORAGE.items() if f["where"] == "beach"]
-    park = [k for k, f in FORAGE.items() if f["where"] == "park"]
+    from . import seasons
+    beach = [k for k, f in FORAGE.items() if f["where"] == "beach" and seasons.forage_ok(k)]
+    park = [k for k, f in FORAGE.items() if f["where"] == "park" and seasons.forage_ok(k)]
     sand = [(x, y) for y in range(city.h) for x in range(1, city.w - 1)
             if city.tile_at(x, y) == "sand" and in_area("beach", x, y)]
     grass = [(x, y) for y in range(city.h) for x in range(1, city.w - 1)
@@ -636,7 +638,8 @@ def spawn_forage(g):
         weights = [FORAGE[k]["weight"] for k in kinds]
         extra = FORAGE_EXTRA.get("park", []) if kinds is park else []
         items = kinds + [e[0] for e in extra]
-        weights = weights + [e[1] * (2 if g.weather == "chuva" else 1) for e in extra]
+        weights = weights + [e[1] * (2 if g.weather == "chuva" else 1)
+                             * seasons.FORAGE_EXTRA_WEIGHT.get(seasons.CURRENT["season"], 1) for e in extra]
         for _ in range(n):
             for _try in range(20):
                 x, y = rnd.choice(pool)
@@ -657,6 +660,7 @@ def pickup_forage(g):
                     g.toasts.push("Mochila cheia! Não dá para pegar.", C_RED)
                 return
             g.forage.remove(f)
+            audio.sfx("pickup")
             first = item not in g.forage_found
             g.forage_found.add(item)
             g.stats["forage"] = g.stats.get("forage", 0) + 1

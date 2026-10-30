@@ -854,12 +854,131 @@ for _k, _u in OFF_DUTY.items():
     NPCS[_k]["look_off"] = dict(NPCS[_k]["look"], **_u)
 
 
-def look_for(key, map_name):
-    """Aparência certa para o lugar: médicas usam a roupa de fora quando não estão no hospital."""
+# ---------------------------------------------------------------------------
+# Roupas por estação (a roupa de "look" é a da primavera)
+# ---------------------------------------------------------------------------
+SEASON = "spring"          # trocada por Game.apply_season
+
+
+def _w(outfit, cloth, accent=None, pants=None, **kw):
+    d = dict(outfit=outfit, cloth=cloth)
+    if accent:
+        d["accent"] = accent
+    if pants:
+        d["pants"] = pants
+    d.update(kw)
+    return d
+
+
+SHORT = dict(sleeves="short")
+# personagem: {estação: mudanças no look}. Médicas: vale para a roupa de fora do hospital (no hospital, jaleco).
+WARDROBE = {
+    "leticia": dict(
+        summer=_w("blouse", (246, 242, 234), (194, 148, 104), (196, 172, 134), **SHORT),
+        autumn=_w("trench", (150, 90, 56), (40, 30, 36), (34, 30, 44)),
+        winter=_w("peacoat", (36, 40, 62), (236, 232, 226), (34, 30, 44), scarf=(150, 36, 60))),
+    "sam": dict(
+        summer=_w("blouse", (250, 236, 200), (98, 106, 62), (70, 80, 110), **SHORT),
+        autumn=_w("cardigan", (170, 110, 60), (242, 240, 234)),
+        winter=_w("peacoat", (124, 100, 78), (242, 240, 234), scarf=(230, 226, 216))),
+    "brainy": dict(
+        summer=dict(accent=(60, 110, 160)),
+        autumn=dict(accent=(110, 46, 40)),
+        winter=dict(scarf=(40, 60, 110))),
+    "jess": dict(
+        summer=_w("skirt_suit", (204, 214, 238), (150, 90, 200), **SHORT),
+        autumn=_w("skirt_suit", (112, 62, 52), (150, 90, 200)),
+        winter=_w("peacoat", (30, 28, 34), (150, 90, 200), scarf=(150, 90, 200))),
+    "rafa": dict(
+        summer=_w("shirt", (240, 230, 200), (66, 66, 72), **SHORT),
+        autumn=_w("cardigan", (120, 70, 40), (66, 66, 72)),
+        winter=_w("peacoat", (62, 50, 40), (66, 66, 72), scarf=(196, 140, 70))),
+    "lucy": dict(
+        summer=_w("shirt", (238, 234, 228), (66, 92, 138), **SHORT),
+        autumn=_w("leather", (112, 70, 46), (238, 234, 228)),
+        winter=_w("peacoat", (34, 42, 72), (236, 232, 226), (40, 44, 60), scarf=(236, 232, 226))),
+    "vittoria": dict(
+        summer=_w("blouse", (250, 246, 240), (128, 32, 48), (220, 200, 170), **SHORT),
+        autumn=_w("trench", (128, 32, 48), (184, 138, 92)),
+        winter=_w("peacoat", (34, 32, 38), (178, 152, 120), (40, 36, 44), scarf=(178, 152, 120))),
+    "nia": dict(
+        summer=_w("blouse", (250, 220, 150), (118, 140, 204), **SHORT),
+        autumn=_w("cardigan", (120, 90, 150), (172, 178, 226)),
+        winter=_w("peacoat", (60, 70, 120), (172, 178, 226), scarf=(240, 220, 150))),
+    "barry": dict(
+        summer=_w("shirt", (200, 44, 52), (230, 226, 216), **SHORT),
+        autumn=_w("cardigan", (120, 40, 40), (230, 226, 216)),
+        winter=_w("peacoat", (62, 42, 42), (230, 226, 216), scarf=(226, 196, 60))),
+    "theo": dict(
+        summer=_w("shirt", (230, 216, 182), (196, 182, 146), **SHORT),
+        autumn=_w("cardigan", (110, 80, 50), (226, 214, 180)),
+        winter=_w("peacoat", (72, 62, 52), (226, 214, 180), scarf=(180, 60, 50))),
+    "bea": dict(
+        summer=_w("blouse", (236, 220, 160), (128, 84, 50), **SHORT),
+        autumn=_w("cardigan", (178, 84, 42), (96, 62, 36)),
+        winter=_w("peacoat", (92, 62, 42), (96, 62, 36), scarf=(230, 200, 120))),
+    "graca": dict(
+        summer=dict(**SHORT),
+        autumn=dict(accent=(214, 120, 40)),
+        winter=dict(scarf=(204, 56, 44))),
+    "marco": dict(
+        summer=dict(**SHORT),
+        winter=_w("peacoat", (30, 28, 32), (150, 96, 60), scarf=(150, 96, 60))),
+    "joca": dict(
+        summer=dict(**SHORT),
+        winter=_w("peacoat", (92, 76, 54), (196, 180, 150), scarf=(196, 180, 150))),
+    "ian": dict(
+        summer=_w("shirt", (244, 244, 248), (26, 34, 70), **SHORT),
+        winter=_w("peacoat", (28, 36, 72), (236, 234, 228), scarf=(236, 234, 228))),
+    # médicas (roupa de fora do hospital)
+    "yang": dict(
+        summer=_w("shirt", (230, 230, 236), (30, 30, 34), **SHORT),
+        autumn=_w("trench", (84, 84, 94), (30, 30, 34)),
+        winter=_w("peacoat", (78, 80, 90), (30, 30, 34), scarf=(30, 30, 34))),
+    "meredith": dict(
+        summer=_w("blouse", (180, 200, 230), (236, 232, 224), **SHORT),
+        autumn=_w("cardigan", (150, 110, 60), (236, 232, 224)),
+        winter=_w("peacoat", (60, 70, 92), (236, 232, 224), scarf=(200, 60, 60))),
+    "milany": dict(
+        summer=_w("blouse", (250, 232, 232), (226, 222, 214), **SHORT),
+        autumn=_w("trench", (128, 40, 58), (226, 222, 214)),
+        winter=_w("peacoat", (64, 30, 42), (226, 222, 214), scarf=(240, 230, 220))),
+    "izzie": dict(
+        summer=_w("blouse", (250, 230, 150), (250, 246, 240), **SHORT),
+        autumn=_w("cardigan", (190, 110, 80), (250, 246, 240)),
+        winter=_w("peacoat", (240, 170, 186), (250, 246, 240), scarf=(250, 246, 240))),
+    "addison": dict(
+        summer=_w("blouse", (240, 240, 236), (30, 110, 86), (30, 110, 86), **SHORT),
+        autumn=_w("skirt_suit", (120, 40, 40), (120, 40, 40), (120, 40, 40)),
+        winter=_w("peacoat", (30, 110, 86), (30, 24, 30), (30, 24, 30), scarf=(30, 24, 30))),
+}
+
+
+def dress(key, look, season=None):
+    """O look da personagem na estação. Figurantes (key None) seguem uma regra geral."""
+    season = season or SEASON
+    if season == "spring":
+        return look
+    ov = WARDROBE.get(key, {}).get(season) if key else None
+    if ov is None:
+        if season == "summer":
+            ov = dict(SHORT)
+        elif season == "winter":
+            ov = dict(outfit="peacoat", scarf=look.get("accent", (180, 40, 60)))
+        else:
+            return look
+    return {**look, **ov}
+
+
+def look_for(key, map_name, season=None):
+    """Aparência certa para o lugar e a estação: médicas usam jaleco no hospital e roupa de fora no resto."""
     d = NPCS[key]
     if d.get("look_off") and map_name != "hospital":
-        return d["look_off"]
-    return d["look"]
+        return dress(key, d["look_off"], season)
+    if d.get("look_off"):
+        return d["look"]                       # no hospital, o jaleco é o mesmo o ano todo
+    return dress(key, d["look"], season)
+
 
 
 # Corpos diferentes, como no Stardew: altura em pixels (+ mais alta, - mais baixa) e ombros largos

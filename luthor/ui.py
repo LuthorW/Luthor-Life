@@ -3,7 +3,7 @@ import os
 
 import pygame
 
-from . import art
+from . import art, audio
 from .config import (ASSETS, SCREEN_W, SCREEN_H, C_PANEL, C_PANEL_2, C_BORDER, C_BORDER_DIM, C_ACCENT, C_ACCENT_2,
                      C_TEXT, C_MUTED, C_LILAC, C_GOLD, C_GREEN, C_RED, C_ENERGY, HEART_POINTS, MAX_HEARTS)
 from .data import ITEMS
@@ -193,7 +193,10 @@ class Dialog(Modal):
 
     def update(self, dt):
         self.t += dt
+        before = int(self.shown)
         self.shown = min(len(self.current), self.shown + dt * 55)
+        if int(self.shown) > before and self.current[before:int(self.shown)].strip():
+            audio.blip()                 # letrinhas aparecendo
 
     H = 224                 # altura da caixa de fala (5% menor que a anterior, de 236)
     PORTRAIT = art.PORTRAIT_SIZE   # retrato grande e solto, ao lado da caixa (não fica por cima dela)
@@ -523,7 +526,7 @@ def draw_hud(surf, g):
     # Relógio / data
     r = pygame.Rect(SCREEN_W - 236, 12, 224, 118)
     panel(surf, r, alpha=225)
-    text(surf, g.date_label(), (r.x + 16, r.y + 10), 18, C_LILAC, bold=True)
+    text(surf, g.date_label(short=True), (r.x + 16, r.y + 10), 18, C_LILAC, bold=True)
     text(surf, g.time_label(), (r.x + 16, r.y + 34), 34, C_TEXT, bold=True)
     wx, wy = r.right - 44, r.y + 44
     if g.minutes >= 19 * 60 or g.minutes < 6 * 60:

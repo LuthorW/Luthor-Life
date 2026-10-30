@@ -33,7 +33,7 @@ import pygame
 
 from . import art, ui
 from .config import SCREEN_W, SCREEN_H, TILE, C_TEXT, C_LILAC, C_PINK, C_MUTED, C_GOLD
-from .characters import NPCS, look_for
+from .characters import NPCS, look_for, dress
 from .entities import PLAYER_LOOK, draw_shadow, idle_frame, FOOT
 from .config import SCALE
 
@@ -51,7 +51,7 @@ class Actor:
 
     def __init__(self, name, x, y, d, map_name=None):
         self.name = name
-        look = PLAYER_LOOK if name == "player" else look_for(name, map_name)
+        look = dress("leticia", PLAYER_LOOK) if name == "player" else look_for(name, map_name)
         self.frames = art.character_frames(look)
         self.fx, self.fy = float(x), float(y)
         self.dir = d

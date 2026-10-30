@@ -16,13 +16,15 @@ from .config import (SCALE, TITLE, SCREEN_W, SCREEN_H, FPS, TILE, SAVE_DIR, SAVE
 from .data import (PROJECTS, ITEMS, FISH, JUNK, RECIPES, BOOKS, SHOPS, SELLABLE, FLAG_LABELS, NEWS, TIPS, GOALS,
                    FORAGE)
 from .characters import NPCS, NPC_ORDER, TEAM, ROMANCES
-from .entities import Player, NPC, Car, DIRS, draw_shadow
+from .entities import Player, NPC, Car, DIRS, draw_shadow, PLAYER_LOOK
 from .world import build_world, COUNTERS, WATER_TILES, STATION_SLOTS, HOME_BED, HOSPITAL_BED
 from .minigames import Fishing, Arcade, Cooking, Inventory
 from .effects import Ambient
 from . import dialogue
 from . import activities
 from . import marina
+from . import audio
+from . import seasons
 from . import gifts  # presentes extras e falas de "não gostei"
 from . import hospital
 from .characters import DOCTOR_KEYS, setup_doctor_spots, doctor_schedule
@@ -90,9 +92,11 @@ FLAVOR = {
 
 class Game:
     def __init__(self, headless=False):
+        audio.pre_init()
         pygame.init()
         pygame.display.set_caption(TITLE)
         self.settings = self.load_settings()
+        audio.init(self.settings)
         self.headless = headless
         self.screen = self._make_display(self.settings.get("fullscreen", False))
         try:
@@ -265,9 +269,20 @@ class Game:
         n %= 4 * DAYS_PER_QUARTER
         return year, n // DAYS_PER_QUARTER + 1, n % DAYS_PER_QUARTER + 1
 
-    def date_label(self, day=None, quarter=None, year=None):
+    def date_label(self, day=None, quarter=None, year=None, short=False):
         day = day or self.day
-        return f"{WEEKDAYS[(day - 1) % 7]}, {day} · Q{quarter or self.quarter} {year or self.year}"
+        season = seasons.NAMES[seasons.of_quarter(quarter or self.quarter)]
+        if short:                                  # no quadro do HUD (sem o ano, para caber)
+            return f"{WEEKDAYS[(day - 1) % 7]}, {day} · {season}"
+        return f"{WEEKDAYS[(day - 1) % 7]}, {day} · {season} {year or self.year}"
+
+    def apply_season(self):
+        """Estação do trimestre atual: cenário, efeitos e roupas (chamada sozinha quando o trimestre muda)."""
+        from . import characters
+        s = seasons.of_quarter(self.quarter)
+        characters.SEASON = s
+        seasons.set_season(s, self.world)
+        self.player.frames = art.character_frames(characters.dress("leticia", PLAYER_LOOK))
 
     @property
     def period(self):
@@ -404,6 +419,51 @@ class Game:
         fname = art.portrait_file(d.get("portrait_key", npc.key), mood) or d.get("portrait")
         return art.portrait(fname, d["look"], size or art.PORTRAIT_SIZE)
 
+    @property
+    def money(self):
+        return self._money
+
+    @money.setter
+    def money(self, v):
+        old = getattr(self, "_money", None)
+        self._money = v
+        if old is not None and v != old and getattr(self, "scene", None) == "play" and not getattr(self, "fade_dir", 0):
+            audio.sfx("coin" if v > old else "buy")
+
+    def music_mood(self):
+        """Música de acordo com o lugar, a hora e o clima (ou a cena/minigame aberto)."""
+        if self.scene != "play":
+            return "title"
+        mapn, minutes, weather = self.map_name, self.minutes, self.weather
+        for mo in reversed(self.modals):
+            name = type(mo).__name__
+            if name == "Karaoke":
+                return "bar"
+            if name == "Regatta":
+                return "marina"
+            if name == "MovieScene":
+                return "night"
+            if isinstance(mo, Cutscene):
+                mapn, minutes, weather = mo.map.name, mo.minutes, mo.weather
+                break
+        hour = (minutes // 60) % 24
+        late = hour >= 22 or hour < 5
+        if mapn == "hospital":
+            return "hospital"
+        if mapn in ("marina", "altomar"):
+            return "night" if late else "marina"
+        if mapn == "bar" or (mapn == "trattoria" and hour >= 18):
+            return "bar"
+        if mapn in ("hq", "catco", "ricci"):
+            return "work"
+        if mapn in ("home", "cafe", "books", "market", "cinema", "trattoria"):
+            return "night" if late else "indoor"
+        if weather == "chuva":
+            return "rain"
+        if late:
+            return "night"
+        return "morning" if hour < 12 else ("afternoon" if hour < 18 else "evening")
+
     def start_fade(self, cb):
         if self.fade_dir:
             return
@@ -411,6 +471,8 @@ class Game:
         self.fade_cb = cb
 
     def warp(self, target, x, y, d):
+        audio.sfx("door")
+
         def go():
             self.map_name = target
             self.player.place_tile(x, y, d)
@@ -447,7 +509,15 @@ class Game:
         if self.fade_dir:
             return
         if self.modals:
-            self.modals[-1].handle(ev)
+            top = self.modals[-1]
+            if ev.type == pygame.KEYDOWN and isinstance(top, (ui.Choice, ui.Shop, ui.ScrollPanel)):
+                if ev.key in (pygame.K_UP, pygame.K_DOWN, pygame.K_w, pygame.K_s):
+                    audio.sfx("move")
+                elif ev.key in ui.CONFIRM:
+                    audio.sfx("confirm")
+                elif ev.key in ui.CANCEL:
+                    audio.sfx("cancel")
+            top.handle(ev)
             self.modals = [m for m in self.modals if not m.done]
             return
         if self.scene == "title":
@@ -487,6 +557,11 @@ class Game:
             self.consume()
 
     def update(self, dt):
+        if seasons.of_quarter(self.quarter) != seasons.CURRENT["season"] or not seasons.CURRENT.get("applied"):
+            self.apply_season()
+        walking = (self.scene == "play" and not self.modals and not self.fade_dir and self.player.moving
+                   and not self.fishing)
+        audio.update(dt, walking)
         if self.fade_dir == 1:
             self.fade = min(1.0, self.fade + dt * 4)
             if self.fade >= 1.0:
@@ -866,6 +941,7 @@ class Game:
             bar = 132 if rod == "vara_fibra" else 92
             if "book_fish" in self.flags:
                 bar = int(bar * 1.3)
+            audio.sfx("splash")
             self.push(Fishing(fish, bar, lambda res, fish=fish: self.fish_result(fish, res)))
         else:
             self.fishing = None
@@ -875,6 +951,7 @@ class Game:
         f = self.fishing
         f["t"] -= dt
         if f["phase"] == "wait" and f["t"] <= 0:
+            audio.sfx("bite")
             f["phase"] = "bite"
             f["t"] = 1.1
         elif f["phase"] == "bite" and f["t"] <= 0:
@@ -905,6 +982,7 @@ class Game:
         return random.choices(cands, weights)[0]
 
     def fish_result(self, fish, res):
+        audio.sfx("catch" if res == "win" else "lose")
         if res == "win":
             if self.add_item(fish):
                 first = fish not in self.fish_caught
@@ -947,7 +1025,7 @@ class Game:
                 name = f["name"] if (have or k in self.fish_caught) else "???"
                 where = "mar" if f["where"] == "sea" else "lago"
                 ui.text(surf, name, (x + 42, y), 17, C_GREEN if have else C_TEXT, bold=have)
-                ui.text(surf, f"{where} · Q{','.join(map(str, f['quarters']))}" + (" · chuva" if f.get("weather") else ""),
+                ui.text(surf, f"{where} · " + ("o ano todo" if len(f['quarters']) >= 4 else ', '.join(seasons.NAMES[seasons.of_quarter(q)] for q in f['quarters'])) + (" · chuva" if f.get("weather") else ""),
                         (x + 42, y + 20), 13, C_MUTED)
         self.push(ui.InfoPanel("Aquário", draw))
 
@@ -1149,6 +1227,7 @@ class Game:
         self.friendship[key] = max(0, min(cap, self.friendship[key] + pts))
         new = self.hearts(key)
         if new > old:
+            audio.sfx("heart")
             self.toasts.push(f"{NPCS[key]['short']}: {new} coração(ões)!", C_PINK)
 
     def talk_to(self, npc):
@@ -1348,6 +1427,7 @@ class Game:
         else:
             mood = {"love": "love" if key in ROMANCES and self.hearts(key) >= 6 else "happy", "like": "happy",
                     "dislike": "bad"}.get(taste)
+        audio.sfx({"love": "love", "dislike": "bad"}.get(taste, "gift"))
         text = d["reactions"][taste]
         if taste == "dislike":
             text = gifts.dislike_line(key, item) or text
@@ -1355,6 +1435,8 @@ class Game:
                             on_close=lambda: self.check_events(key), subtitle=d["role"]))
 
     def _event_done(self, ev):
+        if ev.get("flag") or ev.get("gift"):
+            audio.sfx("reward")
         if ev.get("flag"):
             self.flags.add(ev["flag"])
             if ev["flag"] in FLAG_LABELS:
@@ -1509,7 +1591,7 @@ class Game:
                 f"{NPCS[req['npc']]['short']}.")
 
     def watch_tv(self):
-        prev = "chuva" if self.weather_tomorrow == "chuva" else "sol o dia todo"
+        prev = ("neve" if seasons.of_quarter(self.quarter) == "winter" else "chuva")             if self.weather_tomorrow == "chuva" else "sol o dia todo"
         self.push(ui.Dialog("Jornal de National City", [
             f"Previsão para amanhã: {prev}.",
             f"Mercado: a ação LCORP está cotada a $ {self.stock:.2f}.".replace(".", ",", 1),
@@ -1549,10 +1631,21 @@ class Game:
         self.push(ui.InfoPanel("E-mails da CEO", draw))
 
     # --- Menu de pausa ------------------------------------------------
-    def open_pause(self):
+    def open_pause(self, sel=0):
         fs = "Sim" if self.settings.get("fullscreen") else "Não"
+        sv = int(round(self.settings.get("sfx", 0.7) * 100))
         opts = ["Continuar", "Mochila", "Objetivos", "Relacionamentos", "Coleções", "Rever cenas",
-                f"Tela cheia: {fs}", "Controles", "Salvar e voltar ao título"]
+                f"Tela cheia: {fs}", f"Efeitos sonoros: {sv}%", "Controles", "Salvar e voltar ao título"]
+
+        def step_volume(key):
+            # cada E sobe 20%; depois de 100% volta a 0% (mudo)
+            v = round(self.settings.get(key, 0.6 if key == "music" else 0.7) + 0.2, 1)
+            v = 0.0 if v > 1.0 else v
+            self.settings[key] = v
+            self.save_settings()
+            audio.set_volume(**{("music_vol" if key == "music" else "sfx_vol"): v})
+            if key == "sfx":
+                audio.sfx("confirm")
 
         def pick(i):
             o = opts[i]
@@ -1568,12 +1661,17 @@ class Game:
                 self.open_scene_gallery()
             elif o.startswith("Tela cheia"):
                 self.toggle_fullscreen()
+            elif o.startswith("Efeitos"):
+                step_volume("sfx")
+                self.open_pause(i)
             elif o == "Controles":
                 self.push(ui.InfoPanel("Controles", draw_controls))
             elif o.startswith("Salvar"):
                 self.save()
                 self.start_fade(lambda: setattr(self, "scene", "title"))
-        self.push(ui.Choice(f"Pausa  —  {self.date_label()}, {self.time_label()}", opts, pick))
+        ch = ui.Choice(f"Pausa  —  {self.date_label()}, {self.time_label()}", opts, pick)
+        ch.sel = sel
+        self.push(ch)
 
     def goal_status(self, key):
         unlocked = sum(1 for s in self.stations if s["unlocked"])
@@ -1699,6 +1797,8 @@ class Game:
     # Fim do dia
     # ------------------------------------------------------------------
     def end_day(self, passed_out=False):
+        audio.sfx("sleep")
+
         def go():
             self.summary = self.process_night(passed_out)
             self.modals = []
@@ -1754,7 +1854,10 @@ class Game:
             self.money += 200
             notes.append(("Contrato de manutenção do Conti Moretti: +$200 nesta segunda.", C_GOLD))
         if new_quarter:
-            notes.append((f"Novo trimestre: Q{self.quarter}! Novas propostas e novos peixes.", C_LILAC))
+            name = seasons.NAMES[seasons.of_quarter(self.quarter)]
+            art_ = "a" if name == "Primavera" else "o"
+            notes.append((f"Chegou {art_} {name}! Novo trimestre (Q{self.quarter}): roupas novas na cidade, "
+                          f"novas propostas, novos peixes e coletáveis.", C_LILAC))
         if self.request and self.abs_day() > self.request["deadline"]:
             k = self.request["npc"]
             self.friendship[k] = max(0, self.friendship[k] - 40)
@@ -1834,7 +1937,8 @@ class Game:
                                             "Você está bem. Mas, CEO: durma antes das duas. É uma ordem médica."],
                                 self.portrait_for(self.npcs["meredith"]), subtitle=L["role"]))
         if self.weather == "chuva":
-            self.toasts.push("Está chovendo em National City.", (150, 190, 255))
+            self.toasts.push("Está nevando em National City." if seasons.of_quarter(self.quarter) == "winter"
+                             else "Está chovendo em National City.", (150, 190, 255))
         if self.weekday >= 5:
             self.toasts.push("Fim de semana! A cidade tem outra rotina hoje.", C_LILAC)
 
@@ -2211,7 +2315,9 @@ class Game:
             for (lx, ly) in lamps:
                 surf.blit(self._glow, (lx - 40 * SCALE, ly - 40 * SCALE), special_flags=pygame.BLEND_RGB_ADD)
         self.ambient.draw_glow(surf, cam)
-        if rain:
+        if open_air and seasons.CURRENT["season"] == "winter" and (with_player or actors is not None):
+            self.ambient.draw_snow(surf)
+        elif rain:
             rnd = random.Random(int(self.t * 20))
             for _ in range(180):
                 x = rnd.randrange(SW + 100) - 50

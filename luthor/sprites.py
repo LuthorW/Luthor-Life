@@ -187,6 +187,7 @@ def _palette(look):
         "Y": shade(look.get("beard_color", hair), 0.85), "y": mix(skin, look.get("beard_color", hair), 0.45),
         "X": look.get("glasses_color", (34, 28, 34)),
         "V": look.get("hat", (110, 90, 64)), "v": shade(look.get("hat", (110, 90, 64)), 0.68),
+        "F": look.get("scarf", (180, 40, 60)), "f": shade(look.get("scarf", (180, 40, 60)), 0.72),
     }
 
 
@@ -275,7 +276,19 @@ HAIR.update({
 
 
 def _extras(g, look, view):
-    """Barba, óculos, óculos de proteção na testa e chapéu de aba larga, por cima do rosto e do cabelo."""
+    """Barba, óculos, óculos de proteção na testa, chapéu de aba larga e cachecol, por cima do rosto e do cabelo."""
+    if look.get("scarf"):
+        if view == "side":
+            g.row(15, 6, 10, "F"); g.row(16, 5, 10, "F"); g.row(17, 6, 9, "f")
+            g.set(5, 17, "F"); g.set(5, 18, "f"); g.set(4, 19, "f")       # ponta solta para trás
+        else:
+            g.row(15, 5, 10, "F"); g.row(16, 4, 11, "F"); g.row(17, 5, 10, "f")
+            if view == "front":
+                for y in (18, 19, 20):
+                    g.set(9, y, "F"); g.set(10, y, "f")                  # ponta caindo na frente
+                g.set(9, 21, "f")
+            else:
+                g.row(15, 5, 10, "f")
     if look.get("goggles"):
         if view == "side":
             g.row(6, 3, 12, "T"); g.set(10, 5, "E"); g.set(11, 5, "E"); g.set(10, 6, "E"); g.set(11, 6, "E")
@@ -417,6 +430,9 @@ def _legs_side(g, frame):
     g.row(28, 9 + big, 11 + big, "O"); g.set(11 + big, 28, "o"); g.row(29, 9 + big, 11 + big, "U")
 
 
+_SHORT_SLEEVES = {"on": False}       # ligado em _frames quando look["sleeves"] == "short"
+
+
 def _arm(g, x, top, d, col_out, col_in, sleeve_end=None, hand=True):
     """Braço de 2 px (x, x+1) do ombro até a mão. d desloca a mão (balanço ao andar)."""
     end = 21 + d
@@ -516,6 +532,8 @@ def _body_front(g, outfit, view, frame):
     if view == "back":
         la, ra = ra, la
     sleeve = {"vest": 19, "apron": 20, "fisher": 19}.get(outfit)
+    if _SHORT_SLEEVES["on"] and sleeve is None:
+        sleeve = 19                                   # manga curta (verão)
     arm_out, arm_in = ("Z", "z") if outfit == "vest" else ("A", "a") if outfit == "fisher" else ("Q", "C")
     _arm(g, 3, 18, la, arm_out, arm_in, sleeve)
     _arm(g, 11, 18, ra, "C" if outfit not in ("vest", "fisher") else arm_in, "c" if outfit != "vest" else "z",
@@ -558,6 +576,8 @@ def _body_side(g, outfit, frame):
             g.set(9, y, "A"); g.set(10, y, "a")
     # braço: balança para frente (frame 1) e para trás (frame 2)
     sleeve = {"vest": 19, "apron": 20, "fisher": 19}.get(outfit)
+    if _SHORT_SLEEVES["on"] and sleeve is None:
+        sleeve = 19                                   # manga curta (verão)
     out, inn = ("Z", "z") if outfit == "vest" else ("A", "a") if outfit == "fisher" else ("C", "c")
     if frame == 0:
         _arm(g, 6, 18, 0, out, inn, sleeve)
@@ -820,6 +840,7 @@ def _frames(look, blink=False):
     outfit_full = look.get("outfit", "shirt")
     outfit = OUTFIT_BASE.get(outfit_full, outfit_full)
     out = {}
+    _SHORT_SLEEVES["on"] = look.get("sleeves") == "short"
     for d, view in (("down", "front"), ("up", "back"), ("right", "side")):
         hair = _hair(style, view)
         for i, fr in enumerate([0, 1, 0, 2]):

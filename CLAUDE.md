@@ -47,6 +47,8 @@ luthor/
   scenetest.py   modo de teste de cenas: `python main.py --cenas` / `--cena chave` (não salva nada)
   minigames.py   pesca, fliperama Meteoro, fogão, mochila
   effects.py     borboletas, vagalumes, pétalas, brilho na água, luz de janela
+  seasons.py     estações (Q1 primavera, Q2 verão, Q3 outono, Q4 inverno): grama, árvores, neve, coletáveis
+  audio.py       som: efeitos gerados por código (músicas existem no código, mas DESLIGADAS: MUSIC_ENABLED)
   ui.py          fonte, painéis, Dialog, Choice, Shop, InfoPanel, NumberPrompt, Toasts, HUD
   data.py        PROJECTS, ITEMS, FISH, RECIPES, BOOKS, SHOPS, CROPS, FORAGE, FLAG_LABELS, GOALS, TIPS
 ```
@@ -124,6 +126,12 @@ luthor/
   começa ao lado, com texto maior e o nome em cima, na borda. PNG sem quadro, fotos .jpg com moldura.
 - **Ações LCORP:** variação noturna = aleatório + vendas de produtos/800 × `STOCK_PER_800` (2,5) + bônus (Nia, doação).
   Compra e venda com quantidade livre (`ui.NumberPrompt`) e "Vender todas".
+- **Estações:** `seasons.set_season` troca cores/árvores e reconstrói o chão (Game.apply_season, automático
+  quando o trimestre muda). Roupas por estação em `characters.WARDROBE` + `dress()` (primavera = `look`);
+  sprites ganharam `scarf` (cachecol) e `sleeves="short"`. No inverno a "chuva" vira neve.
+- **Som:** `audio.sfx(nome)` para efeitos (conversa, menus, lojas, itens, coração, pesca...). A dona NÃO gostou
+  das músicas geradas: desligadas (`audio.MUSIC_ENABLED = False`). Passos também saíram (testados duas vezes; `audio.STEPS_ENABLED = False`): não colocar de novo sem ela pedir.
+  Volume dos efeitos no menu de pausa (settings `sfx`).
 - **Atalhos:** I/Tab mochila, O objetivos, R relacionamentos (a mesma tecla fecha). Painéis longos usam
   `ui.InfoPanel(..., scroll=True)` (draw_fn devolve o y final) em vez de crescer.
 - **Desmaio às 2h:** acorda no leito do hospital (`HOSPITAL_BED`) com conta.
@@ -172,3 +180,5 @@ substitua `pygame.key.get_pressed`. Antes de entregar uma mudança, rode alguns 
     cabelos soltos para todas.
 13. Retratos nítidos na tela cheia (redesenhados na resolução do monitor) e sem esticar na caixa de fala.
 14. Rosto mais à mostra (franja aberta), alturas e ombros diferentes por personagem; figurantes variados.
+15. Som: efeitos gerados por código, com volume no menu de pausa (músicas e passos testados e retirados).
+16. Estações: cenário, efeitos (pétalas, folhas, neve), coletáveis e roupas de todos mudam a cada trimestre.

@@ -334,13 +334,16 @@ class NPC:
                 self.dir = self.goal[3]
 
     def current_frames(self):
-        """Médicas trocam de roupa ao sair do hospital (look_off)."""
-        if not self.data.get("look_off"):
-            return self.frames
-        if self.map != getattr(self, "_frames_map", None):
+        """Roupa da estação (characters.dress); médicas trocam o jaleco pela roupa de fora ao sair do hospital."""
+        from . import characters as ch
+        key = (self.map, ch.SEASON)
+        if key != getattr(self, "_frames_key", None):
             m = self.map.name if hasattr(self.map, "name") else self.map
-            look = self.data["look"] if m == "hospital" else self.data["look_off"]
-            self._frames_cur, self._frames_map = art.character_frames(look), self.map
+            if self.key in ch.NPCS:
+                look = ch.look_for(self.key, m)
+            else:                                   # figurantes
+                look = ch.dress(None, self.data["look"])
+            self._frames_cur, self._frames_key = art.character_frames(look), key
         return self._frames_cur
 
     def draw(self, surf, cam):

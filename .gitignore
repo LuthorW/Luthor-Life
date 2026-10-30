@@ -1,2 +1,4 @@
-# originais em alta resolução dos retratos (o jogo usa as versões reduzidas de assets/portraits)
+# cópias antigas dos retratos (não são mais usadas pelo jogo)
 assets/portraits_hd/
+# músicas geradas pelo jogo na primeira vez que abre (luthor/audio.py)
+saves/audio/
