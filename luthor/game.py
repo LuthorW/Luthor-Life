@@ -545,6 +545,9 @@ class Game:
                 self.push(Inventory(self))
             elif ev.key == pygame.K_o:
                 self.open_goals()
+            elif ev.key == pygame.K_m:
+                from .citymap import CityMap
+                self.push(CityMap(self))
             elif ev.key == pygame.K_r:
                 self.open_relationships()
             elif ev.key in HOTBAR_KEYS:
@@ -1876,7 +1879,9 @@ class Game:
         self.shipped = []
         self.warned = set()
         self.weather = self.weather_tomorrow
-        self.weather_tomorrow = "chuva" if random.random() < 0.22 else "sol"
+        # chance de chuva de cada estação (no inverno vira neve)
+        rain = {"spring": 0.25, "summer": 0.12, "autumn": 0.32, "winter": 0.35}[seasons.of_quarter(self.quarter)]
+        self.weather_tomorrow = "chuva" if random.random() < rain else "sol"
         if "drone" in self.flags:
             n = 0
             for st in self.stations:
@@ -2548,6 +2553,7 @@ def draw_controls(surf, rect):
         ("Roda do mouse", "Trocar item da barra"),
         ("I / Tab", "Abrir a mochila (24 espaços)"),
         ("O / R", "Objetivos / relacionamentos"),
+        ("M", "Mapa da cidade (onde está cada pessoa)"),
         ("F / botão direito", "Comer, beber ou ler o item escolhido"),
         ("Esc", "Menu: objetivos, relacionamentos, coleções, opções"),
         ("F11", "Tela cheia"),

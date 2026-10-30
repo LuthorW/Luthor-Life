@@ -160,9 +160,13 @@ def _sfx_defs():
     b = mk(0.5)
     add_note(b, 0, 0.12, midi(62), "square", 0.18, 0.004, 0.08, 0.5, slide=-0.15)
     add_note(b, 0.16, 0.2, midi(58), "square", 0.18, 0.004, 0.15, 0.5, slide=-0.2); out["bad"] = b
-    b = mk(0.35)
-    add_note(b, 0, 0.12, 900, "noise", 0.25, 0.002, 0.15)
-    add_note(b, 0, 0.08, midi(88), "square", 0.14, 0.002, 0.05, 0.25); out["bite"] = b
+    # peixe mordeu: "blup" (bolha subindo) + "plim" (sininho)
+    b = mk(0.7)
+    add_note(b, 0, 0.045, 260, "sine", 0.55, 0.002, 0.03, slide=2.6)          # blup
+    add_note(b, 0.012, 0.03, 520, "sine", 0.18, 0.002, 0.03, slide=2.2)
+    add_note(b, 0.09, 0.015, midi(91), "sine", 0.36, 0.001, 0.45)              # plim
+    add_note(b, 0.09, 0.015, midi(103), "sine", 0.10, 0.001, 0.28)
+    add_note(b, 0.09, 0.012, midi(91), "tri", 0.08, 0.001, 0.12); out["bite"] = b
     b = mk(1.0)
     for i, n in enumerate((67, 72, 76, 79, 84)):
         add_note(b, i * 0.08, 0.1 if i < 4 else 0.35, midi(n), "square", 0.14, 0.003, 0.2, 0.25)

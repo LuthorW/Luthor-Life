@@ -876,27 +876,27 @@ WARDROBE = {
     "leticia": dict(
         summer=_w("blouse", (246, 242, 234), (194, 148, 104), (196, 172, 134), **SHORT),
         autumn=_w("trench", (150, 90, 56), (40, 30, 36), (34, 30, 44)),
-        winter=_w("peacoat", (36, 40, 62), (236, 232, 226), (34, 30, 44), scarf=(150, 36, 60))),
+        winter=_w("peacoat", (122, 30, 52), (240, 232, 220), (34, 30, 44), scarf=(240, 232, 220))),
     "sam": dict(
         summer=_w("blouse", (250, 236, 200), (98, 106, 62), (70, 80, 110), **SHORT),
         autumn=_w("cardigan", (170, 110, 60), (242, 240, 234)),
-        winter=_w("peacoat", (124, 100, 78), (242, 240, 234), scarf=(230, 226, 216))),
+        winter=_w("trench", (40, 112, 82), (220, 172, 60), scarf=(220, 172, 60))),
     "brainy": dict(
         summer=dict(accent=(60, 110, 160)),
         autumn=dict(accent=(110, 46, 40)),
-        winter=dict(scarf=(40, 60, 110))),
+        winter=dict(scarf=(0, 176, 196))),
     "jess": dict(
         summer=_w("skirt_suit", (204, 214, 238), (150, 90, 200), **SHORT),
         autumn=_w("skirt_suit", (112, 62, 52), (150, 90, 200)),
-        winter=_w("peacoat", (30, 28, 34), (150, 90, 200), scarf=(150, 90, 200))),
+        winter=_w("peacoat", (112, 52, 112), (240, 150, 190), scarf=(240, 150, 190))),
     "rafa": dict(
         summer=_w("shirt", (240, 230, 200), (66, 66, 72), **SHORT),
         autumn=_w("cardigan", (120, 70, 40), (66, 66, 72)),
-        winter=_w("peacoat", (62, 50, 40), (66, 66, 72), scarf=(196, 140, 70))),
+        winter=_w("peacoat", (204, 152, 52), (110, 70, 40), scarf=(110, 70, 40))),
     "lucy": dict(
         summer=_w("shirt", (238, 234, 228), (66, 92, 138), **SHORT),
         autumn=_w("leather", (112, 70, 46), (238, 234, 228)),
-        winter=_w("peacoat", (34, 42, 72), (236, 232, 226), (40, 44, 60), scarf=(236, 232, 226))),
+        winter=_w("peacoat", (232, 224, 206), (34, 42, 72), (40, 44, 60), scarf=(34, 42, 72))),
     "vittoria": dict(
         summer=_w("blouse", (250, 246, 240), (128, 32, 48), (220, 200, 170), **SHORT),
         autumn=_w("trench", (128, 32, 48), (184, 138, 92)),
@@ -904,53 +904,53 @@ WARDROBE = {
     "nia": dict(
         summer=_w("blouse", (250, 220, 150), (118, 140, 204), **SHORT),
         autumn=_w("cardigan", (120, 90, 150), (172, 178, 226)),
-        winter=_w("peacoat", (60, 70, 120), (172, 178, 226), scarf=(240, 220, 150))),
+        winter=_w("peacoat", (120, 172, 222), (245, 245, 250), scarf=(245, 245, 250))),
     "barry": dict(
         summer=_w("shirt", (200, 44, 52), (230, 226, 216), **SHORT),
         autumn=_w("cardigan", (120, 40, 40), (230, 226, 216)),
-        winter=_w("peacoat", (62, 42, 42), (230, 226, 216), scarf=(226, 196, 60))),
+        winter=_w("peacoat", (182, 40, 44), (226, 196, 60), scarf=(226, 196, 60))),
     "theo": dict(
         summer=_w("shirt", (230, 216, 182), (196, 182, 146), **SHORT),
         autumn=_w("cardigan", (110, 80, 50), (226, 214, 180)),
-        winter=_w("peacoat", (72, 62, 52), (226, 214, 180), scarf=(180, 60, 50))),
+        winter=_w("trench", (52, 92, 62), (182, 82, 42), scarf=(182, 82, 42))),
     "bea": dict(
         summer=_w("blouse", (236, 220, 160), (128, 84, 50), **SHORT),
         autumn=_w("cardigan", (178, 84, 42), (96, 62, 36)),
-        winter=_w("peacoat", (92, 62, 42), (96, 62, 36), scarf=(230, 200, 120))),
+        winter=_w("peacoat", (180, 86, 44), (244, 232, 206), scarf=(244, 232, 206))),
     "graca": dict(
         summer=dict(**SHORT),
         autumn=dict(accent=(214, 120, 40)),
-        winter=dict(scarf=(204, 56, 44))),
+        winter=dict(scarf=(40, 172, 162))),
     "marco": dict(
         summer=dict(**SHORT),
-        winter=_w("peacoat", (30, 28, 32), (150, 96, 60), scarf=(150, 96, 60))),
+        winter=_w("peacoat", (52, 50, 58), (132, 30, 52), scarf=(132, 30, 52))),
     "joca": dict(
         summer=dict(**SHORT),
-        winter=_w("peacoat", (92, 76, 54), (196, 180, 150), scarf=(196, 180, 150))),
+        winter=_w("peacoat", (232, 190, 44), (34, 42, 72), scarf=(34, 42, 72))),
     "ian": dict(
         summer=_w("shirt", (244, 244, 248), (26, 34, 70), **SHORT),
-        winter=_w("peacoat", (28, 36, 72), (236, 234, 228), scarf=(236, 234, 228))),
+        winter=_w("peacoat", (28, 36, 72), (236, 234, 228), scarf=(200, 44, 52))),
     # médicas (roupa de fora do hospital)
     "yang": dict(
         summer=_w("shirt", (230, 230, 236), (30, 30, 34), **SHORT),
         autumn=_w("trench", (84, 84, 94), (30, 30, 34)),
-        winter=_w("peacoat", (78, 80, 90), (30, 30, 34), scarf=(30, 30, 34))),
+        winter=_w("peacoat", (30, 30, 34), (190, 30, 42), scarf=(190, 30, 42))),
     "meredith": dict(
         summer=_w("blouse", (180, 200, 230), (236, 232, 224), **SHORT),
         autumn=_w("cardigan", (150, 110, 60), (236, 232, 224)),
-        winter=_w("peacoat", (60, 70, 92), (236, 232, 224), scarf=(200, 60, 60))),
+        winter=_w("peacoat", (188, 142, 98), (34, 44, 78), scarf=(34, 44, 78))),
     "milany": dict(
         summer=_w("blouse", (250, 232, 232), (226, 222, 214), **SHORT),
         autumn=_w("trench", (128, 40, 58), (226, 222, 214)),
-        winter=_w("peacoat", (64, 30, 42), (226, 222, 214), scarf=(240, 230, 220))),
+        winter=_w("peacoat", (240, 236, 230), (128, 40, 58), scarf=(128, 40, 58))),
     "izzie": dict(
         summer=_w("blouse", (250, 230, 150), (250, 246, 240), **SHORT),
         autumn=_w("cardigan", (190, 110, 80), (250, 246, 240)),
-        winter=_w("peacoat", (240, 170, 186), (250, 246, 240), scarf=(250, 246, 240))),
+        winter=_w("peacoat", (240, 170, 186), (190, 160, 230), scarf=(190, 160, 230))),
     "addison": dict(
         summer=_w("blouse", (240, 240, 236), (30, 110, 86), (30, 110, 86), **SHORT),
         autumn=_w("skirt_suit", (120, 40, 40), (120, 40, 40), (120, 40, 40)),
-        winter=_w("peacoat", (30, 110, 86), (30, 24, 30), (30, 24, 30), scarf=(30, 24, 30))),
+        winter=_w("trench", (30, 110, 86), (222, 182, 92), (30, 24, 30), scarf=(222, 182, 92))),
 }
 
 

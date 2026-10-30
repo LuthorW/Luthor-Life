@@ -47,6 +47,7 @@ luthor/
   scenetest.py   modo de teste de cenas: `python main.py --cenas` / `--cena chave` (não salva nada)
   minigames.py   pesca, fliperama Meteoro, fogão, mochila
   effects.py     borboletas, vagalumes, pétalas, brilho na água, luz de janela
+  citymap.py     mapa da cidade (tecla M) com a posição de cada personagem
   seasons.py     estações (Q1 primavera, Q2 verão, Q3 outono, Q4 inverno): grama, árvores, neve, coletáveis
   audio.py       som: efeitos gerados por código (músicas existem no código, mas DESLIGADAS: MUSIC_ENABLED)
   ui.py          fonte, painéis, Dialog, Choice, Shop, InfoPanel, NumberPrompt, Toasts, HUD
@@ -128,11 +129,11 @@ luthor/
   Compra e venda com quantidade livre (`ui.NumberPrompt`) e "Vender todas".
 - **Estações:** `seasons.set_season` troca cores/árvores e reconstrói o chão (Game.apply_season, automático
   quando o trimestre muda). Roupas por estação em `characters.WARDROBE` + `dress()` (primavera = `look`);
-  sprites ganharam `scarf` (cachecol) e `sleeves="short"`. No inverno a "chuva" vira neve.
+  sprites ganharam `scarf` (cachecol) e `sleeves="short"`. No inverno a "chuva" vira neve. Chance de chuva: primavera 25%, verão 12%, outono 32%, inverno 35%.
 - **Som:** `audio.sfx(nome)` para efeitos (conversa, menus, lojas, itens, coração, pesca...). A dona NÃO gostou
   das músicas geradas: desligadas (`audio.MUSIC_ENABLED = False`). Passos também saíram (testados duas vezes; `audio.STEPS_ENABLED = False`): não colocar de novo sem ela pedir.
   Volume dos efeitos no menu de pausa (settings `sfx`).
-- **Atalhos:** I/Tab mochila, O objetivos, R relacionamentos (a mesma tecla fecha). Painéis longos usam
+- **Atalhos:** I/Tab mochila, O objetivos, R relacionamentos, M mapa (a mesma tecla fecha). Painéis longos usam
   `ui.InfoPanel(..., scroll=True)` (draw_fn devolve o y final) em vez de crescer.
 - **Desmaio às 2h:** acorda no leito do hospital (`HOSPITAL_BED`) com conta.
 - **Site:** roxo (#8a00e6 / #b84cff) como principal e verde (#6ee78c) como destaque. As capturas de conversa,
