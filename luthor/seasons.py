@@ -170,6 +170,11 @@ def _make_tile(name, v):
             x, y = r.randrange(1, 14), r.randrange(3, 15)
             P(s, dk, x, y); P(s, dk, x + 2, y); P(s, dk, x + 1, y + 1)
             P(s, lt, x, y - 1); P(s, lt, x + 2, y - 1)
+        for _ in range(7):                  # folhinhas de grama: risquinhos claros com a base escura
+            x, y = r.randrange(0, 16), r.randrange(2, 16)
+            P(s, mix(base, lt, 0.7), x, y - 1)
+            P(s, mix(base, lt, 0.35), x, y)
+            P(s, shade(base, 0.86), x, y + 1)
         if name == "flowers" and season != "winter":
             cols = {"spring": [(255, 150, 190), (255, 236, 130), (205, 165, 255), (255, 255, 255), (255, 170, 120),
                                (150, 210, 255)],

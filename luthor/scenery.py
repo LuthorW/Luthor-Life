@@ -91,10 +91,21 @@ def _trunk(s, cx, top, bottom, wdt=8):
 def _big_tree(kind="oak"):
     s = new(48, 64)
     _trunk(s, 24, 34, 62)
+    # copa cheia: tufos grandes no meio e tufos menores na borda (silhueta irregular, como no Stardew)
     blobs = [(24, 30, 12), (12, 30, 9), (36, 30, 9), (16, 19, 10), (32, 19, 10), (24, 11, 9),
-             (8, 22, 6), (40, 22, 6), (24, 38, 9), (14, 39, 6), (34, 39, 6)]
+             (8, 22, 6), (40, 22, 6), (24, 38, 9), (14, 39, 6), (34, 39, 6),
+             (20, 25, 10), (28, 25, 10), (10, 13, 6), (38, 13, 6), (18, 5, 6), (30, 5, 6),
+             (4, 30, 5), (44, 30, 5), (20, 44, 6), (29, 44, 6), (6, 38, 4), (42, 38, 4)]
     owner = _lit_blobs(s, blobs, LEAF[kind], hash(kind) & 0xFFFF)
     rnd = random.Random(kind)
+    pal = LEAF[kind]
+    for (x, y) in owner:                    # textura de folhas: pequenos "v" mais escuros dentro da copa
+        c = s.get_at((x, y))[:3]
+        if rnd.random() < 0.10 and (x + 1, y + 1) in owner and (x - 1, y + 1) in owner:
+            if c == pal[3]:
+                P(s, pal[2], x - 1, y); P(s, pal[2], x, y + 1); P(s, pal[2], x + 1, y)
+            elif c == pal[2]:
+                P(s, pal[1], x - 1, y); P(s, pal[1], x, y + 1); P(s, pal[1], x + 1, y)
     pts = [p for p in owner if 2 < p[0] < 45 and 3 < p[1] < 44]
     if kind == "orange":
         for _ in range(11):

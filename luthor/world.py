@@ -4,7 +4,7 @@ import random
 
 import pygame
 
-from . import art, scenery, nautical
+from . import art, scenery, nautical, caprichado
 from .config import TILE, SCALE
 
 SOLID_TILES = {"wall", "wall_top", "glass", "water", "sea", "sea_foam", "fountain", "void", "deep"}
@@ -68,6 +68,7 @@ OBJECT_DEFS = {
     "ricci_map": (2, 1, False, "wall"), "sandcastle": (1, 1, True, "obj"), "bench_l": (1, 1, True, "obj"), "bench_r": (1, 1, True, "obj"),
 }
 OBJECT_DEFS.update(nautical.OBJECT_DEFS)
+OBJECT_DEFS.update(caprichado.OBJECT_DEFS)
 
 # Área que realmente bloqueia a jogadora (x, y, largura, altura em pixels de arte, a partir do canto
 # do objeto). Postes, bancos, árvores e arbustos ocupam só a base: dá para contornar sem enroscar.
@@ -83,6 +84,7 @@ HITBOXES = {
 }
 
 HITBOXES.update(nautical.HITBOXES)
+HITBOXES.update(caprichado.HITBOXES)
 
 COUNTERS = {"ceo_desk", "desk", "desk_home", "desk_editor", "desk_news", "reception", "cafe_counter", "kitchen",
             "shop_counter", "counter_it", "bar_counter", "island"}
@@ -230,15 +232,8 @@ class GameMap:
                 surf.blit(spr, (o.x * TILE, (o.y + o.h) * TILE - spr.get_height()))
         scenery.decorate_floor(self, surf)
         nautical.decorate_floor(self, surf)
-        sh = pygame.Surface((TILE, TILE // 3), pygame.SRCALPHA)
-        sh.fill((0, 0, 0, 55))
-        for b in self.buildings:
-            for xx in range(b.x, b.x + b.w + 1):
-                if self.in_bounds(xx, b.y + b.h):
-                    surf.blit(sh, (xx * TILE, (b.y + b.h) * TILE))
-            side = pygame.Surface((TILE // 3, b.h * TILE), pygame.SRCALPHA)
-            side.fill((0, 0, 0, 45))
-            surf.blit(side, ((b.x + b.w) * TILE, (b.y + 1) * TILE))
+        caprichado.decorate_floor(self, surf)       # meio-fio
+        caprichado.building_shadows(self, surf)     # sombra dos prédios no chão
         self.floor_surface = surf
 
     def in_bounds(self, x, y):
@@ -610,6 +605,7 @@ def build_city():
         m.doors[(dx, dy)] = (key, ix, iy - 1, "up")
     m.spawn_edges = [(1, 17), (W - 2, 20), (1, 49), (W - 2, 52)]      # calçadas (NPCs não entram pela rua)
     m.car_lanes = [(18, -1), (19, 1), (50, -1), (51, 1)]
+    caprichado.street_decor(m)          # mesinhas, lousas e floreiras nas calçadas das fachadas
     m.finalize()
     return m
 
@@ -699,7 +695,7 @@ def build_home():
     m.add("fridge", 24, 2)
     m.add("island", 19, 5)
     m.add("stool", 19, 6); m.add("stool", 21, 6)
-    m.add("petbed", 16, 12)
+    m.add("petbed", 24, 14)          # caminha no canto da sala (activities.PET_BED)
     # porta de vidro para o terraço
     tx, ty = TERRACE_DOOR
     m.tiles[ty][tx] = "door"

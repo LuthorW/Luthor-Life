@@ -22,6 +22,7 @@ from .minigames import Fishing, Arcade, Cooking, Inventory
 from .effects import Ambient
 from . import dialogue
 from . import activities
+from . import lighting
 from . import marina
 from . import audio
 from . import seasons
@@ -31,6 +32,7 @@ from .characters import DOCTOR_KEYS, setup_doctor_spots, doctor_schedule
 from .crowd import Crowd, thought
 from .cutscenes import Cutscene, SCENES, dating_scene, move_in_scene, date_scene
 from . import scenery
+from . import caprichado
 from .world import CITY_LAYOUT, CITY_DOORS, old_city_xy
 
 SHADOW_KINDS = {"tree": 46, "tree2": 46, "tree3": 46, "palm": 30, "bush": 26, "bush2": 26, "bush3": 26,
@@ -38,6 +40,7 @@ SHADOW_KINDS = {"tree": 46, "tree2": 46, "tree3": 46, "palm": 30, "bush": 26, "b
                 "kiosk": 120, "signboard": 20, "plant": 26, "plant_big": 30, "sofa": 120, "armchair": 40,
                 "table": 34, "table_it": 34, "arcade": 40, "jukebox": 36, "terminal": 36, "station": 40}
 SHADOW_KINDS.update(scenery.SHADOWS)
+SHADOW_KINDS.update(caprichado.SHADOWS)
 
 NO_GIFT = ("proposal", "tool", "bait", "seed", "treat")
 STOCK_PER_800 = 2.5         # quanto a ação LCORP sobe a cada $800 vendidos em produtos numa noite
@@ -121,6 +124,7 @@ class Game:
         self.summary = None
         self.particles = []
         self.cars = []
+        self.pigeons = caprichado.Pigeons()
         self._glow = self._make_glow(40 * SCALE)
         self._clouds = self._make_clouds()
         self.ambient = Ambient()
@@ -611,6 +615,7 @@ class Game:
                     npc.emote = None
         activities.update(self, dt)
         self.crowd.update(dt)
+        self.pigeons.update(dt, self)
         if self.fishing:
             self.update_fishing(dt)
             return
@@ -624,6 +629,8 @@ class Game:
             speed = WALK_SPEED * 0.7
         blockers = [n.rect() for n in self.npcs.values() if n.map == self.map_name]
         blockers += [e.rect() for e in self.crowd.on_map(self.map_name)]
+        if self.map_name == "city":
+            blockers += [c.rect() for c in self.cars]
         self.player.update(dt, (mx, my), self.current_map, blockers, speed)
         door = self.current_map.doors.get(self.player.tile)
         if door:
@@ -637,7 +644,11 @@ class Game:
                                for c in self.cars if c.lane_y == lane_y)
                 if start_ok:
                     self.cars.append(Car(lane_y, d, city.w))
-        self.cars = [c for c in self.cars if c.update(dt, self.cars)]
+        # quem está a pé na cidade: os carros param antes de chegar nelas
+        walkers = [(self.player.x, self.player.y)] if self.map_name == "city" else []
+        walkers += [((n.fx + 0.5) * TILE, n.base_y) for n in self.npcs.values() if n.map == "city"]
+        walkers += [((e.fx + 0.5) * TILE, e.base_y) for e in self.crowd.on_map("city")]
+        self.cars = [c for c in self.cars if c.update(dt, self.cars, walkers)]
 
     def on_tick(self):
         for npc in self.npcs.values():
@@ -2217,6 +2228,8 @@ class Game:
             surf.blit(spr, (o.x * TILE - cam[0], (o.y + o.h) * TILE - spr.get_height() - cam[1]))
         self.ambient.draw_window_light(surf, m, cam, minutes)
         activities.draw_ground(self, surf, m, cam)
+        if m.name == "city":
+            self.pigeons.draw(surf, cam, False)
         items = []
         for o in m.objects:
             if o.layer == "obj":
@@ -2245,6 +2258,8 @@ class Game:
                 if d < nd:
                     near_staff, nd = e, d
         lamps = []
+        windows = []        # prédios com janelas acesas (viram luz no escuro)
+        neon = []           # prédios com letreiro luminoso (redesenhados depois de escurecer)
         behind = None       # a jogadora atrás de uma árvore deixa a copa transparente
         if with_player and actors is None and m.outdoor:
             pr = self.player
@@ -2278,7 +2293,11 @@ class Game:
                         pygame.draw.circle(surf, C_ACCENT_2, (bx, by), 20, 2)
                         surf.blit(ic, (bx - 16, by - 16))
             elif kind == "bld":
-                self.draw_building(surf, e, cam, night)
+                drawn = self.draw_building(surf, e, cam, night)
+                if drawn and night:
+                    windows.append(drawn)
+                    if e.style in lighting.NEON_STYLES:
+                        neon.append(e)
             elif kind == "car":
                 e.draw(surf, cam)
             else:
@@ -2302,23 +2321,18 @@ class Game:
                     self.draw_fishing(surf, cam)
         for p in self.particles:
             p.draw(surf, cam)
+        if m.name == "city":
+            self.pigeons.draw(surf, cam, True)
         self.ambient.draw_world(surf, cam)
         if extra is not None:
             extra.draw(surf, cam)
         rain = weather == "chuva" and open_air and (with_player or actors is not None)
         sun = self.sunset(minutes) if open_air else 0
-        if sun > 0:
-            warm = pygame.Surface((SW, SH), pygame.SRCALPHA)
-            warm.fill((255, 120, 40, int(55 * sun)))
-            surf.blit(warm, (0, 0))
-        alpha = int(dark * (190 if m.outdoor else 150 if open_air else 70)) + (45 if rain else 0)
-        if alpha > 0:
-            veil = pygame.Surface((SW, SH), pygame.SRCALPHA)
-            veil.fill((12, 10, 44, min(220, alpha)))
-            surf.blit(veil, (0, 0))
-        if open_air and dark > 0.15:
-            for (lx, ly) in lamps:
-                surf.blit(self._glow, (lx - 40 * SCALE, ly - 40 * SCALE), special_flags=pygame.BLEND_RGB_ADD)
+        lighting.apply(self, surf, m, cam, dark, sun, rain, open_air, lamps, windows,
+                       self.player if with_player and actors is None else None,
+                       self.cars if m.name == "city" else [])
+        for b in neon:
+            self.draw_building(surf, b, cam, True, signs_only=True)
         self.ambient.draw_glow(surf, cam)
         if open_air and seasons.CURRENT["season"] == "winter" and (with_player or actors is not None):
             self.ambient.draw_snow(surf)
@@ -2372,13 +2386,16 @@ class Game:
             return art.station_sprite(state, p["color"], st["worked"] or state == "ready", prog)
         return art.object_sprite(o.kind)
 
-    def draw_building(self, surf, b, cam, night):
+    def draw_building(self, surf, b, cam, night, signs_only=False):
         spr = art.building_sprite(b.style, b.w, b.h, b.extra, night)
         x = b.x * TILE - cam[0]
         y = b.base_y - spr.get_height() - cam[1]
         if x > SCREEN_W or x + spr.get_width() < 0 or y > SCREEN_H or y + spr.get_height() < 0:
-            return
-        surf.blit(spr, (x, y))
+            return None
+        if not signs_only:
+            surf.blit(spr, (x, y))
+        if caprichado.draw_label(self, surf, b, spr, x, y, night):
+            return spr, x, y
         cx = x + spr.get_width() // 2
         H = spr.get_height()
         if b.style == "tower":
@@ -2417,6 +2434,7 @@ class Game:
                 surf.blit(logo, (cx - 9 * SCALE, y + H - 56 * SCALE - 9 * SCALE))
             ui.text(surf, "CONTI MORETTI HOSPITAIS", (cx, y + 3 * SCALE + 3), 17, (246, 243, 236), bold=True, center=True)
             ui.text(surf, "CONTI MORETTI", (cx, y + H - 40 * SCALE + 1), 19, (246, 243, 236), bold=True, center=True)
+        return spr, x, y
 
     def draw(self, surf):
         cut = next((i for i, mo in enumerate(self.modals) if isinstance(mo, Cutscene)), None)

@@ -406,6 +406,73 @@ class InfoPanel(Modal):
         text(surf, "Esc / E: fechar", (rect.right - 24, rect.bottom - 34), 16, C_MUTED, right=True)
 
 
+class TextPrompt(Modal):
+    """Digitar um nome curto. Enter confirma, Tab troca pela próxima sugestão, Esc volta."""
+
+    def __init__(self, title, on_confirm, initial="", suggestions=(), max_len=12, info="", on_cancel=None):
+        self.title = title
+        self.on_confirm = on_confirm
+        self.on_cancel = on_cancel
+        self.value = initial
+        self.suggestions = list(suggestions)
+        self.max_len = max_len
+        self.info = info
+        self.t = 0.0
+        self.k = 0
+        try:
+            pygame.key.start_text_input()
+        except Exception:
+            pass
+
+    def update(self, dt):
+        self.t += dt
+
+    def handle(self, ev):
+        if ev.type == pygame.TEXTINPUT:
+            if self.t < 0.12:                  # a tecla que abriu a caixa não vira letra do nome
+                return
+            for ch in ev.text:
+                if (ch.isalnum() or ch in " -'") and len(self.value) < self.max_len:
+                    self.value += ch
+            return
+        if ev.type != pygame.KEYDOWN or self.t < 0.12:
+            return
+        if ev.key == pygame.K_BACKSPACE:
+            self.value = self.value[:-1]
+        elif ev.key == pygame.K_TAB and self.suggestions:
+            self.value = self.suggestions[self.k % len(self.suggestions)]
+            self.k += 1
+        elif ev.key in (pygame.K_RETURN, pygame.K_KP_ENTER):
+            name = " ".join(self.value.split())
+            if name:
+                self.done = True
+                self.on_confirm(name[0].upper() + name[1:])
+        elif ev.key == pygame.K_ESCAPE:
+            self.done = True
+            if self.on_cancel:
+                self.on_cancel()
+
+    def draw(self, surf):
+        rect = pygame.Rect(0, 0, 560, 230)
+        rect.center = (SCREEN_W // 2, SCREEN_H // 2 - 30)
+        panel(surf, rect)
+        text(surf, self.title, (rect.centerx, rect.y + 18), 24, C_TEXT, bold=True, center=True)
+        if self.info:
+            text(surf, self.info, (rect.centerx, rect.y + 52), 16, C_MUTED, center=True)
+        box = pygame.Rect(rect.x + 60, rect.y + 86, rect.w - 120, 52)
+        pygame.draw.rect(surf, C_PANEL_2, box, border_radius=10)
+        pygame.draw.rect(surf, C_ACCENT_2, box, 2, border_radius=10)
+        img = font(30, True).render(self.value, False, C_GOLD)
+        surf.blit(img, (box.centerx - img.get_width() // 2, box.y + 10))
+        if int(self.t * 2) % 2 == 0:              # cursor piscando
+            cx = box.centerx + img.get_width() // 2 + 3
+            pygame.draw.rect(surf, C_GOLD, (cx, box.y + 12, 3, 28))
+        hint = "Digite o nome   Enter: confirmar   Esc: voltar"
+        if self.suggestions:
+            hint = "Digite o nome   Tab: sugestão   Enter: confirmar   Esc: voltar"
+        text(surf, hint, (rect.centerx, rect.bottom - 40), 15, C_MUTED, center=True)
+
+
 class NumberPrompt(Modal):
     """Escolher uma quantidade: digite o número ou use as setas."""
 

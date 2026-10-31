@@ -35,10 +35,18 @@ def _telescope():
 
 
 def _petbed():
-    s = new(16, 12)
-    pygame.draw.ellipse(s, (110, 60, 150), (0, 2, 16, 10))
-    pygame.draw.ellipse(s, (160, 110, 210), (2, 3, 12, 7))
-    pygame.draw.ellipse(s, (230, 210, 245), (4, 5, 8, 4))
+    """Caminha redonda roxa (cores da Luthor Corp), com almofada, bolinha e ossinho."""
+    s = new(16, 13)
+    pygame.draw.ellipse(s, (58, 30, 84), (0, 3, 16, 10))           # contorno
+    pygame.draw.ellipse(s, (110, 60, 150), (1, 3, 14, 9))          # borda
+    pygame.draw.ellipse(s, (150, 96, 200), (1, 3, 14, 4))          # luz na borda
+    pygame.draw.ellipse(s, (84, 44, 118), (3, 6, 10, 5))           # fundo
+    pygame.draw.ellipse(s, (232, 214, 246), (4, 6, 8, 4))          # almofada
+    pygame.draw.ellipse(s, (250, 242, 255), (5, 6, 4, 2))
+    pygame.draw.circle(s, (240, 90, 90), (13, 11), 2)              # bolinha
+    P(s, (255, 190, 190), 12, 10)
+    R(s, (244, 236, 214), 1, 11, 4, 1); P(s, (244, 236, 214), 0, 10); P(s, (244, 236, 214), 0, 12)   # ossinho
+    P(s, (244, 236, 214), 5, 10); P(s, (244, 236, 214), 5, 12)
     return s
 
 
@@ -397,67 +405,233 @@ PET_NAMES = {"gato": ["Kiwi", "Mel", "Fumaça", "Pandora", "Biscoito", "Lex"],
              "cachorro": ["Krypto", "Pipoca", "Paçoca", "Thor", "Luna", "Bolinha"]}
 
 
-def _pet_art(kind, coat, frame, sleeping=False):
-    s = new(16, 14)
-    c = coat
-    d = shade(c, 0.72)
-    if sum(c) > 650:
-        d = (200, 190, 180)
-    out = shade(c, 0.45) if sum(c) > 200 else (20, 18, 24)
-    eye = (40, 30, 30) if sum(c) > 200 else (120, 230, 120)
-    if sleeping:
-        pygame.draw.ellipse(s, out, (1, 5, 14, 9))
-        pygame.draw.ellipse(s, c, (2, 6, 12, 7))
-        pygame.draw.circle(s, c, (11, 8), 3)
-        R(s, d, 3, 11, 9, 1)
-        if kind == "gato":
-            P(s, c, 10, 5); P(s, c, 13, 5)
-        P(s, out, 10, 8); P(s, out, 12, 8)
-        return s
-    legs = [(4, 6), (5, 7), (3, 5)][frame % 3]
-    # corpo
-    pygame.draw.ellipse(s, out, (1, 5, 11, 7))
-    pygame.draw.ellipse(s, c, (2, 6, 9, 5))
-    R(s, out, legs[0], 10, 2, 4); R(s, out, legs[1] + 4, 10, 2, 4)
-    R(s, c, legs[0], 10, 1, 3); R(s, c, legs[1] + 4, 10, 1, 3)
-    # cauda
-    if kind == "gato":
-        wag = frame % 2
-        pygame.draw.line(s, out, (2, 7), (0, 2 + wag), 2)
-        P(s, c, 1, 4 + wag)
-    else:
-        pygame.draw.line(s, out, (2, 7), (0, 4 + (frame % 2) * 2), 2)
-    # cabeça
-    pygame.draw.circle(s, out, (12, 5), 4)
-    pygame.draw.circle(s, c, (12, 5), 3)
-    if kind == "gato":
-        pygame.draw.polygon(s, out, [(9, 3), (10, 0), (11, 2)])
-        pygame.draw.polygon(s, out, [(13, 2), (14, 0), (15, 3)])
-        P(s, (255, 170, 190), 10, 1); P(s, (255, 170, 190), 14, 1)
-    else:
-        R(s, d if d != c else out, 9, 3, 2, 4)
-        R(s, d if d != c else out, 14, 3, 2, 4)
-        R(s, mix(c, (255, 255, 255), 0.3), 12, 6, 3, 2)
-        P(s, (30, 20, 20), 14, 6)
-    P(s, eye, 11, 4); P(s, eye, 13, 4)
-    P(s, (255, 150, 170), 12, 6)
-    if sum(c) > 650 and kind == "cachorro":
-        R(s, (120, 90, 70), 4, 6, 3, 2)
-        P(s, (120, 90, 70), 8, 8)
-    return s
+# --- desenho dos bichinhos (estilo Stardew: contorno escuro na cor do pelo, luz de cima) -------------------
+PET_BED = (24, 14)          # a caminha fica no canto da sala, perto da mesa de jantar (world.build_home)
 
 
-def pet_frames(kind, coat):
+def _pet_pal(kind, coat):
+    c = tuple(coat)
+    light = sum(c) > 650
+    dark = sum(c) < 220
+    return dict(
+        C=c,
+        D=shade(c, 0.78) if not light else (214, 204, 196),          # sombra do pelo
+        H=mix(c, (255, 250, 240), 0.35),                              # brilho do pelo
+        L=mix(c, (255, 248, 236), 0.62) if not dark else (90, 84, 100),   # barriga / focinho
+        O=mix(shade(c, 0.38), (34, 20, 30), 0.5) if not dark else (14, 12, 18),
+        P=(250, 150, 170), N=(64, 36, 40) if not dark else (210, 120, 140),
+        E=(40, 30, 34) if not dark else (150, 230, 120), W=(255, 255, 255),
+        S=(150, 104, 70) if kind == "cachorro" and light else shade(c, 0.6),   # manchas / listras
+    )
+
+
+def _outline(s, pal):
+    """Contorno de 1 px em volta do desenho (tom escuro do próprio pelo)."""
+    w, h = s.get_size()
+    out = s.copy()
+    for y in range(h):
+        for x in range(w):
+            if s.get_at((x, y)).a:
+                continue
+            for dx, dy in ((1, 0), (-1, 0), (0, 1), (0, -1)):
+                nx, ny = x + dx, y + dy
+                if 0 <= nx < w and 0 <= ny < h and s.get_at((nx, ny)).a:
+                    out.set_at((x, y), pal["O"])
+                    break
+    return out
+
+
+def _px(s, c, pts):
+    for (x, y) in pts:
+        if 0 <= x < s.get_width() and 0 <= y < s.get_height():
+            s.set_at((x, y), c)
+
+
+def _legs(s, pal, xs, top, bottom, lifts):
+    for x, lift in zip(xs, lifts):
+        R(s, pal["C"], x, top, 2, bottom - top - lift)
+        R(s, pal["D"], x + 1, top, 1, bottom - top - lift)
+        R(s, pal["L"], x, bottom - lift - 1, 2, 1)                  # patinha clara
+
+
+def _cat(pal, view, frame, coat_name=""):
+    s = new(18, 16)
+    C, D, H, L, P, E, W, N = (pal[k] for k in "CDHLPEWN")
+    lift = [(0, 0, 0, 0), (1, 0, 0, 1), (0, 0, 0, 0), (0, 1, 1, 0)][frame % 4]
+    bob = 1 if frame % 2 else 0
+    if view == "side":                       # virado para a direita
+        # rabo levantado e curvo
+        _px(s, C, [(3, 9), (2, 8), (1, 7), (1, 6), (1, 5), (2, 4), (3, 9 - 1), (2, 7)])
+        _px(s, H, [(2, 4), (1, 5)])
+        _px(s, D, [(2, 9), (2, 6)])
+        _legs(s, pal, (4, 6, 10, 12), 11, 15, lift)
+        pygame.draw.ellipse(s, C, (3, 7 - bob, 12, 6))
+        pygame.draw.ellipse(s, L, (6, 10 - bob, 7, 3))              # barriga
+        R(s, H, 5, 7 - bob, 7, 1)                                     # luz nas costas
+        # cabeça
+        pygame.draw.ellipse(s, C, (10, 2 - bob, 7, 7))
+        pygame.draw.polygon(s, C, [(11, 4 - bob), (11, 0 - bob), (14, 3 - bob)])   # orelhas
+        pygame.draw.polygon(s, C, [(14, 3 - bob), (16, 0 - bob), (16, 4 - bob)])
+        _px(s, P, [(12, 2 - bob), (15, 2 - bob)])
+        pygame.draw.ellipse(s, L, (14, 5 - bob, 4, 3))               # focinho
+        _px(s, N, [(17, 5 - bob)])
+        _px(s, E, [(14, 4 - bob), (14, 5 - bob)]); _px(s, W, [(14, 4 - bob)])
+        _px(s, H, [(12, 3 - bob), (13, 2 - bob)])
+        _px(s, pal["O"], [(16, 7 - bob)])                            # boquinha
+    elif view == "front":
+        pygame.draw.ellipse(s, C, (4, 8, 10, 7))                     # corpo sentado
+        pygame.draw.ellipse(s, L, (7, 10, 4, 5))                     # peito
+        _legs(s, pal, (6, 10), 12, 16, (lift[0], lift[3]))
+        # rabo enroladinho do lado
+        _px(s, C, [(13, 13), (14, 12), (15, 11), (15, 10), (14, 9)])
+        _px(s, H, [(15, 10)])
+        pygame.draw.ellipse(s, C, (3, 1, 12, 9))                     # cabeça grande
+        pygame.draw.polygon(s, C, [(3, 4), (4, 0), (7, 2)])
+        pygame.draw.polygon(s, C, [(11, 2), (14, 0), (15, 4)])
+        _px(s, P, [(4, 2), (5, 2), (13, 2), (12, 2)])
+        R(s, H, 6, 2, 6, 1)
+        pygame.draw.ellipse(s, L, (6, 5, 6, 4))                      # focinho
+        _px(s, E, [(6, 4), (6, 5), (11, 4), (11, 5)]); _px(s, W, [(6, 4), (11, 4)])
+        _px(s, N, [(8, 6), (9, 6)])
+        _px(s, pal["O"], [(8, 7), (9, 7)])
+        _px(s, (255, 170, 180), [(4, 6), (13, 6)])                    # bochechas
+    elif view == "back":
+        _legs(s, pal, (6, 10), 12, 16, (lift[0], lift[3]))
+        pygame.draw.ellipse(s, C, (4, 8, 10, 7))                     # corpo
+        pygame.draw.ellipse(s, C, (5, 1, 8, 8))                      # cabeça (um pouco menor que o corpo)
+        pygame.draw.polygon(s, C, [(5, 4), (5, 0), (8, 2)])
+        pygame.draw.polygon(s, C, [(10, 2), (13, 0), (13, 4)])
+        _px(s, D, [(6, 1), (12, 1)])                                  # parte de trás das orelhas
+        R(s, H, 7, 2, 4, 1)
+        R(s, D, 6, 8, 6, 1)                                           # nuca
+        R(s, H, 6, 9, 6, 1)
+        # rabo levantado por cima do corpo
+        _px(s, C, [(9, 13), (10, 12), (10, 11), (11, 10), (11, 9), (10, 8)])
+        _px(s, D, [(10, 12), (11, 10)])
+        _px(s, H, [(10, 8)])
+    else:                                    # dormindo enroladinho
+        pygame.draw.ellipse(s, C, (1, 7, 16, 8))
+        pygame.draw.ellipse(s, H, (3, 7, 10, 2))
+        pygame.draw.ellipse(s, C, (10, 6, 7, 6))                     # cabeça encostada
+        pygame.draw.polygon(s, C, [(11, 8), (11, 5), (13, 7)])
+        pygame.draw.polygon(s, C, [(14, 7), (16, 5), (16, 8)])
+        _px(s, pal["O"], [(12, 9), (13, 9), (15, 9)])                 # olhos fechados
+        _px(s, L, [(2, 13), (3, 14), (5, 14), (7, 14), (9, 14)])     # rabo dando a volta
+        R(s, D, 3, 13, 9, 1)
+    if "Laranj" in coat_name or "Cinza" in coat_name:              # listrinhas de gato malhado
+        S = pal["S"]
+        if view == "side":
+            _px(s, S, [(7, 7 - bob), (7, 8 - bob), (9, 7 - bob), (9, 8 - bob), (11, 8 - bob), (12, 3 - bob)])
+        elif view in ("front", "back"):
+            _px(s, S, [(8, 2), (9, 2), (8, 3), (10, 3)] if view == "front" else
+                [(7, 4), (9, 4), (11, 4), (6, 9), (9, 10), (12, 9)])
+    return _outline(s, pal)
+
+
+def _dog(pal, view, frame, coat_name="", wag=0):
+    s = new(20, 17)
+    C, D, H, L, P, E, W, N = (pal[k] for k in "CDHLPEWN")
+    lift = [(0, 0, 0, 0), (1, 0, 0, 1), (0, 0, 0, 0), (0, 1, 1, 0)][frame % 4]
+    bob = 1 if frame % 2 else 0
+    spots = "manchas" in coat_name
+    if view == "side":
+        tail_up = [(2, 6), (1, 5), (1, 4)] if wag else [(2, 7), (1, 6), (0, 5)]
+        _px(s, C, [(3, 8)] + tail_up)
+        _legs(s, pal, (4, 6, 12, 14), 11, 16, lift)
+        pygame.draw.ellipse(s, C, (3, 6 - bob, 14, 7))
+        pygame.draw.ellipse(s, L, (6, 10 - bob, 9, 3))
+        R(s, H, 5, 6 - bob, 9, 1)
+        pygame.draw.ellipse(s, C, (12, 1 - bob, 7, 7))               # cabeça
+        R(s, C, 16, 4 - bob, 4, 3)                                    # focinho comprido
+        R(s, L, 16, 5 - bob, 4, 2)
+        _px(s, N, [(19, 4 - bob)])
+        R(s, D, 12, 2 - bob, 2, 5)                                    # orelha caída
+        R(s, shade(D, 0.9), 12, 6 - bob, 2, 1)
+        _px(s, E, [(15, 3 - bob), (15, 4 - bob)]); _px(s, W, [(15, 3 - bob)])
+        _px(s, H, [(14, 1 - bob), (15, 1 - bob)])
+        _px(s, (240, 110, 130), [(18, 7 - bob)])                      # linguinha
+        if spots:
+            pygame.draw.ellipse(s, pal["S"], (7, 7 - bob, 4, 3))
+            R(s, pal["S"], 12, 2 - bob, 2, 5)
+    elif view == "front":
+        pygame.draw.ellipse(s, C, (4, 8, 12, 8))
+        pygame.draw.ellipse(s, L, (7, 10, 6, 6))
+        _legs(s, pal, (6, 12), 12, 17, (lift[0], lift[3]))
+        tail = [(16, 10), (17, 9), (18, 8)] if wag else [(16, 11), (17, 11), (18, 10)]
+        _px(s, C, tail)
+        pygame.draw.ellipse(s, C, (4, 1, 12, 10))                    # cabeça
+        R(s, D, 2, 3, 3, 6); R(s, D, 15, 3, 3, 6)                    # orelhas caídas
+        R(s, shade(D, 0.9), 2, 8, 3, 1); R(s, shade(D, 0.9), 15, 8, 3, 1)
+        R(s, H, 7, 2, 6, 1)
+        pygame.draw.ellipse(s, L, (6, 6, 8, 5))                      # focinho
+        _px(s, E, [(7, 4), (7, 5), (12, 4), (12, 5)]); _px(s, W, [(7, 4), (12, 4)])
+        R(s, N, 9, 6, 2, 2)
+        _px(s, (240, 110, 130), [(9, 9), (10, 9), (10, 10)])           # linguinha
+        if spots:
+            pygame.draw.ellipse(s, pal["S"], (5, 2, 4, 4))
+            R(s, pal["S"], 15, 3, 3, 6)
+    elif view == "back":
+        _legs(s, pal, (6, 12), 12, 17, (lift[0], lift[3]))
+        pygame.draw.ellipse(s, C, (4, 8, 12, 8))                     # corpo
+        pygame.draw.ellipse(s, C, (6, 1, 8, 9))                      # cabeça
+        R(s, D, 5, 3, 2, 5); R(s, D, 13, 3, 2, 5)                    # orelhas caídas, coladas na cabeça
+        R(s, H, 8, 2, 4, 1)
+        R(s, D, 7, 9, 6, 1)                                           # nuca
+        if spots:
+            pygame.draw.ellipse(s, pal["S"], (6, 11, 5, 3))
+            R(s, pal["S"], 13, 3, 2, 5)
+        # rabo por cima do corpo, abanando
+        tail = [(10, 12), (10, 11), (11, 10), (11, 9)] if wag else [(10, 12), (10, 11), (9, 10), (9, 9)]
+        _px(s, C, tail)
+        _px(s, H, [tail[-1]])
+    else:                                    # dormindo
+        pygame.draw.ellipse(s, C, (1, 8, 17, 8))
+        pygame.draw.ellipse(s, H, (3, 8, 11, 2))
+        pygame.draw.ellipse(s, C, (11, 7, 8, 7))
+        R(s, C, 16, 10, 4, 3); R(s, L, 16, 11, 4, 2)
+        R(s, D, 11, 8, 2, 5)
+        _px(s, N, [(19, 10)])
+        _px(s, pal["O"], [(14, 10), (15, 10)])
+        R(s, D, 3, 14, 10, 1)
+        if spots:
+            pygame.draw.ellipse(s, pal["S"], (5, 9, 5, 3))
+    return _outline(s, pal)
+
+
+def pet_frames(kind, coat, coat_name=""):
+    """Quadros do bichinho: (direção, quadro) para andar, ("sit", piscando), ("wag", n) e ("sleep", 0)."""
     def make():
+        pal = _pet_pal(kind, coat)
+        draw = _cat if kind == "gato" else _dog
         fr = {}
-        for f in range(3):
-            img = up(_pet_art(kind, coat, f))
-            fr[("right", f)] = img
-            fr[("left", f)] = pygame.transform.flip(img, True, False)
-        img = up(_pet_art(kind, coat, 0, True))
-        fr[("sleep", 0)] = img
+        for f in range(4):
+            side = up(draw(pal, "side", f, coat_name))
+            fr[("right", f)] = side
+            fr[("left", f)] = pygame.transform.flip(side, True, False)
+            fr[("down", f)] = up(draw(pal, "front", f, coat_name))
+            fr[("up", f)] = up(draw(pal, "back", f, coat_name))
+        fr[("sleep", 0)] = up(draw(pal, "sleep", 0, coat_name))
+        if kind == "cachorro":
+            for d, view in (("right", "side"), ("down", "front"), ("up", "back")):
+                img = up(_dog(pal, view, 0, coat_name, wag=1))
+                fr[("wag", d)] = img
+                if d == "right":
+                    fr[("wag", "left")] = pygame.transform.flip(img, True, False)
+        # piscada (sentado de frente)
+        blink = draw(pal, "front", 0, coat_name)
+        for x in ((6, 11) if kind == "gato" else (7, 12)):
+            blink.set_at((x, 4), pal["C"])
+            blink.set_at((x, 5), pal["O"])
+        fr[("blink", 0)] = up(blink)
         return fr
-    return cached(("pet", kind, tuple(coat)), make)
+    return cached(("pet2", kind, tuple(coat), coat_name), make)
+
+
+def _coat_name(kind, coat):
+    for name, c in PET_COATS.get(kind, []):
+        if tuple(c) == tuple(coat):
+            return name
+    return ""
 
 
 class Pet:
@@ -521,12 +695,14 @@ class Pet:
             dx, dy = cx - self.x, cy - self.y
             dist = math.hypot(dx, dy)
             sp = 1.8 * TILE * dt
-            if dx:
+            if abs(dx) >= abs(dy):
                 self.dir = "right" if dx > 0 else "left"
+            else:
+                self.dir = "down" if dy > 0 else "up"
             if dist <= sp:
                 self.x, self.y = cx, cy
                 self.path.pop(0)
-                if not self.path and night and self.map == "home" and (tx, ty) == (16, 12):
+                if not self.path and night and self.map == "home" and (tx, ty) == PET_BED:
                     self.sleeping = True
             else:
                 self.x += dx / dist * sp
@@ -538,7 +714,7 @@ class Pet:
         self.wait = random.uniform(1.5, 5.0)
         here = self.tile
         if night and self.map == "home":
-            goal = (16, 12)
+            goal = PET_BED
         elif self.map == g.map_name and random.random() < 0.35:
             goal = g.player.tile          # vem ficar pertinho
             goal = (goal[0] + random.choice((-1, 1)), goal[1])
@@ -547,21 +723,33 @@ class Pet:
         if m.is_solid(*goal) or goal in m.doors:
             return
         path = m.find_path(here, goal, 900)
-        if path and len(path) <= 14 and not any(p in m.doors for p in path):
+        if path and (len(path) <= 14 or goal == PET_BED) and not any(p in m.doors for p in path):
             self.path = path
 
     def draw(self, surf, cam):
-        fr = pet_frames(self.kind, self.coat)
+        fr = pet_frames(self.kind, self.coat, _coat_name(self.kind, self.coat))
         if self.sleeping:
             img = fr[("sleep", 0)]
+        elif self.path:
+            img = fr[(self.dir, int(self.anim * 8) % 4)]
         else:
-            f = int(self.anim * 8) % 3 if self.path else 0
-            img = fr[(self.dir, f)]
+            # parado: senta de frente, pisca de vez em quando; o cachorro abana o rabo
+            t = self.anim % 4.0
+            if self.dir in ("left", "right") and self.wait > 1.2:
+                d = self.dir
+            else:
+                d = "down"
+            if t < 0.15 and d == "down":
+                img = fr[("blink", 0)]
+            elif self.kind == "cachorro" and int(self.anim * 5) % 2:
+                img = fr[("wag", d)]
+            else:
+                img = fr[(d, 0)]
         x = int(self.x - img.get_width() // 2 - cam[0])
         y = int(self.y - img.get_height() - cam[1])
-        sh = pygame.Surface((12 * SCALE, 4 * SCALE), pygame.SRCALPHA)
+        sh = pygame.Surface((14 * SCALE, 4 * SCALE), pygame.SRCALPHA)
         pygame.draw.ellipse(sh, (0, 0, 0, 60), sh.get_rect())
-        surf.blit(sh, (int(self.x - 6 * SCALE - cam[0]), int(self.y - 2 * SCALE - cam[1])))
+        surf.blit(sh, (int(self.x - 7 * SCALE - cam[0]), int(self.y - 2 * SCALE - cam[1])))
         surf.blit(img, (x, y))
         if self.emote:
             from .cutscenes import draw_emote
@@ -815,25 +1003,25 @@ def open_adoption(g):
             if j >= len(coats):
                 return
             coat = coats[j][1]
-            names = PET_NAMES[kind]
+            names = PET_NAMES[kind][:]
+            random.shuffle(names)
 
-            def pick_name(n):
-                if n >= len(names):
-                    return
+            def adopt(name):
                 if g.money < 100:
                     g.say("O abrigo pede uma doação de $100 para a adoção. Você não tem o suficiente agora.")
                     return
                 g.money -= 100
-                g.pet = Pet(kind, names[n], coat)
+                g.pet = Pet(kind, name, coat)
                 place_pet(g)
                 g.pet.map = "home"
                 g.pet.place(13, 12)
-                g.toasts.push(f"{names[n]} agora é da família! Está te esperando na cobertura.", C_PINK)
+                g.toasts.push(f"{name} agora é da família! Está te esperando na cobertura.", C_PINK)
                 g.push(ui.Dialog("Abrigo Patinhas", [
-                    f"Que lindo! {names[n]} vai adorar a cobertura.",
+                    f"Que lindo! {name} vai adorar a cobertura. A caminha fica no canto da sala.",
                     "Faça carinho todo dia (E) e, de vez em quando, traga um petisco. "
                     "Bichinhos felizes deixam presentinhos pela casa!"]))
-            g.push(ui.Choice("Qual nome?", names + ["Voltar"], pick_name))
+            g.push(ui.TextPrompt(f"Qual vai ser o nome do seu {kind}?", adopt, initial=names[0], suggestions=names[1:]
+                                 + names[:1], info="Doação de $100 para o Abrigo Patinhas."))
         g.push(ui.Choice(f"Qual {kind} você quer adotar?", [c[0] for c in coats] + ["Voltar"], pick_coat))
     g.push(ui.Choice("Abrigo Patinhas de National City. Adoção com doação de $100.",
                      ["Adotar um gato", "Adotar um cachorro", "Só olhando"], pick_kind))
@@ -1532,7 +1720,17 @@ def use_object(g, o):
             g.push(ui.Choice("Relaxar uma hora na espreguiçadeira?", ["Relaxar", "Agora não"], pick))
     elif k == "petbed":
         if g.pet:
-            g.say(f"A caminha de {g.pet.name}. Tem pelo por todo lado e um brinquedo meio mordido.")
+            p = g.pet
+
+            def rename(i):
+                if i == 0:
+                    def set_name(name):
+                        old_name, p.name = p.name, name
+                        g.toasts.push(f"{old_name} agora se chama {name}!", C_PINK)
+                    g.push(ui.TextPrompt(f"Novo nome para {p.name}", set_name, initial=p.name,
+                                         suggestions=PET_NAMES[p.kind]))
+            g.push(ui.Choice(f"A caminha de {p.name}. Tem pelo por todo lado e um brinquedo meio mordido.",
+                             [f"Mudar o nome de {p.name}", "Deixar como está"], rename))
         else:
             g.say("Uma caminha de pet vazia. O Abrigo Patinhas, no calçadão, tem bichinhos esperando um lar.")
     elif k == "jukebox":

@@ -359,10 +359,15 @@ CAR_COLORS = [(200, 50, 60), (60, 110, 200), (240, 240, 245), (40, 40, 48), (230
 
 
 class Car:
+    LEN = 32 * SCALE            # comprimento do carro (o desenho tem 32 px de arte)
+    GAP = 0.45 * TILE           # distância que um carro deixa para o da frente e para quem está na rua
+    LOOK = 2.6 * TILE           # até onde o motorista olha à frente para frear
+
     def __init__(self, lane_y, direction, map_w):
         self.lane_y = lane_y
         self.dir = direction
         self.speed = random.uniform(3.5, 6.5) * TILE
+        self.v = self.speed                     # velocidade atual (freia e acelera aos poucos)
         self.color = random.choice(CAR_COLORS)
         self.x = -2.5 * TILE if direction > 0 else (map_w + 1.5) * TILE
         self.map_w = map_w
@@ -371,14 +376,36 @@ class Car:
     def base_y(self):
         return (self.lane_y + 1) * TILE - SCALE
 
-    def update(self, dt, cars):
-        ahead = [c for c in cars if c is not self and c.lane_y == self.lane_y and (c.x - self.x) * self.dir > 0]
-        speed = self.speed
-        if ahead:
-            gap = min(abs(c.x - self.x) for c in ahead)
-            if gap < 2.6 * TILE:
-                speed = min(speed, min(c.speed for c in ahead if abs(c.x - self.x) == gap))
-        self.x += self.dir * speed * dt
+    @property
+    def front(self):
+        return self.x + self.LEN if self.dir > 0 else self.x
+
+    def rect(self):
+        """Parte do carro que bloqueia a jogadora (a lataria, sem o teto)."""
+        return pygame.Rect(int(self.x + SCALE), int(self.base_y - 10 * SCALE), self.LEN - 2 * SCALE, 10 * SCALE)
+
+    def _room(self, cars, walkers):
+        """Quanto o carro ainda pode andar até o carro da frente ou até alguém na pista."""
+        room = float("inf")
+        for c in cars:
+            if c is not self and c.lane_y == self.lane_y and (c.x - self.x) * self.dir > 0:
+                room = min(room, abs(c.x - self.x) - self.LEN - self.GAP)
+        top, bottom = self.lane_y * TILE, (self.lane_y + 1) * TILE + SCALE     # pés dentro desta faixa
+        for (wx, wy) in walkers:
+            if not top <= wy <= bottom:
+                continue
+            d = (wx - self.front) * self.dir           # > 0: à frente do para-choque
+            if -self.LEN - TILE * 0.3 < d < self.LOOK + self.GAP:
+                room = min(room, d - self.GAP)
+        return max(0.0, room)
+
+    def update(self, dt, cars, walkers=()):
+        room = self._room(cars, walkers)
+        # freia como um carro de verdade: a velocidade máxima é a que ainda dá para parar na folga que sobra
+        brake = math.sqrt(2 * 8 * TILE * room)
+        self.v = min(self.speed, self.v + 4 * TILE * dt, brake)
+        step = min(self.v * dt, room)
+        self.x += self.dir * step
         return -4 * TILE < self.x < (self.map_w + 4) * TILE
 
     def draw(self, surf, cam):
