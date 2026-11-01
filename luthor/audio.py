@@ -183,6 +183,42 @@ def _sfx_defs():
     for i, n in enumerate((72, 67, 64, 60, 64, 55)):
         add_note(b, i * 0.3, 0.28, midi(n), "sine", 0.3, 0.02, 0.35)
     out["sleep"] = b
+    # comer: "nhac" crocante (ruído curtinho e abafado + um tom grave)
+    b = mk(0.12)
+    rnd = random.Random(21)
+    last = 0.0
+    n = int(0.06 * RATE)
+    for k in range(n):
+        last = last * 0.55 + rnd.uniform(-1, 1) * 0.45
+        b[k] += last * 0.5 * (1 - k / n)
+    add_note(b, 0, 0.02, 180, "sine", 0.25, 0.002, 0.04, slide=-0.3)
+    out["eat"] = b
+    # beber: "glup" (bolha descendo)
+    b = mk(0.18)
+    add_note(b, 0, 0.07, 420, "sine", 0.4, 0.004, 0.06, slide=-0.55)
+    add_note(b, 0.02, 0.05, 840, "sine", 0.08, 0.004, 0.04, slide=-0.5)
+    out["gulp"] = b
+    # terminou de comer: "hmm!" (duas notinhas subindo)
+    b = mk(0.45)
+    add_note(b, 0, 0.08, midi(76), "tri", 0.22, 0.004, 0.1)
+    add_note(b, 0.09, 0.14, midi(83), "tri", 0.22, 0.004, 0.2)
+    out["yum"] = b
+    # beijo: "muah" (estalinho + notinha subindo)
+    b = mk(0.35)
+    add_note(b, 0, 0.012, 1400, "sine", 0.35, 0.001, 0.02, slide=-0.6)
+    add_note(b, 0.03, 0.12, 520, "sine", 0.22, 0.01, 0.12, slide=0.35)
+    add_note(b, 0.05, 0.1, 1040, "tri", 0.06, 0.01, 0.1, slide=0.35)
+    out["kiss"] = b
+    # ler: folha virando
+    b = mk(0.3)
+    rnd = random.Random(33)
+    n = int(0.16 * RATE)
+    prev = 0.0
+    for k in range(n):
+        v = rnd.uniform(-1, 1)
+        b[k] += (v - prev) * 0.18 * math.sin(math.pi * k / n)       # ruído agudo (passa-alta) em "onda"
+        prev = v
+    out["page"] = b
     b = mk(0.25); add_note(b, 0, 0.06, 2600, "noise", 0.12, 0.002, 0.12); add_note(b, 0, 0.05, midi(96), "sine", 0.1, 0.002, 0.1)
     out["splash"] = b
     return out

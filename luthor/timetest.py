@@ -5,11 +5,15 @@
 
 No painel: setas cima/baixo escolhem, esquerda/direita mudam o valor (Shift = passos maiores),
 Enter aplica e fecha, Esc fecha sem mudar. Com "Relógio parado", o horário não anda sozinho.
+"Personagem" escolhe alguém e "Corações" muda a amizade com essa pessoa (0 a 10; dá para mudar várias
+antes de apertar Enter).
 """
 import pygame
 
 from . import ui, seasons
-from .config import SCREEN_W, SCREEN_H, C_TEXT, C_MUTED, C_ACCENT, C_GOLD, C_LILAC, DAYS_PER_QUARTER
+from .config import (SCREEN_W, SCREEN_H, C_TEXT, C_MUTED, C_ACCENT, C_GOLD, C_LILAC, DAYS_PER_QUARTER,
+                     HEART_POINTS, MAX_HEARTS)
+from .characters import NPC_ORDER
 
 STATE = {"frozen": False}
 WEEK = ["segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"]
@@ -21,13 +25,14 @@ def _fmt(minutes):
 
 
 class TimePanel(ui.Modal):
-    ROWS = ["Horário", "Dia", "Estação", "Ano", "Clima", "Relógio parado"]
+    ROWS = ["Horário", "Dia", "Estação", "Ano", "Clima", "Relógio parado", "Personagem", "Corações"]
 
     def __init__(self, g):
         self.g = g
         self.sel = 0
         self.v = dict(minutes=g.minutes, day=g.day, quarter=g.quarter, year=g.year, weather=g.weather,
-                      frozen=STATE["frozen"])
+                      frozen=STATE["frozen"], npc=STATE.get("npc", 0),
+                      hearts={k: g.hearts(k) for k in NPC_ORDER if k in g.friendship})
 
     def handle(self, ev):
         if ev.type != pygame.KEYDOWN:
@@ -60,6 +65,11 @@ class TimePanel(ui.Modal):
             v["weather"] = "chuva" if v["weather"] == "sol" else "sol"
         elif row == "Relógio parado":
             v["frozen"] = not v["frozen"]
+        elif row == "Personagem":
+            v["npc"] = (v["npc"] + d * (5 if big else 1)) % len(NPC_ORDER)
+        elif row == "Corações":
+            k = NPC_ORDER[v["npc"]]
+            v["hearts"][k] = max(0, min(MAX_HEARTS, v["hearts"].get(k, 0) + d * (5 if big else 1)))
 
     def label(self, row):
         v = self.v
@@ -71,10 +81,12 @@ class TimePanel(ui.Modal):
             "Ano": str(v["year"]),
             "Clima": ("neve" if season == "winter" else "chuva") if v["weather"] == "chuva" else "sol",
             "Relógio parado": "sim" if v["frozen"] else "não",
+            "Personagem": self.g.npcs[NPC_ORDER[v["npc"]]].name,
+            "Corações": f"{v['hearts'].get(NPC_ORDER[v['npc']], 0)} de {MAX_HEARTS}",
         }[row]
 
     def draw(self, surf):
-        rect = pygame.Rect(0, 0, 560, 120 + len(self.ROWS) * 44 + 40)
+        rect = pygame.Rect(0, 0, 560, 120 + len(self.ROWS) * 44 + 60)
         rect.center = (SCREEN_W // 2, SCREEN_H // 2)
         ui.panel(surf, rect)
         ui.text(surf, "Teste de dia e horário", (rect.centerx, rect.y + 16), 26, C_TEXT, bold=True, center=True)
@@ -103,6 +115,12 @@ def apply(g, v):
     g.minutes = v["minutes"]
     g.time_acc = 0.0
     STATE["frozen"] = v["frozen"]
+    STATE["npc"] = v["npc"]
+    changed = []
+    for k, h in v["hearts"].items():
+        if h != g.hearts(k):
+            g.friendship[k] = h * HEART_POINTS          # direto, sem o limite de 8 do romance (é teste)
+            changed.append(f"{g.npcs[k].name} {h}")
     g.apply_season()
     if new_day:
         g.crowd.reset_day()
@@ -112,6 +130,8 @@ def apply(g, v):
     g.scene_check_pending = True
     g.toasts.push(f"Teste: {g.date_label()}, {_fmt(g.minutes)}"
                   + ("  (relógio parado)" if STATE["frozen"] else ""), C_LILAC)
+    if changed:
+        g.toasts.push("Corações: " + ", ".join(changed), C_LILAC)
 
 
 def install(g):

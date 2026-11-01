@@ -1,6 +1,8 @@
 """Interface: fontes, painéis, diálogos, menus, loja, HUD e barra de itens."""
 import os
 
+import math
+
 import pygame
 
 from . import art, audio
@@ -237,45 +239,83 @@ class Dialog(Modal):
 
 
 class Choice(Modal):
+    """Caixa de escolhas no pé da tela, como no Stardew: pergunta em cima e as opções em lista, com uma
+    setinha na escolhida. Muitas opções rolam (no máximo VISIBLE por vez; a rodinha do mouse também rola)."""
+    VISIBLE = 6
+    ROW = 38
+
     def __init__(self, question, options, on_pick, on_cancel=None):
         self.question = question
         self.options = options
         self.on_pick = on_pick
         self.on_cancel = on_cancel
         self.sel = 0
+        self.top = 0
+        self.t = 0.0
+
+    def _move(self, d):
+        self.sel = (self.sel + d) % len(self.options)
+
+    def _pick(self):
+        self.done = True
+        self.on_pick(self.sel)
 
     def handle(self, ev):
-        if ev.type != pygame.KEYDOWN:
-            return
-        if ev.key in (pygame.K_UP, pygame.K_w):
-            self.sel = (self.sel - 1) % len(self.options)
-        elif ev.key in (pygame.K_DOWN, pygame.K_s):
-            self.sel = (self.sel + 1) % len(self.options)
-        elif ev.key in CONFIRM:
-            self.done = True
-            self.on_pick(self.sel)
-        elif ev.key in CANCEL:
-            self.done = True
-            if self.on_cancel:
-                self.on_cancel()
+        if ev.type == pygame.KEYDOWN:
+            if ev.key in (pygame.K_UP, pygame.K_w):
+                self._move(-1)
+            elif ev.key in (pygame.K_DOWN, pygame.K_s):
+                self._move(1)
+            elif ev.key in CONFIRM:
+                self._pick()
+            elif ev.key in CANCEL:
+                self.done = True
+                if self.on_cancel:
+                    self.on_cancel()
+        elif ev.type == pygame.MOUSEBUTTONDOWN and ev.button in (4, 5):
+                self._move(-1 if ev.button == 4 else 1)
+
+    def update(self, dt):
+        self.t += dt
 
     def draw(self, surf):
-        lines = wrap(self.question, 22, 520)
-        h = 40 + len(lines) * 30 + len(self.options) * 40 + 20
-        rect = pygame.Rect(0, 0, 600, h)
-        rect.center = (SCREEN_W // 2, SCREEN_H // 2 - 40)
+        n = len(self.options)
+        vis = min(n, self.VISIBLE)
+        if self.sel < self.top:
+            self.top = self.sel
+        elif self.sel >= self.top + vis:
+            self.top = self.sel - vis + 1
+        x0, w = 24, SCREEN_W - 48
+        qlines = wrap(self.question, 24, w - 64, bold=True) if self.question else []
+        h = 26 + len(qlines) * 32 + (10 if qlines else 0) + vis * self.ROW + 18
+        rect = pygame.Rect(x0, SCREEN_H - 18 - h, w, h)
         panel(surf, rect)
         y = rect.y + 22
-        for l in lines:
-            text(surf, l, (rect.centerx, y), 22, bold=True, center=True)
-            y += 30
-        y += 10
-        for i, opt in enumerate(self.options):
-            r = pygame.Rect(rect.x + 40, y, rect.w - 80, 34)
-            if i == self.sel:
-                pygame.draw.rect(surf, C_ACCENT, r, border_radius=8)
-            text(surf, opt, (r.centerx, r.y + 6), 20, center=True, color=C_TEXT if i == self.sel else C_MUTED)
-            y += 40
+        for l in qlines:
+            text(surf, l, (rect.x + 32, y), 24, bold=True)
+            y += 32
+        if qlines:
+            pygame.draw.line(surf, C_BORDER, (rect.x + 28, y + 2), (rect.right - 28, y + 2), 2)
+            y += 10
+        bob = int(math.sin(self.t * 7) * 3)
+        for i in range(self.top, self.top + vis):
+            r = pygame.Rect(rect.x + 22, y, rect.w - 44, self.ROW - 4)
+            on = i == self.sel
+            if on:
+                hl = pygame.Surface(r.size, pygame.SRCALPHA)
+                pygame.draw.rect(hl, (*C_ACCENT, 120), hl.get_rect(), border_radius=8)
+                surf.blit(hl, r.topleft)
+                ax, ay = r.x + 12 + bob, r.centery          # setinha apontando para a opção
+                pygame.draw.polygon(surf, C_ACCENT_2, [(ax, ay - 8), (ax + 12, ay), (ax, ay + 8)])
+            text(surf, self.options[i], (r.x + 36, r.y + 4), 22, C_TEXT if on else C_MUTED)
+            y += self.ROW
+        if n > vis:                                        # setinhas de rolagem
+            cx = rect.right - 34
+            if self.top > 0:
+                pygame.draw.polygon(surf, C_ACCENT_2, [(cx - 7, rect.y + 30), (cx + 7, rect.y + 30), (cx, rect.y + 22)])
+            if self.top + vis < n:
+                pygame.draw.polygon(surf, C_ACCENT_2, [(cx - 7, rect.bottom - 26), (cx + 7, rect.bottom - 26),
+                                                       (cx, rect.bottom - 18)])
 
 
 class Shop(Modal):
@@ -589,28 +629,96 @@ class Toasts:
 # HUD
 # ---------------------------------------------------------------------------
 
+_WEATHER_CACHE = {}
+
+
+def _cloud_art(night):
+    """Nuvem fofinha em pixel art (24x14 px de arte): contorno, sombra embaixo e brilho em cima."""
+    key = ("cloud", night)
+    if key in _WEATHER_CACHE:
+        return _WEATHER_CACHE[key]
+    w, h = 26, 16
+    puffs = [(7, 9, 5), (13, 6, 6), (19, 9, 5)]
+    inside = lambda x, y, grow=0: (any((x - cx) ** 2 + (y - cy) ** 2 <= (r + grow) ** 2 for cx, cy, r in puffs)
+                                   or (3 - grow <= x <= 22 + grow and 9 <= y <= 13 + grow))
+    if night:
+        line, base, shadow, light = (40, 46, 74), (150, 158, 190), (112, 120, 156), (190, 198, 224)
+    else:
+        line, base, shadow, light = (70, 82, 120), (236, 240, 250), (186, 196, 222), (255, 255, 255)
+    s = pygame.Surface((w, h), pygame.SRCALPHA)
+    for y in range(h):
+        for x in range(w):
+            if inside(x, y):
+                c = base
+                if not inside(x, y - 2) and y < 10:      # brilho na borda de cima de cada bolota
+                    c = light
+                if y >= 12:                              # sombra embaixo
+                    c = shadow
+                s.set_at((x, y), c)
+            elif inside(x, y, 1):
+                s.set_at((x, y), line)
+    _WEATHER_CACHE[key] = s
+    return s
+
+
+def draw_weather_icon(surf, center, kind, night, ticks):
+    """Ícone do clima no HUD: sol (raios girando devagar), lua, nuvem com chuva ou com neve (animadas)."""
+    cx, cy = center
+    S = 2
+    if kind == "sun":
+        rot = (ticks / 80.0) % 360
+        for a in range(8):
+            v = pygame.math.Vector2(1, 0).rotate(a * 45 + rot)
+            pygame.draw.line(surf, (255, 196, 70), (cx + v.x * 14, cy + v.y * 14), (cx + v.x * 19, cy + v.y * 19), 3)
+        pygame.draw.circle(surf, (226, 150, 40), (cx, cy), 12)
+        pygame.draw.circle(surf, (255, 210, 90), (cx, cy), 10)
+        pygame.draw.circle(surf, (255, 240, 170), (cx - 3, cy - 3), 4)
+        return
+    if kind == "moon":
+        pygame.draw.circle(surf, (250, 244, 214), (cx, cy), 12)
+        pygame.draw.circle(surf, (34, 24, 50), (cx + 6, cy - 4), 10)
+        for (dx, dy) in ((-16, -10), (12, 12), (16, -14)):
+            pygame.draw.rect(surf, (250, 244, 214), (cx + dx, cy + dy, 2, 2))
+        return
+    cloud = pygame.transform.scale_by(_cloud_art(night), S)
+    top = cy - 20
+    if night:                                    # lua espiando atrás da nuvem
+        pygame.draw.circle(surf, (250, 244, 214), (cx + 18, top + 5), 9)
+        pygame.draw.circle(surf, (34, 24, 50), (cx + 23, top + 1), 8)
+    # pingos (ou flocos) caindo em loop por baixo da nuvem
+    t = ticks / 1000.0
+    for i, dx in enumerate((-12, -2, 8, 16)):
+        ph = (t * (1.6 if kind == "rain" else 0.7) + i * 0.37) % 1.0
+        y = top + 26 + ph * 11
+        x = cx + dx - (ph * 4 if kind == "rain" else 0)
+        if kind == "rain":
+            col = (110, 170, 255)
+            pygame.draw.line(surf, col, (x, y), (x - 2, y + 6), 2)
+        else:
+            sway = math.sin(t * 3 + i) * 2
+            col = (240, 246, 255)
+            px, py = int(x + sway), int(y)
+            pygame.draw.rect(surf, col, (px - 1, py - 3, 2, 6))
+            pygame.draw.rect(surf, col, (px - 3, py - 1, 6, 2))
+    surf.blit(cloud, (cx - cloud.get_width() // 2, top))
+
+
 def draw_hud(surf, g):
     # Relógio / data
     r = pygame.Rect(SCREEN_W - 236, 12, 224, 118)
     panel(surf, r, alpha=225)
     text(surf, g.date_label(short=True), (r.x + 16, r.y + 10), 18, C_LILAC, bold=True)
     text(surf, g.time_label(), (r.x + 16, r.y + 34), 34, C_TEXT, bold=True)
-    wx, wy = r.right - 44, r.y + 44
-    if g.minutes >= 19 * 60 or g.minutes < 6 * 60:
-        pygame.draw.circle(surf, (240, 236, 210), (wx, wy), 11)
-        pygame.draw.circle(surf, (34, 24, 50), (wx + 6, wy - 4), 10)
-        if g.weather == "chuva":
-            for i in range(3):
-                pygame.draw.line(surf, (120, 170, 255), (wx - 6 + i * 9, wy + 14), (wx - 9 + i * 9, wy + 22), 2)
-    elif g.weather == "chuva":
-        pygame.draw.ellipse(surf, (170, 176, 196), (wx - 14, wy - 8, 34, 18))
-        for i in range(3):
-            pygame.draw.line(surf, (120, 170, 255), (wx - 6 + i * 9, wy + 12), (wx - 9 + i * 9, wy + 20), 2)
+    wx, wy = r.right - 44, r.y + 56            # abaixo da data, para não cobrir o nome da estação
+    night = g.minutes >= 19 * 60 or g.minutes < 6 * 60
+    if g.weather == "chuva":
+        from . import seasons
+        snow = seasons.CURRENT["season"] == "winter"
+        draw_weather_icon(surf, (wx, wy), "snow" if snow else "rain", night, pygame.time.get_ticks())
+    elif night:
+        draw_weather_icon(surf, (wx, wy), "moon", True, 0)
     else:
-        pygame.draw.circle(surf, (255, 210, 90), (wx, wy), 11)
-        for a in range(8):
-            v = pygame.math.Vector2(1, 0).rotate(a * 45)
-            pygame.draw.line(surf, (255, 210, 90), (wx + v.x * 14, wy + v.y * 14), (wx + v.x * 18, wy + v.y * 18), 2)
+        draw_weather_icon(surf, (wx, wy), "sun", False, pygame.time.get_ticks())
     up = g.stock >= g.stock_prev
     text(surf, f"LCORP {g.stock:.2f}".replace(".", ","), (r.x + 16, r.y + 82), 18, C_MUTED, bold=True)
     col = C_GREEN if up else C_RED

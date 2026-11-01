@@ -15,13 +15,15 @@ TILE_COLORS = {
     "boardwalk": (150, 104, 66), "pier": (140, 96, 60), "cross": (206, 206, 212), "cross_v": (206, 206, 212),
 }
 ROAD = (72, 72, 84)
-BUILDING_COLORS = {"home": (92, 70, 150), "hq": (122, 40, 196), "cafe": (150, 96, 60), "catco": (52, 58, 78),
+BUILDING_COLORS = {"home": (92, 70, 150), "residencial": (92, 70, 150), "hq": (122, 40, 196), "cafe": (150, 96, 60), "catco": (52, 58, 78),
                    "ricci": (58, 108, 72), "hospital": (18, 63, 53), "books": (110, 70, 50), "market": (176, 90, 60),
                    "trattoria": (160, 50, 50), "bar": (70, 40, 60), "cinema": (60, 40, 110), "marina": (40, 70, 130)}
-SHORT = {"home": "Cobertura", "hq": "Luthor Corp", "cafe": "Grão Nobre", "catco": "CatCo", "ricci": "Gruppo Ricci",
+SHORT = {"home": "Cobertura", "residencial": "Residencial Luthor", "hq": "Luthor Corp", "cafe": "Grão Nobre", "catco": "CatCo", "ricci": "Gruppo Ricci",
          "hospital": "Conti Moretti", "books": "Bayside Books", "market": "Mercado", "trattoria": "Trattoria",
          "bar": "Noonan's", "cinema": "Cine National", "marina": "Marina"}
-INSIDE_DOOR = {"terrace": "home", "altomar": "marina"}      # mapas que não têm porta própria na cidade
+INSIDE_DOOR = {"terrace": "residencial", "altomar": "marina"}      # mapas que não têm porta própria na cidade
+from .world import APT_PARENT as _APT_PARENT, SUB_PARENT as _SUB_PARENT
+INSIDE_DOOR.update(_SUB_PARENT)                              # apartamentos e cobertura: porta da portaria
 
 
 def _base(g):
@@ -92,13 +94,15 @@ class CityMap(ui.Modal):
               "cafe": "no Grão Nobre", "catco": "na CatCo", "ricci": "no Gruppo Ricci", "hospital": "no Conti Moretti",
               "books": "na Bayside Books", "market": "no Mercado Central", "trattoria": "na Ricci Trattoria",
               "bar": "no Noonan's", "cinema": "no Cine National", "marina": "na Marina Luthor",
-              "altomar": "em alto-mar"}
+              "altomar": "em alto-mar", "bayside": "na portaria dos Apartamentos Bayside",
+              "residencial": "na portaria do Residencial Luthor"}
 
     def where(self, mapn):
         """(porta no mapa em tiles ou None, texto do lugar) de quem está em mapn."""
         if mapn == "city":
             return None, self.LABELS["city"]
-        return CITY_DOORS.get(INSIDE_DOOR.get(mapn, mapn)), self.LABELS.get(mapn, mapn)
+        label = "em casa" if mapn in _APT_PARENT else self.LABELS.get(mapn, mapn)
+        return CITY_DOORS.get(INSIDE_DOOR.get(mapn, mapn)), label
 
     def draw(self, surf):
         g = self.g

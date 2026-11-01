@@ -303,12 +303,13 @@ class GameMap:
 # ---------------------------------------------------------------------------
 # Portas
 # ---------------------------------------------------------------------------
-CITY_DOORS = {"home": (6, 15), "hq": (21, 15), "cafe": (35, 15), "catco": (48, 15),
+CITY_DOORS = {"residencial": (6, 15), "hq": (21, 15), "cafe": (35, 15), "catco": (48, 15),
               "books": (55, 31), "market": (64, 31), "trattoria": (81, 31), "bar": (55, 45), "cinema": (65, 45),
-              "hospital": (78, 15), "ricci": (64, 15), "marina": (90, 58)}
+              "hospital": (78, 15), "ricci": (64, 15), "marina": (90, 58), "bayside": (79, 45)}
 INTERIOR_DOORS = {"home": (16, 15), "hq": (12, 17), "cafe": (7, 10), "catco": (11, 14),
                   "books": (8, 11), "market": (8, 11), "trattoria": (10, 12), "bar": (8, 11), "cinema": (10, 13),
-                  "hospital": (13, 16), "ricci": (10, 13), "marina": (11, 11)}
+                  "hospital": (13, 16), "ricci": (10, 13), "marina": (11, 11), "bayside": (13, 10),
+                  "residencial": (8, 8)}
 TERRACE_DOOR = (15, 1)      # porta da sala para o terraço (na cobertura)
 STATION_SLOTS = [(x, y) for y in (4, 7) for x in (12, 14, 16, 18, 20, 22)]
 HOME_BED = (3, 4)          # onde a jogadora acorda
@@ -446,7 +447,7 @@ def build_city():
 
     # --- Centro: prédios -------------------------------------------------------
     m.buildings += [
-        Building("Residencial Luthor", "home", 2, 8, 9, 8, 2, 6, "home"),
+        Building("Residencial Luthor", "home", 2, 8, 9, 8, 2, 6, "residencial"),
         Building("LUTHOR CORP", "tower", 16, 6, 11, 10, 6, 21, "hq"),
         Building("Grão Nobre", "cafe", 31, 10, 7, 6, 1, 35, "cafe"),
         Building("CatCo Worldwide Media", "catco", 44, 7, 10, 9, 5, 48, "catco"),
@@ -457,7 +458,7 @@ def build_city():
         Building("Ricci Trattoria", "trattoria", 74, 25, 9, 7, 1, 81, "trattoria"),
         Building("Noonan's", "bar", 48, 39, 8, 7, 1, 55, "bar"),
         Building("Cine National", "cinema", 61, 39, 9, 7, 2, 65, "cinema"),
-        Building("Apartamentos Bayside", "apartments", 75, 39, 8, 7, 2, 79, None),
+        Building("Apartamentos Bayside", "apartments", 75, 39, 8, 7, 2, 79, "bayside"),
     ]
     m.fill(39, 11, 41, 13, "flowers")
     for (tx, ty, k) in [(13, 9, "tree"), (13, 13, "tree2"), (29, 8, "tree3"), (40, 8, "tree"), (42, 13, "tree2"),
@@ -471,7 +472,7 @@ def build_city():
         m.add("lamp", x, 21)
     m.add("busstop", 10, 16)
     m.add("busstop", 68, 20)
-    m.add("hydrant", 30, 17)
+    m.add("hydrant", 30, 20)
     m.add("hydrant", 54, 20)
 
     # --- Calçadão comercial ----------------------------------------------------
@@ -627,8 +628,9 @@ def _interior(name, rows, label):
             m.tiles[y][x] = INTERIOR_LEGEND[ch]
     dx, dy = INTERIOR_DOORS[name]
     assert m.tiles[dy][dx] == "door", (name, dx, dy)
-    cx, cy = CITY_DOORS[name]
-    m.doors[(dx, dy)] = ("city", cx, cy + 1, "down")
+    if name in CITY_DOORS:              # a cobertura sai para a portaria (build_world liga essa porta)
+        cx, cy = CITY_DOORS[name]
+        m.doors[(dx, dy)] = ("city", cx, cy + 1, "down")
     return m
 
 
@@ -840,7 +842,7 @@ def build_trattoria():
     m.add("wine_shelf", 15, 2)
     m.add("counter_it", 6, 5)
     m.add("window", 8, 1); m.add("painting", 11, 1); m.add("painting2", 4, 1)
-    for (tx, ty) in [(3, 8), (7, 8), (13, 8), (17, 8), (3, 10), (11, 10), (15, 10)]:
+    for (tx, ty) in [(3, 8), (7, 8), (13, 8), (17, 8), (3, 10), (13, 10), (17, 10)]:
         m.add("table_it", tx, ty)
         m.add("chair", tx - 1, ty)
         m.add("chair", tx + 1, ty)
@@ -1083,8 +1085,188 @@ def build_altomar():
 
 
 def build_world():
-    return {"city": build_city(), "home": build_home(), "hq": build_hq(), "cafe": build_cafe(),
-            "catco": build_catco(), "books": build_books(), "market": build_market(),
-            "trattoria": build_trattoria(), "bar": build_bar(), "terrace": build_terrace(),
-            "cinema": build_cinema(), "hospital": build_hospital(), "ricci": build_ricci(),
-            "marina": build_marina(), "altomar": build_altomar()}
+    w = {"city": build_city(), "home": build_home(), "hq": build_hq(), "cafe": build_cafe(),
+         "catco": build_catco(), "books": build_books(), "market": build_market(),
+         "trattoria": build_trattoria(), "bar": build_bar(), "terrace": build_terrace(),
+         "cinema": build_cinema(), "hospital": build_hospital(), "ricci": build_ricci(),
+         "marina": build_marina(), "altomar": build_altomar(), **build_homes()}
+    # a porta da cobertura leva ao elevador da portaria do Residencial Luthor
+    ex, ey = LOBBY_DOORS["home"]
+    w["home"].doors[INTERIOR_DOORS["home"]] = ("residencial", ex, ey + 1, "down")
+    return w
+
+
+# ---------------------------------------------------------------------------
+# Casas: Apartamentos Bayside e Residencial Luthor (portaria + apartamento de cada personagem)
+# ---------------------------------------------------------------------------
+from . import beds as _beds              # noqa: E402,F401  (registra as camas de cada morador)
+
+# quem mora onde: personagem -> mapa do apartamento
+APARTMENTS = {"lucy": "apt_lucy", "vittoria": "apt_vittoria", "brainy": "apt_brainy", "jess": "apt_jess",
+              "nia": "apt_nia", "barry": "apt_barry",
+              "sam": "apt_sam", "ian": "apt_ian", "milany": "apt_milany"}
+APT_OWNER = {v: k for k, v in APARTMENTS.items()}
+APT_NAMES = {"lucy": "Lucy", "vittoria": "Vittoria", "sam": "Sam", "brainy": "Brainy", "jess": "Jess",
+             "nia": "Nia", "barry": "Barry", "ian": "Ian", "milany": "Milany"}
+# prédio de cada apartamento (a Sam, o Ian e a Milany são vizinhos da Letícia no Residencial Luthor)
+RESIDENCIAL = ("apt_sam", "apt_ian", "apt_milany")
+APT_PARENT = {apt: ("residencial" if apt in RESIDENCIAL else "bayside") for apt in APARTMENTS.values()}
+_LOBBY_W, _LOBBY_H = 26, 11
+_RES_W, _RES_H = 17, 9
+# tamanho de cada apartamento por prédio: (largura, altura, x da porta, linhas da passagem do quarto para a sala)
+APT_SIZE = {"bayside": (18, 11, 12, (7, 8)), "residencial": (20, 12, 14, (8, 9))}
+_WALL_X = 7                              # parede entre o quarto (colunas 1-6) e a sala/cozinha
+# porta de cada apartamento no corredor (parede de cima da portaria) e a porta dentro do apartamento.
+# "home" = elevador da portaria do Residencial que sobe para a cobertura.
+LOBBY_DOORS = {"apt_lucy": (2, 1), "apt_vittoria": (5, 1), "apt_brainy": (8, 1),
+               "apt_jess": (11, 1), "apt_nia": (14, 1), "apt_barry": (17, 1),
+               "apt_sam": (2, 1), "apt_ian": (5, 1), "home": (8, 1), "apt_milany": (11, 1)}
+APT_DOORS = {apt: (APT_SIZE[APT_PARENT[apt]][2], APT_SIZE[APT_PARENT[apt]][1] - 1) for apt in APARTMENTS.values()}
+APT_DOORS["home"] = INTERIOR_DOORS["home"]
+# mapas que ficam dentro de um prédio (os NPCs passam pela portaria): apartamentos e a cobertura
+SUB_PARENT = {**APT_PARENT, "home": "residencial"}
+# onde cada pessoa fica quando está em casa
+APT_HOME_SPOT = {apt: ((13, 7, "up") if APT_PARENT[apt] == "residencial" else (10, 7, "down"))
+                 for apt in APARTMENTS.values()}
+BAYSIDE_HOURS = (7 * 60, 23 * 60)       # a portaria do Bayside abre às 7h e fecha às 23h (o Residencial, nunca)
+APT_MIN_HEARTS = 2                      # como no Stardew: só entra no apartamento com 2 corações
+
+
+def _lobby_rows(name, w, h, door_x):
+    rows = ["W" * w]
+    top = ["W"] * w
+    for sub, (x, _y) in LOBBY_DOORS.items():
+        if SUB_PARENT[sub] == name:
+            top[x] = "D"
+    rows.append("".join(top))
+    for _ in range(h - 3):
+        rows.append("W" + "m" * (w - 2) + "W")
+    rows.append("W" * door_x + "D" + "W" * (w - door_x - 1))
+    return rows
+
+
+def _link_lobby(m):
+    for sub, (x, y) in LOBBY_DOORS.items():
+        if SUB_PARENT[sub] == m.name:
+            ax, ay = APT_DOORS[sub]
+            m.doors[(x, y)] = (sub, ax, ay - 1, "up")
+
+
+def build_bayside():
+    m = _interior("bayside", _lobby_rows("bayside", _LOBBY_W, _LOBBY_H, 13), "Apartamentos Bayside")
+    _link_lobby(m)
+    m.add("rug_big", 11, 5)
+    m.add("reception", 18, 7)
+    m.add("plant_big", 1, 9); m.add("plant_big", 24, 9)
+    m.add("plant", 1, 2); m.add("plant", 24, 2)
+    m.add("sofa", 3, 7)
+    m.add("armchair", 6, 7)
+    m.add("cabinet", 22, 7)                       # caixas de correio
+    m.add("cabinet", 23, 7)
+    for x in (20, 23):                            # quadrinhos (as portas ficam à esquerda, longe do HUD)
+        m.add("painting" if x % 2 else "painting2", x, 1)
+    m.finalize()
+    return m
+
+
+def build_residencial():
+    """Portaria do Residencial Luthor: elevador da cobertura e os apartamentos da Sam, do Ian e da Milany."""
+    m = _interior("residencial", _lobby_rows("residencial", _RES_W, _RES_H, 8), "Residencial Luthor")
+    _link_lobby(m)
+    m.add("rug_big", 6, 3)
+    m.add("reception", 12, 5)
+    m.add("plant_big", 1, 7); m.add("plant_big", 15, 7)
+    m.add("plant", 15, 2); m.add("plant", 1, 2)
+    m.add("sofa_grey", 2, 6)
+    m.add("cabinet", 14, 2); m.add("cabinet", 13, 2)   # caixas de correio
+    m.add("painting", 14, 1); m.add("painting2", 3, 1)
+    m.finalize()
+    return m
+
+
+def _apt_rows(apt, floor):
+    """Apartamento: quarto à esquerda separado por uma parede (com passagem) da sala com cozinha."""
+    w, h, door_x, gap = APT_SIZE[APT_PARENT[apt]]
+    rows = ["W" * w, "W" * w]
+    for y in range(2, h - 1):
+        mid = floor if y in gap else "W"
+        rows.append("W" + floor * (_WALL_X - 1) + mid + floor * (w - _WALL_X - 2) + "W")
+    rows.append("W" * door_x + "D" + "W" * (w - door_x - 1))
+    return rows
+
+
+# cozinha de cada tipo de apartamento
+KITCHENS = {
+    # Residencial Luthor: igual à da cobertura (bancada, fogão, pia, geladeira, ilha e banquetas)
+    "residencial": [("kitchen", 9, 2), ("stove", 12, 2), ("kitchen2", 13, 2), ("fridge", 15, 2),
+                    ("island", 10, 4), ("stool", 10, 5), ("stool", 12, 5), ("window", 10, 1)],
+    # Bayside: cozinha compacta com mesinha de jantar
+    "bayside": [("kitchen2", 8, 2), ("stove", 10, 2), ("fridge", 11, 2), ("dining", 9, 4), ("chair", 8, 4),
+                ("chair", 11, 4), ("window", 9, 1)],
+}
+
+# decoração de cada apartamento: (piso, [(objeto, x, y), ...]); a cozinha vem de KITCHENS.
+# Quarto: colunas 1 a 6. Sala: da coluna 8 em diante. Cada um tem a sua cama (beds.py).
+APT_STYLE = {
+    "apt_lucy": ("o", [("bed_lucy", 1, 2), ("nightstand", 4, 2), ("plant", 6, 2), ("rug_bed", 1, 5),
+                       ("bookshelf3", 1, 9), ("bookshelf", 3, 9), ("window", 2, 1),
+                       ("desk_editor", 13, 2), ("chair_blue", 14, 3), ("plant", 16, 2), ("coffee_table", 14, 6),
+                       ("sofa_grey", 13, 8), ("poster", 15, 1)]),
+    "apt_vittoria": ("m", [("bed_vittoria", 1, 2), ("nightstand", 4, 2), ("plant_big", 6, 2), ("rug_red", 1, 5),
+                           ("wine_shelf", 1, 9), ("plant", 5, 9), ("window_big", 2, 1),
+                           ("flowerstand", 13, 2), ("plant_big", 16, 2), ("coffee_table", 14, 6),
+                           ("sofa", 13, 8), ("plant_big", 16, 8), ("window_big", 13, 1), ("painting2", 16, 1)]),
+    "apt_brainy": ("l", [("bed_brainy", 1, 2), ("nightstand", 3, 2), ("terminal", 4, 2), ("monitor", 5, 2),
+                         ("cabinet", 6, 2), ("bookshelf3", 1, 9), ("window", 2, 1),
+                         ("desk", 13, 2), ("chair_blue", 14, 3), ("monitor", 16, 2), ("cabinet", 16, 8),
+                         ("printer", 16, 9), ("poster2", 14, 1)]),
+    "apt_jess": ("c", [("bed_jess", 1, 2), ("nightstand", 4, 2), ("wardrobe", 5, 2), ("rug_bed", 1, 5),
+                       ("bookshelf", 1, 9), ("flowerpot", 3, 9), ("window", 2, 1),
+                       ("desk_home", 13, 2), ("chair_blue", 14, 3), ("flowerpot2", 16, 2), ("sofa_grey", 13, 8),
+                       ("plant", 16, 8), ("window", 14, 1), ("poster", 16, 1)]),
+    "apt_nia": ("c", [("bed_nia", 1, 2), ("nightstand", 4, 2), ("plant_big", 6, 2), ("rug_green", 1, 5),
+                      ("bookshelf3", 1, 9), ("window", 2, 1),
+                      ("flowerstand", 13, 2), ("plant_big", 16, 2), ("coffee_table", 14, 6), ("sofa_grey", 13, 8),
+                      ("plant", 16, 8), ("painting", 14, 1), ("painting2", 15, 1)]),
+    "apt_barry": ("o", [("bed_barry", 1, 2), ("nightstand", 4, 2), ("cabinet", 6, 2), ("bookshelf", 1, 9),
+                        ("window", 2, 1), ("poster", 5, 1),
+                        ("tv_big", 13, 2), ("rug", 13, 4), ("sofa", 13, 7), ("armchair", 16, 7),
+                        ("film_poster", 16, 1), ("poster2", 13, 1)]),
+    "apt_sam": ("b", [("bed_sam", 1, 2), ("nightstand", 4, 2), ("plant_big", 6, 2), ("rug_bed", 1, 5),
+                      ("bookshelf2", 1, 10), ("window", 3, 1),
+                      ("desk_home", 16, 2), ("chair_blue", 17, 3), ("coffee_table", 16, 6), ("sofa", 15, 8),
+                      ("plant", 18, 8), ("painting", 17, 1)]),
+    "apt_ian": ("O", [("bed_ian", 1, 2), ("nightstand", 4, 2), ("buoy", 6, 2), ("ship_wheel", 5, 1),
+                      ("bookshelf2", 1, 10), ("window", 3, 1),
+                      ("trophy", 16, 2), ("helm", 18, 4), ("nautical_chart", 16, 1), ("rug", 15, 5),
+                      ("sofa", 15, 8), ("rope", 18, 10)]),
+    "apt_milany": ("o", [("bed_milany", 1, 2), ("nightstand", 4, 2), ("plant_big", 6, 2), ("rug_green", 1, 5),
+                         ("bookshelf2", 1, 10), ("window", 3, 1),
+                         ("desk_home", 16, 2), ("chair_blue", 17, 3), ("coffee_table", 16, 6),
+                         ("sofa_grey", 15, 8), ("plant", 18, 8), ("painting", 17, 1)]),
+}
+OBJECT_DEFS.update({k: ((2 if k == "bed_brainy" else 3), 2, True, "obj") for k in _beds.BEDS})
+
+
+def build_apartment(apt):
+    floor, objs = APT_STYLE[apt]
+    owner = APT_NAMES[APT_OWNER[apt]]
+    w, h, _dx, _gap = APT_SIZE[APT_PARENT[apt]]
+    m = GameMap(apt, w, h, outdoor=False, label=f"Apartamento da {owner}" if owner not in
+                ("Brainy", "Barry", "Ian") else f"Apartamento do {owner}")
+    for y, row in enumerate(_apt_rows(apt, floor)):
+        for x, ch in enumerate(row):
+            m.tiles[y][x] = INTERIOR_LEGEND[ch]
+    lx, ly = LOBBY_DOORS[apt]
+    m.doors[APT_DOORS[apt]] = (APT_PARENT[apt], lx, ly + 1, "down")
+    for kind, x, y in KITCHENS[APT_PARENT[apt]] + objs:
+        m.add(kind, x, y)
+    m.finalize()
+    return m
+
+
+def build_homes():
+    out = {"bayside": build_bayside(), "residencial": build_residencial()}
+    for apt in APARTMENTS.values():
+        out[apt] = build_apartment(apt)
+    return out

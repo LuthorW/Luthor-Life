@@ -10,7 +10,7 @@ from . import sprites  # noqa: F401  (personagens no estilo Stardew)
 from .config import TILE, SCALE
 
 FOOT = 2 * SCALE  # distância do pé até a base do tile
-from .world import CITY_DOORS, INTERIOR_DOORS
+from .world import CITY_DOORS, INTERIOR_DOORS, APT_PARENT, SUB_PARENT, LOBBY_DOORS, APT_DOORS, APARTMENTS
 
 DIRS = {"up": (0, -1), "down": (0, 1), "left": (-1, 0), "right": (1, 0)}
 
@@ -49,8 +49,10 @@ class Player:
         self.dir = "down"
         self.moving = False
         self.anim = 0.0
+        self.seat = None          # sentada: dict(lift, sort, back=(x, y, dir)) — ver Game.sit
 
     def place_tile(self, tx, ty, d=None):
+        self.seat = None
         self.x = (tx + 0.5) * TILE
         self.y = (ty + 1) * TILE - FOOT
         if d:
@@ -129,10 +131,28 @@ class Player:
             self.anim = 0
 
     def draw(self, surf, cam):
+        if self.seat:
+            self.draw_seated(surf, cam)
+            return
         img, bob = idle_frame(self.frames, self.dir, self.moving, self.anim, 0.0)
         sx, sy = int(self.x - cam[0]), int(self.y - cam[1])
         draw_shadow(surf, sx, sy + SCALE)
         surf.blit(img, (sx - img.get_width() // 2, sy - img.get_height() + FOOT + bob))
+
+    LEG_CUT = 7               # pixels de arte das pernas que somem quando ela senta
+
+    def draw_seated(self, surf, cam):
+        """Sentada: o corpo desce até o assento e as pernas viram joelhinhos dobrados (de costas, somem)."""
+        img, bob = idle_frame(self.frames, self.dir, False, 0.0, 0.0)
+        w, h = img.get_size()
+        cut = self.LEG_CUT * SCALE
+        sx = int(self.x - cam[0])
+        hip = int(self.y + FOOT - cam[1]) - self.seat["lift"] * SCALE + bob
+        if self.dir != "up":
+            legs = pygame.transform.scale(img.subsurface((0, h - cut, w, cut)), (w, 3 * SCALE))
+            off = {"left": -2, "right": 2}.get(self.dir, 0) * SCALE
+            surf.blit(legs, (sx - w // 2 + off, hip - SCALE))
+        surf.blit(img.subsurface((0, 0, w, h - cut)), (sx - w // 2, hip - (h - cut)))
 
 
 class NPC:
@@ -171,11 +191,14 @@ class NPC:
             kind = "weekend"
         sch = self.base_schedule(kind)
         if partner:
+            # morando junto: o apartamento antigo vira a cobertura da Letícia
+            apt = APARTMENTS.get(self.key)
             sch = [e for e in sch]
-            if sch and sch[0][1] is None:
+            if sch and sch[0][1] in (None, apt):
                 sch[0] = (sch[0][0], "home", 20, 7, "up")
-            if sch[-1][1] is None:
+            if sch[-1][1] in (None, apt):
                 sch[-1] = (sch[-1][0], "home", 14, 12, "left")
+            sch = [((t, "home", 14, 12, "left") if m == apt else (t, m, x, y, d)) for (t, m, x, y, d) in sch]
         if date:
             m, x, y, d = date
             start, end = 1140, 1320
@@ -246,16 +269,26 @@ class NPC:
             self.dir = "down" if dy > 0 else "up"
         self.paused = 2.5
 
+    # mapas em três níveis: cidade -> prédio (portaria Bayside ou Residencial) -> apartamento/cobertura
+    @staticmethod
+    def _top(m):
+        """O prédio da cidade onde fica o mapa m (o próprio m, se ele já tem porta na rua)."""
+        return SUB_PARENT.get(m, m)
+
     def _leg_target(self, world):
         gmap = self.goal[0]
         if self.map == gmap:
             return (self.goal[1], self.goal[2])
+        if self.map in SUB_PARENT:                               # sai do apartamento para o corredor
+            return APT_DOORS[self.map]
         if self.map != "city":
+            if SUB_PARENT.get(gmap) == self.map:                 # do corredor para o apartamento
+                return LOBBY_DOORS[gmap]
             return INTERIOR_DOORS[self.map]
         if gmap is None:
             m = world["city"]
             return min(m.spawn_edges, key=lambda e: abs(e[0] - self.fx) + abs(e[1] - self.fy))
-        return CITY_DOORS[gmap]
+        return CITY_DOORS[self._top(gmap)]
 
     def _finish_leg(self, world):
         gmap, gx, gy, gd = self.goal
@@ -263,15 +296,22 @@ class NPC:
             self.dir = gd
             self.arrived = True
             return
-        if self.map != "city":
+        if self.map in SUB_PARENT:
+            lx, ly = LOBBY_DOORS[self.map]
+            self.place(SUB_PARENT[self.map], lx, ly + 1, "down")
+        elif self.map != "city" and SUB_PARENT.get(gmap) == self.map:
+            ax, ay = APT_DOORS[gmap]
+            self.place(gmap, ax, ay - 1, "up")
+        elif self.map != "city":
             cx, cy = CITY_DOORS[self.map]
             self.place("city", cx, cy + 1, "down")
         elif gmap is None:
             self.map = None
             self.arrived = True
         else:
-            ix, iy = INTERIOR_DOORS[gmap]
-            self.place(gmap, ix, iy - 1, "up")
+            top = self._top(gmap)
+            ix, iy = INTERIOR_DOORS[top]
+            self.place(top, ix, iy - 1, "up")
         self.path = None
 
     def update(self, dt, world):
@@ -290,6 +330,10 @@ class NPC:
             if gmap == "city":
                 ex, ey = random.choice(world["city"].spawn_edges)
                 self.place("city", ex, ey)
+            elif gmap in APT_PARENT:                             # acorda já dentro de casa
+                self.place(gmap, gx, gy, gd)
+                self.arrived = True
+                return
             else:
                 ix, iy = INTERIOR_DOORS[gmap]
                 self.place(gmap, ix, iy - 1, "up")

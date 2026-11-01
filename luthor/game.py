@@ -16,7 +16,7 @@ from .config import (SCALE, TITLE, SCREEN_W, SCREEN_H, FPS, TILE, SAVE_DIR, SAVE
 from .data import (PROJECTS, ITEMS, FISH, JUNK, RECIPES, BOOKS, SHOPS, SELLABLE, FLAG_LABELS, NEWS, TIPS, GOALS,
                    FORAGE)
 from .characters import NPCS, NPC_ORDER, TEAM, ROMANCES
-from .entities import Player, NPC, Car, DIRS, draw_shadow, PLAYER_LOOK
+from .entities import Player, NPC, Car, DIRS, draw_shadow, PLAYER_LOOK, FOOT
 from .world import build_world, COUNTERS, WATER_TILES, STATION_SLOTS, HOME_BED, HOSPITAL_BED
 from .minigames import Fishing, Arcade, Cooking, Inventory
 from .effects import Ambient
@@ -34,6 +34,7 @@ from .cutscenes import Cutscene, SCENES, dating_scene, move_in_scene, date_scene
 from . import scenery
 from . import caprichado
 from .world import CITY_LAYOUT, CITY_DOORS, old_city_xy
+from .world import APT_OWNER, APT_NAMES, LOBBY_DOORS, SUB_PARENT, BAYSIDE_HOURS, APT_MIN_HEARTS
 
 SHADOW_KINDS = {"tree": 46, "tree2": 46, "tree3": 46, "palm": 30, "bush": 26, "bush2": 26, "bush3": 26,
                 "planter": 30, "lamp": 16, "bench": 34, "statue": 30, "hydrant": 18, "umbrella": 40, "umbrella2": 40,
@@ -219,6 +220,7 @@ class Game:
                          for i in range(MAX_STATIONS)]
         self.friendship = {k: 0 for k in NPC_ORDER}
         self.talked, self.gifted = set(), set()
+        self.kissed = set()
         self.gift_known = {k: {} for k in NPC_ORDER}
         self.flags, self.events_seen = set(), set()
         self.event_hinted = set()
@@ -233,8 +235,11 @@ class Game:
         self.weather, self.weather_tomorrow = "sol", "sol"
         self.map_name = "home"
         self.coffee_today = False
+        self.ricci_coffee = False
+        self.milany_visit = False
         self.warned = set()
         self.dating = None
+        self.proposal = None          # pedido de namoro marcado (buquê dado, cena ainda não tocou)
         self.partner = None
         self.date = None
         self.fishing = None
@@ -388,10 +393,16 @@ class Game:
     def scene_title(self, key):
         titles = {"intro": "Primeiro dia", "lucy_2": "Lucy: depois do expediente", "lucy_4": "Lucy: um mistério",
                   "lucy_6": "Lucy: o píer à noite", "lucy_8": "Lucy: pôr do sol", "lucy_10": "Lucy: o chafariz",
-                  "vittoria_2": "Vittoria: pizza no ar", "vittoria_4": "Vittoria: família Ricci",
+                  "vittoria_4": "Vittoria: família Ricci",
                   "vittoria_6": "Vittoria: o caderno da nonna", "vittoria_8": "Vittoria: no parque",
                   "vittoria_10": "Vittoria: manhã na praia", "brainy_3": "Brainy: Projeto Hecate",
-                  "brainy_5": "Brainy: o drone", "sam_3": "Sam: contratos", "namoro_lucy": "Namoro com a Lucy",
+                  "brainy_5": "Brainy: o drone", "sam_3": "Sam: contratos", "sam_0": "Sam: de volta", "sam_2": "Sam: a agenda",
+                  "sam_4": "Sam: contratos", "sam_6": "Sam: presente", "sam_8": "Sam: novos acordos",
+                  "ian_0": "Ian: a marina", "ian_2": "Ian: os troféus", "ian_4": "Ian: segredo", 
+                  "ian_8": "Ian: a revanche", "jess_5": "Jess: a agenda nova", "milany_0": "Milany: reencontro", "milany_2": "Milany: fim de plantão",
+                  "milany_4": "Milany: noite de jogos", "milany_6": "Milany: no hospital", "milany_8": "Milany: a foto",
+                  "vittoria_1": "Vittoria: a mesa reservada", "vittoria_2": "Vittoria: o escritório", "namoro_lucy": "Namoro com a Lucy",
+                  "lucy_pedido": "Lucy: o pedido de namoro", "vittoria_pedido": "Vittoria: o pedido de namoro",
                   "namoro_vittoria": "Namoro com a Vittoria", "mudanca_lucy": "Lucy se muda",
                   "mudanca_vittoria": "Vittoria se muda", "ian_3": "Ian: o relatório da marina",
                   "ian_6": "Ian: as férias no interior", "barry_3": "Barry: as fotos da semana",
@@ -482,6 +493,10 @@ class Game:
             self.player.place_tile(x, y, d)
             self.fishing = None
             self.scene_check_pending = True
+            if target == "hospital" and "milany_care" in self.flags and not self.milany_visit:
+                self.milany_visit = True
+                self.energy = min(self.max_energy, self.energy + 20)
+                self.toasts.push("A Milany deixou recado na recepção: +20 de energia.", C_GREEN)
         self.start_fade(go)
 
     # ------------------------------------------------------------------
@@ -588,6 +603,8 @@ class Game:
             self.modals[-1].update(dt)
             self.modals = [m for m in self.modals if not m.done]
         self.particles = [p for p in self.particles if p.update(dt)]
+        self.update_eat_fx(dt)
+        self.update_kiss_fx(dt)
         if self.scene == "title":
             self.update_cars(dt)
             return
@@ -598,7 +615,7 @@ class Game:
             self.ambient.update(dt, self.current_map, self.camera(self.current_map), self.minutes, self.weather)
         if self.modals or self.fade_dir:
             return
-        self.time_acc += dt
+        self.time_acc += dt * (0.9 if "jess_agenda" in self.flags and 9 * 60 <= self.minutes < 12 * 60 else 1.0)
         while self.time_acc >= SECONDS_PER_10MIN:
             self.time_acc -= SECONDS_PER_10MIN
             self.minutes += 10
@@ -627,6 +644,12 @@ class Game:
             speed *= 1.1
         if self.energy <= 0:
             speed = WALK_SPEED * 0.7
+        if getattr(self, "eat_fx", None) or getattr(self, "kiss_fx", None):   # parada enquanto come ou beija
+            mx = my = 0
+        if self.player.seat:
+            if mx or my:
+                self.stand_up()
+            return
         blockers = [n.rect() for n in self.npcs.values() if n.map == self.map_name]
         blockers += [e.rect() for e in self.crowd.on_map(self.map_name)]
         if self.map_name == "city":
@@ -634,7 +657,11 @@ class Game:
         self.player.update(dt, (mx, my), self.current_map, blockers, speed)
         door = self.current_map.doors.get(self.player.tile)
         if door:
-            self.warp(*door)
+            if self.door_open(door):
+                self.warp(*door)
+            else:                                   # porta trancada: volta um passo
+                tx, ty = self.player.tile
+                self.player.place_tile(tx, ty + 1, "down")
 
     def update_cars(self, dt):
         city = self.world["city"]
@@ -709,6 +736,8 @@ class Game:
 
     def target_label(self, target):
         kind, t = target
+        if self.player.seat and kind != "npc":
+            return "Levantar"
         if kind == "water":
             return "Pescar"
         if kind == "pet":
@@ -732,6 +761,8 @@ class Game:
                 return f"{short} (já conversaram)"
             return f"Falar com {short}"
         k = t.kind
+        if k in self.SEATS:
+            return "Sentar"
         lab = activities.object_label(self, t) or hospital.object_label(self, t) or marina.target_label(self, t)
         if lab:
             return lab
@@ -742,7 +773,7 @@ class Game:
             if st["project"] is None:
                 return "Iniciar projeto" if (self.selected_item() or "").startswith("prop_") else "Bancada livre"
             p = PROJECTS[st["project"]]
-            if st["progress"] >= p["days"]:
+            if st["progress"] >= self.project_days(st["project"]):
                 return f"Lançar {p['name']}!"
             return "Já trabalhou hoje" if st["worked"] else f"Trabalhar ({p['name']})"
         labels = {"bed2": "Dormir", "bed": "Dormir", "tv": "Assistir ao jornal", "tv_big": "Assistir ao jornal",
@@ -753,6 +784,13 @@ class Game:
         return labels.get(k, "Olhar")
 
     def interact(self):
+        if self.player.seat:
+            target = self.resolve_target()
+            if target and target[0] == "npc":
+                self.talk_to(target[1])
+            else:
+                self.stand_up()
+            return
         target = self.resolve_target()
         if not target:
             return
@@ -773,8 +811,86 @@ class Game:
     def say(self, msg, speaker=""):
         self.push(ui.Dialog(speaker or "", [msg]))
 
+    APT_LOOK = {"bed2": "A cama de {n}, arrumadinha. Melhor não deitar na casa dos outros.",
+                "bed_lucy": "A cama da Lucy: colcha de flanela xadrez e um bloquinho de anotações no travesseiro.",
+                "bed_vittoria": "Cabeceira estofada e lençóis de linho italiano. Nem uma ruga na colcha.",
+                "bed_sam": "A cama da Sam, feita com capricho. Tem uma agenda da Luthor Corp na mesinha.",
+                "bed_brainy": "Uma cama de solteiro com estampa de circuitos. Tem um livro de física no travesseiro.",
+                "bed_jess": "Colcha florida e um ursinho de pelúcia. A Jess jura que ele é decoração.",
+                "bed_nia": "Colcha cheia de estrelas e uma lua. Tem um caderno de sonhos na mesinha.",
+                "bed_barry": "Colcha vermelha com um raio amarelo. Bem a cara do Barry.",
+                "bed_ian": "Listras de marinheiro e uma âncora na cabeceira. Cheiro de maresia.",
+                "bed_milany": "A cama da Milany, colcha lilás e um bipe do hospital do lado do travesseiro.",
+                "hbed": "A cama de {n}. Tem um livro aberto em cima do travesseiro.",
+                "kitchen": "A cozinha de {n}. Cheiro de café recém-passado.",
+                "stove": "O fogão de {n}. Melhor não cozinhar na casa dos outros sem pedir.",
+                "island": "A ilha da cozinha de {n}, com uma fruteira cheia.",
+                "dining": "A mesinha de jantar de {n}. Tem um vaso com uma flor só.",
+                "kitchen2": "Uma cozinha pequena e organizada. Tem uma caneca com o nome de {n}.",
+                "fridge": "A geladeira de {n}, cheia de ímãs e bilhetinhos.",
+                "tv_big": "A TV de {n}. Pausada no meio de um filme.",
+                "desk_editor": "A mesa de {n}, cheia de anotações de matérias.",
+                "desk_home": "A mesa de trabalho de {n}. Melhor não mexer nos papéis.",
+                "desk": "A mesa de {n}, coberta de cálculos e circuitos.",
+                "terminal": "O computador de {n}. Tem uma senha de 32 caracteres.",
+                "monitor": "Um monitor cheio de gráficos que só {n} entende.",
+                "bookshelf": "Os livros de {n}. Dá para saber muito sobre alguém pela estante.",
+                "bookshelf2": "Os livros de {n}. Dá para saber muito sobre alguém pela estante.",
+                "bookshelf3": "Os livros de {n}. Dá para saber muito sobre alguém pela estante.",
+                "wine_shelf": "Os vinhos de {n}. Todos italianos, claro.",
+                "wardrobe": "O armário de {n}. Fechado, por educação.",
+                "trophy": "Troféus de regata de {n}. Muitos.",
+                "helm": "Um timão antigo, lembrança de {n} do primeiro barco."}
+
+    # --- Sentar -----------------------------------------------------------
+    # altura do assento em pixels de arte (o corpo desce até ali)
+    SEATS = {"chair": 7, "chair_blue": 7, "hchair": 6, "stool": 10, "bench": 6, "bench_l": 6, "bench_r": 6,
+             "sofa": 8, "sofa_grey": 8, "armchair": 7}
+    TABLE_WORDS = ("table", "desk", "dining", "island", "counter", "bar", "kitchen")
+
+    def seat_dir(self, o, tx, ty):
+        """Para onde ela fica virada: para a mesa ao lado; bancos de parede, para o lado deles; senão, para baixo."""
+        if o.kind == "bench_l":
+            return "left"
+        if o.kind == "bench_r":
+            return "right"
+        m = self.current_map
+        if o.kind in ("chair", "chair_blue", "hchair", "stool"):
+            for d, (dx, dy) in (("up", (0, -1)), ("right", (1, 0)), ("left", (-1, 0)), ("down", (0, 1))):
+                n = m.object_at(tx + dx, ty + dy)
+                if n and n is not o and n.kind not in self.SEATS and any(w in n.kind for w in self.TABLE_WORDS):
+                    return d
+        return "down"
+
+    def sit(self, o):
+        fx, _ = self.player.facing_tile()
+        tx = min(max(fx, o.x), o.x + o.w - 1)            # sofá: senta no lugar que está na frente dela
+        ty = o.y + o.h - 1
+        if any(n.map == self.map_name and n.tile == (tx, ty) for n in self.npcs.values()):
+            self.toasts.push("Esse lugar está ocupado.", C_MUTED)
+            return
+        back = (self.player.x, self.player.y, self.player.dir)
+        self.player.place_tile(tx, ty, self.seat_dir(o, tx, ty))
+        self.player.moving = False
+        self.player.seat = dict(lift=self.SEATS[o.kind], sort=o.base_y + 1, back=back)
+
+    def stand_up(self):
+        st = self.player.seat
+        if not st:
+            return
+        self.player.seat = None
+        self.player.x, self.player.y, _ = st["back"]
+
     def use_object(self, o):
         k = o.kind
+        if k in self.SEATS:                         # dá para sentar até na casa dos outros
+            self.sit(o)
+            return
+        owner = APT_OWNER.get(self.map_name)
+        if owner:                                   # na casa dos outros não se usa nada, só se olha
+            n = APT_NAMES[owner]
+            self.say(self.APT_LOOK.get(k, "Coisas de {n}. Melhor não mexer.").format(n=n))
+            return
         if activities.use_object(self, o) or hospital.use_object(self, o) or marina.use_object(self, o):
             return
         if k == "station":
@@ -826,7 +942,7 @@ class Game:
 
     def consume(self):
         item = self.selected_item()
-        if not item:
+        if not item or getattr(self, "eat_fx", None):      # um de cada vez
             return
         it = ITEMS[item]
         if it["kind"] == "book":
@@ -837,6 +953,7 @@ class Game:
             self.remove_item(item)
             self.flags.add(b["flag"])
             self.toasts.push(f"Leu '{b['name']}': {b['effect']}", C_GOLD, item)
+            self.start_eat_fx(item, "read")
             return
         if it["kind"] not in ("food", "dish", "crop", "forage") or not it.get("energy"):
             self.toasts.push(f"{it['name']} não é comestível.", C_MUTED)
@@ -848,6 +965,114 @@ class Game:
         gain = int(it["energy"] * (1.3 if "gastro" in self.buffs else 1))
         self.energy = min(self.max_energy, self.energy + gain)
         self.toasts.push(f"{it['name']}: +{gain} de energia", C_GREEN, item)
+        self.start_eat_fx(item, "drink" if it["icon"] in ("cup", "soda", "drink") else "eat")
+
+    # --- animação de comer / beber / ler ---------------------------------------
+    EAT_DUR = {"eat": 1.15, "drink": 1.0, "read": 1.1}
+    EAT_BEATS = {"eat": (0.18, 0.48, 0.78), "drink": (0.25, 0.6), "read": (0.15, 0.55)}
+
+    def door_open(self, door):
+        """Portaria dos Apartamentos Bayside (7h às 23h) e apartamentos (dono em casa + 2 corações)."""
+        target = door[0]
+        if target == "bayside" and self.map_name == "city":
+            a, b = BAYSIDE_HOURS
+            if not (a <= self.minutes < b):
+                audio.sfx("cancel")
+                self.say("A portaria dos Apartamentos Bayside está fechada. Abre às 7h e fecha às 23h.")
+                return False
+            return True
+        owner = APT_OWNER.get(target)
+        if not owner:
+            return True
+        name = APT_NAMES[owner]
+        npc = self.npcs.get(owner)
+        if self.partner == owner:
+            audio.sfx("cancel")
+            self.say(f"O apartamento está vazio: {name} mora com você na cobertura agora.")
+            return False
+        invited = any(ev.get("scene") and SCENES[ev["scene"]]["map"] == target and
+                      self.scene_place(ev["scene"])[1] <= self.minutes <= self.scene_place(ev["scene"])[2]
+                      for _k, _h, ev in self.pending_scene_events())
+        if invited:                                 # evento marcado aqui: a pessoa te espera para a cena
+            return True
+        if not npc or npc.map != target:
+            audio.sfx("cancel")
+            self.say(f"Você bate na porta... ninguém atende. {name} não está em casa agora.")
+            return False
+        if self.hearts(owner) < APT_MIN_HEARTS and self.dating != owner:
+            audio.sfx("cancel")
+            self.say(f"{name} entreabre a porta: 'Oi, Letícia! Hoje não dá, a casa está uma bagunça.' "
+                     f"(É preciso ter {APT_MIN_HEARTS} corações para entrar.)")
+            return False
+        return True
+
+    def draw_apt_plates(self, surf, cam):
+        """Plaquinhas com o nome de cada morador em cima das portas do corredor (e a do elevador da cobertura)."""
+        for apt, (x, y) in LOBBY_DOORS.items():
+            if SUB_PARENT[apt] != self.map_name:
+                continue
+            name = "Cobertura" if apt == "home" else APT_NAMES[APT_OWNER[apt]]
+            img = ui.font(12, True).render(name, False, (250, 240, 210))
+            cx = int((x + 0.5) * TILE - cam[0])
+            cy = int(y * TILE + 3 - cam[1])
+            r = pygame.Rect(0, 0, img.get_width() + 6, img.get_height() + 2)
+            r.midtop = (cx, cy)
+            pygame.draw.rect(surf, (120, 92, 52), r.inflate(2, 2), border_radius=2)
+            pygame.draw.rect(surf, (60, 44, 30), r, border_radius=2)
+            surf.blit(img, (r.x + 3, r.y + 1))
+
+    def start_eat_fx(self, item, kind):
+        """A Letícia segura o item acima da cabeça: mordidas (comer), goles (beber) ou folhear (ler)."""
+        self.eat_fx = dict(item=item, kind=kind, t=0.0, beats=list(self.EAT_BEATS[kind]))
+        self.player.dir = "down"
+
+    def update_eat_fx(self, dt):
+        fx = getattr(self, "eat_fx", None)
+        if not fx:
+            return
+        fx["t"] += dt
+        while fx["beats"] and fx["t"] >= fx["beats"][0]:
+            fx["beats"].pop(0)
+            if fx["kind"] == "eat":
+                audio.sfx("eat")
+                col = mix_rgb(ITEMS[fx["item"]]["color"], (236, 204, 150), 0.55)   # farelos claros
+                for _ in range(5):
+                    p = Particle(self.player.x + random.uniform(-6, 6), self.player.y - 30 * SCALE, col)
+                    p.vx *= 0.35; p.vy = random.uniform(-60, -10); p.life *= 0.8
+                    self.particles.append(p)
+            elif fx["kind"] == "drink":
+                audio.sfx("gulp")
+            else:
+                audio.sfx("page")
+        if fx["t"] >= self.EAT_DUR[fx["kind"]]:
+            audio.sfx("reward" if fx["kind"] == "read" else "yum")
+            self.eat_fx = None
+
+    def draw_eat_fx(self, surf, cam):
+        fx = getattr(self, "eat_fx", None)
+        if not fx:
+            return
+        t, kind = fx["t"], fx["kind"]
+        icon = art.item_icon(fx["item"], 2).copy()
+        w, h = icon.get_size()
+        if kind == "eat":                          # cada mordida tira um pedaço (arco transparente no canto)
+            bites = sum(1 for b in self.EAT_BEATS["eat"] if t >= b)
+            for i in range(bites):
+                cx = w - 2 - i * (w // 4)
+                pygame.draw.circle(icon, (0, 0, 0, 0), (cx, 2 + i * 3), w // 4 + 1)
+        lift = min(1.0, t / 0.15)                   # sobe até acima da cabeça
+        x = int(self.player.x - w // 2 - cam[0])
+        y = int(self.player.y - 34 * SCALE - h * lift - cam[1])
+        if kind == "drink":                         # inclina como quem toma um gole
+            ang = 25 * abs(math.sin(t * 5))
+            icon = pygame.transform.rotate(icon, ang)
+        elif kind == "read":
+            y += int(math.sin(t * 9) * 2)
+        surf.blit(icon, (x, y))
+        if kind == "read" and t > 0.5:              # brilhinho de "aprendi!"
+            k = int((t - 0.5) * 20) % 3
+            for dx, dy in ((-10, -4), (w + 6, 2), (w // 2, -12))[:k + 1]:
+                pygame.draw.rect(surf, (255, 236, 140), (x + dx, y + dy, 4, 4))
 
     # --- Laboratório ---------------------------------------------------
     def use_station(self, idx):
@@ -867,7 +1092,7 @@ class Game:
                 self.toasts.push("Bancada livre: selecione uma proposta na barra e aperte E.", C_MUTED)
             return
         p = PROJECTS[st["project"]]
-        if st["progress"] >= p["days"]:
+        if st["progress"] >= self.project_days(st["project"]):
             if self.add_item(st["project"]):
                 self.stats["launched"] += 1
                 if st["project"] == "hecate":
@@ -887,7 +1112,7 @@ class Game:
         cost = WORK_ENERGY
         self.energy -= cost // 2 if "neurologia" in self.buffs else cost
         st["worked"] = True
-        left = p["days"] - st["progress"] - 1
+        left = self.project_days(st["project"]) - st["progress"] - 1
         msg = ("fica pronto amanhã!" if left == 0 else
                "falta 1 dia depois de hoje" if left == 1 else f"faltam {left} dias depois de hoje")
         self.toasts.push(f"Trabalhou no {p['name']}: {msg}", C_TEXT)
@@ -915,10 +1140,17 @@ class Game:
         value = self.sell_value(item) * n
         self.toasts.push(f"Venda: {n}x {ITEMS[item]['name']} (+${value} esta noite)", C_GOLD, item)
 
+    def project_days(self, key):
+        """Dias de um projeto (com as bancadas do Brainy, 1 dia a menos)."""
+        return max(1, PROJECTS[key]["days"] - (1 if "brainy_fast" in self.flags else 0))
+
     def sell_value(self, item):
         v = ITEMS[item].get("value", 0)
-        if "sam_bonus" in self.flags and ITEMS[item]["kind"] == "product":
-            v = int(v * 1.1)
+        bonus = (0.10 if "sam_bonus" in self.flags else 0) + (0.25 if "sam_bonus2" in self.flags else 0)
+        if bonus:                                   # contratos renegociados pela Sam (eventos de 4 e 8 corações)
+            v = int(v * (1 + bonus))
+        if "ian_deepfish" in self.flags and item in FISH and FISH[item].get("where") == "deep":
+            v = int(v * 1.15)
         if "endocrino" in self.buffs and ITEMS[item]["kind"] == "dish":
             v = int(v * 1.2)
         return v
@@ -1112,6 +1344,21 @@ class Game:
                 out.append(dict(label=ITEMS[item]["name"], price=price, desc=ITEMS[item]["desc"], item=item,
                                 buy=self._buy_item(item, price), enabled=lambda p=price: self.money >= p))
             return out
+        if shop_id == "trattoria" and "vittoria_coffee" in self.flags:
+            base = entries
+
+            def free_coffee():
+                if self.ricci_coffee:
+                    return False, "Você já tomou o café de hoje. Volte amanhã!"
+                if not self.add_item("cappuccino"):
+                    return False, "Mochila cheia."
+                self.ricci_coffee = True
+                return True, "Cappuccino por conta da Vittoria. Grazie!"
+
+            def entries():
+                return [dict(label="Café por conta da Vittoria" + (" (amanhã tem mais)" if self.ricci_coffee else ""),
+                             price=0, desc="Um cappuccino por dia, por conta da casa.", item="cappuccino",
+                             buy=free_coffee, enabled=lambda: not self.ricci_coffee)] + base()
         sub = shop["subtitle"] + ("  (20% de desconto)" if disc < 1 else "")
         self.push(ui.Shop(shop["title"], sub, entries, self))
 
@@ -1293,6 +1540,8 @@ class Game:
             opts.append("Ver iscas e varas"); acts.append(lambda: self.open_shop("bait"))
         if can_gift:
             opts.append(f"Dar {ITEMS[item]['name']}"); acts.append(lambda: self.give_gift(npc, item))
+        if key in (self.dating, self.partner):
+            opts.append("Beijar"); acts.append(lambda: self.kiss(npc))
         if key in (self.dating, self.partner) and not self.date and self.minutes < 19 * 60:
             opts.append("Convidar para um encontro hoje às 20h"); acts.append(lambda: self.invite_date(npc))
         marina.talk_options(self, npc, opts, acts)
@@ -1361,6 +1610,103 @@ class Game:
         seen.append(line)
         return line
 
+    # --- Beijo (namorando ou morando junto) -----------------------------
+    KISS_DUR = 1.9
+    KISS_POINTS = 30                                # amizade extra, uma vez por dia
+    HEART_PX = [".XX.XX.", "XXXXXXX", "XXXXXXX", ".XXXXX.", "..XXX..", "...X..."]
+
+    def kiss(self, npc):
+        """As duas se viram uma para a outra, se inclinam, estalinho e corações subindo."""
+        if getattr(self, "kiss_fx", None) or getattr(self, "eat_fx", None):
+            return
+        nx, ny = (npc.fx + 0.5) * TILE, (npc.fy + 1) * TILE - FOOT
+        dx, dy = nx - self.player.x, ny - self.player.y
+        if abs(dx) >= abs(dy):
+            self.player.dir = "right" if dx > 0 else "left"
+        else:
+            self.player.dir = "down" if dy > 0 else "up"
+        npc.face_toward(self.player.x, self.player.y)
+        npc.paused = self.KISS_DUR + 0.6
+        self.kiss_fx = dict(npc=npc, t=0.0, ox=self.player.x, oy=self.player.y, nfx=npc.fx, nfy=npc.fy,
+                            smack=False, hearts=[])
+
+    @staticmethod
+    def _kiss_lean(t):
+        """0 -> 1 (se aproximam), segura, 1 -> 0 (voltam)."""
+        if t < 0.45:
+            return math.sin(t / 0.45 * math.pi / 2)
+        if t < 1.25:
+            return 1.0
+        return max(0.0, math.cos(min(1.0, (t - 1.25) / 0.5) * math.pi / 2))
+
+    def update_kiss_fx(self, dt):
+        fx = getattr(self, "kiss_fx", None)
+        if not fx:
+            return
+        fx["t"] += dt
+        t, npc = fx["t"], fx["npc"]
+        nx0, ny0 = (fx["nfx"] + 0.5) * TILE, (fx["nfy"] + 1) * TILE - FOOT
+        dx, dy = nx0 - fx["ox"], ny0 - fx["oy"]
+        d = max(1.0, math.hypot(dx, dy))
+        ux, uy = dx / d, dy / d
+        gap = 0.5 * TILE if abs(ux) > 0.7 else 0.85 * TILE              # de frente uma para a outra precisa de mais espaço
+        amt = max(0.0, (d - gap) / 2) * self._kiss_lean(t)              # cada uma anda metade do caminho
+        self.player.x, self.player.y = fx["ox"] + ux * amt, fx["oy"] + uy * amt
+        npc.fx, npc.fy = fx["nfx"] - ux * amt / TILE, fx["nfy"] - uy * amt / TILE
+        mx = (self.player.x + nx0 - ux * amt) / 2
+        my = (self.player.y + ny0 - uy * amt) / 2 - 32 * SCALE
+        if not fx["smack"] and t >= 0.45:
+            fx["smack"] = True
+            audio.sfx("kiss")
+            fx["hearts"].append(dict(x=mx, y=my, vy=-14, life=1.4, big=True, sway=0.0))
+        if fx["smack"] and t < 1.4 and random.random() < dt * 7:
+            fx["hearts"].append(dict(x=mx + random.uniform(-14, 14), y=my + random.uniform(-4, 6),
+                                     vy=random.uniform(-40, -24), life=random.uniform(0.7, 1.1), big=False,
+                                     sway=random.uniform(0, 6)))
+        for h in fx["hearts"]:
+            h["life"] -= dt
+            h["y"] += h["vy"] * dt
+        fx["hearts"] = [h for h in fx["hearts"] if h["life"] > 0]
+        if t >= self.KISS_DUR and not fx["hearts"]:
+            self.player.x, self.player.y = fx["ox"], fx["oy"]
+            npc.fx, npc.fy = fx["nfx"], fx["nfy"]
+            self.kiss_fx = None
+            self.npc_emote(npc, "coracao")
+            kissed = self.__dict__.setdefault("kissed", set())
+            if npc.key not in kissed:
+                kissed.add(npc.key)
+                self.add_friendship(npc.key, self.KISS_POINTS)
+                self.toasts.push(f"{npc.data['short']} ficou toda boba com o beijo.", C_PINK)
+
+    def _heart_img(self, k):
+        key = ("kiss_heart", k)
+        img = self.__dict__.setdefault("_heart_cache", {}).get(key)
+        if img is None:
+            img = pygame.Surface((9 * k, 8 * k), pygame.SRCALPHA)
+            for yy, row in enumerate(self.HEART_PX):                 # contorno escuro
+                for xx, c in enumerate(row):
+                    if c == "X":
+                        img.fill((120, 30, 70), (xx * k, yy * k, 3 * k, 3 * k))
+            for yy, row in enumerate(self.HEART_PX):                 # coração rosa
+                for xx, c in enumerate(row):
+                    if c == "X":
+                        img.fill((255, 96, 150), ((xx + 1) * k, (yy + 1) * k, k, k))
+            img.fill((255, 214, 228), (2 * k, 2 * k, k, k))          # brilho
+            self._heart_cache[key] = img
+        return img
+
+    def draw_kiss_fx(self, surf, cam):
+        fx = getattr(self, "kiss_fx", None)
+        if not fx:
+            return
+        for h in fx["hearts"]:
+            k = 3 if h["big"] else 2
+            img = self._heart_img(k).copy()
+            img.set_alpha(int(255 * min(1.0, h["life"] / 0.35)))
+            sway = 0 if h["big"] else math.sin(fx["t"] * 6 + h["sway"]) * 3
+            surf.blit(img, (int(h["x"] - cam[0] + sway - img.get_width() / 2),
+                            int(h["y"] - cam[1] - img.get_height() / 2)))
+
     def npc_emote(self, npc, kind):
         npc.emote, npc.emote_t = kind, 1.8
 
@@ -1390,10 +1736,26 @@ class Game:
                                                "Fica com as rosas. Elas merecem alguém que diga sim de verdade."],
                                     self.portrait_for(npc), subtitle=d["role"]))
                 return
+            elif self.proposal:
+                who = NPCS[self.proposal]["short"]
+                self.say(f"Você já combinou de pedir a {who} em namoro. Guarde as rosas para depois."
+                         if self.proposal != key else
+                         f"O pedido já está marcado: {self.proposal_text()}.")
+                return
             elif self.hearts(key) < ROMANCE_CAP_HEARTS:
                 self.push(ui.Dialog(npc.name, ["Rosas vermelhas? Isso é... muito pra agora.",
                                                "Vamos com calma, tá? Guarda pra quando a gente se conhecer melhor."],
                                     self.portrait_for(npc), subtitle=d["role"]))
+                return
+            elif f"{key}_pedido" in SCENES:
+                # como no pedido do Stardew, mas marcado: nada acontece com ela agora; a cena do pedido
+                # toca no lugar e na hora dela (linha rosa no HUD)
+                self.remove_item(item)
+                self.proposal = key
+                audio.sfx("love")
+                self.push(ui.Dialog("", [f"Você guarda o buquê com cuidado. Hoje não é o momento certo...",
+                                         f"Você vai pedir a {d['short']} em namoro: {self.proposal_text()}."]))
+                self.toasts.push(f"Pedido de namoro: {self.proposal_text()}", C_PINK)
                 return
             else:
                 self.remove_item(item)
@@ -1533,22 +1895,45 @@ class Game:
                 out.append((key, nxt[0], nxt[1]))
         return out
 
+    def proposal_text(self):
+        where, a, b = self.scene_place(f"{self.proposal}_pedido")
+        return f"{where}, entre {self.fmt_hour(a)} e {self.fmt_hour(b)}"
+
+    def accept_proposal(self, key):
+        """Fim da cena do pedido: agora é namoro."""
+        self.proposal = None
+        self.dating = key
+        self.talked.add(key)
+        self.add_friendship(key, 200)
+        self.toasts.push(f"Você e {NPCS[key]['short']} estão namorando!", C_PINK)
+        self.plan_npcs(snap=False)
+
+    def scene_ready(self, scene_key):
+        """A jogadora está no mapa da cena, no horário (e, na cidade, perto do lugar)?"""
+        sc = SCENES[scene_key]
+        mapn = self.SCENE_TRIGGER_MAP.get(sc["map"], sc["map"])
+        _, a, b = self.scene_place(scene_key)
+        if self.map_name != mapn or not (a <= self.minutes <= b):
+            return False
+        if mapn == "city":
+            anchor = self._scene_anchor(scene_key)
+            if anchor:
+                tx, ty = self.player.tile
+                if abs(tx - anchor[0]) + abs(ty - anchor[1]) > 14:
+                    return False
+        return True
+
     def check_scene_events(self):
         """Toca a cena de um evento pendente quando a jogadora está no lugar e no horário da cena."""
         if self.scene != "play" or self.modals or self.fishing or self.fade_dir:
             return
+        if self.proposal and not self.dating and self.scene_ready(f"{self.proposal}_pedido"):
+            key = self.proposal
+            self.play_scene(f"{key}_pedido", on_end=lambda: self.accept_proposal(key))
+            return
         for key, h, ev in self.pending_scene_events():
-            sc = SCENES[ev["scene"]]
-            mapn = self.SCENE_TRIGGER_MAP.get(sc["map"], sc["map"])
-            _, a, b = self.scene_place(ev["scene"])
-            if self.map_name != mapn or not (a <= self.minutes <= b):
+            if not self.scene_ready(ev["scene"]):
                 continue
-            if mapn == "city":
-                anchor = self._scene_anchor(ev["scene"])
-                if anchor:
-                    tx, ty = self.player.tile
-                    if abs(tx - anchor[0]) + abs(ty - anchor[1]) > 14:
-                        continue
             self.events_seen.add(f"{key}:{h}")
             self.play_scene(ev["scene"], on_end=lambda ev=ev: self._event_done(ev))
             return
@@ -1625,7 +2010,7 @@ class Game:
             else:
                 blocks.append(("Pedido", "Nenhum pedido em aberto hoje.", C_MUTED))
             active = sum(1 for s in self.stations if s["project"])
-            ready = sum(1 for s in self.stations if s["project"] and s["progress"] >= PROJECTS[s["project"]]["days"])
+            ready = sum(1 for s in self.stations if s["project"] and s["progress"] >= self.project_days(s["project"]))
             blocks.append(("Laboratório", f"{active} projeto(s) em andamento, {ready} pronto(s) para lançar. "
                                           f"Projetos lançados até hoje: {self.stats['launched']}.", C_TEXT))
             blocks.append(("Mercado", f"LCORP a $ {self.stock:.2f}. Receita total: ${self.stats['earned']:,}. "
@@ -1847,7 +2232,7 @@ class Game:
             if st["project"] and st["worked"]:
                 st["progress"] += 1
             st["worked"] = False
-        ready = sum(1 for s in self.stations if s["project"] and s["progress"] >= PROJECTS[s["project"]]["days"])
+        ready = sum(1 for s in self.stations if s["project"] and s["progress"] >= self.project_days(s["project"]))
         if ready:
             notes.append((f"{ready} projeto(s) pronto(s) para lançar no laboratório!", C_GREEN))
         self.stock_prev = self.stock
@@ -1884,9 +2269,12 @@ class Game:
         self.time_acc = 0
         self.energy = self.max_energy if not passed_out else self.max_energy // 2
         self.talked, self.gifted = set(), set()
+        self.kissed = set()
         self.talk_log = set()
         self.request_nag = set()
         self.coffee_today = False
+        self.ricci_coffee = False
+        self.milany_visit = False
         self.shipped = []
         self.warned = set()
         self.weather = self.weather_tomorrow
@@ -1896,7 +2284,7 @@ class Game:
         if "drone" in self.flags:
             n = 0
             for st in self.stations:
-                if st["project"] and st["progress"] < PROJECTS[st["project"]]["days"]:
+                if st["project"] and st["progress"] < self.project_days(st["project"]):
                     st["worked"] = True
                     n += 1
             if n:
@@ -1964,16 +2352,17 @@ class Game:
     def save(self):
         os.makedirs(SAVE_DIR, exist_ok=True)
         data = dict(
-            version=SAVE_VERSION, city_layout=CITY_LAYOUT, day=self.day, quarter=self.quarter, year=self.year, minutes=self.minutes,
+            version=SAVE_VERSION, city_layout=CITY_LAYOUT, quarter_days=DAYS_PER_QUARTER, day=self.day, quarter=self.quarter, year=self.year, minutes=self.minutes,
             money=self.money, energy=self.energy, inventory=self.inventory, selected=self.selected,
             stations=self.stations, friendship=self.friendship, talked=list(self.talked),
             gifted=list(self.gifted), gift_known=self.gift_known, flags=list(self.flags),
             events_seen=list(self.events_seen), stats=self.stats, stock=self.stock, stock_prev=self.stock_prev,
             shares=self.shares, shipped=self.shipped, request=self.request, weather=self.weather,
             weather_tomorrow=self.weather_tomorrow, map=self.map_name,
-            player=[self.player.x, self.player.y, self.player.dir], coffee_today=self.coffee_today,
+            player=(list(self.player.seat["back"]) if self.player.seat else
+                    [self.player.x, self.player.y, self.player.dir]), coffee_today=self.coffee_today,
             fish_caught=list(self.fish_caught), aquarium=list(self.aquarium), cooked=list(self.cooked),
-            dating=self.dating, partner=self.partner, date=self.date, scenes_seen=self.scenes_seen,
+            dating=self.dating, partner=self.partner, proposal=self.proposal, ricci_coffee=self.ricci_coffee, milany_visit=self.milany_visit, date=self.date, scenes_seen=self.scenes_seen,
             talk_log=list(self.talk_log), lines_seen=self.lines_seen,
         )
         data.update(activities.save_state(self))
@@ -1993,7 +2382,7 @@ class Game:
             d = json.load(f)
         self.reset_state()
         for k in ("day", "quarter", "year", "minutes", "money", "energy", "selected", "stock", "stock_prev",
-                  "request", "weather", "weather_tomorrow", "coffee_today", "shares", "dating", "partner", "date"):
+                  "request", "weather", "weather_tomorrow", "coffee_today", "shares", "dating", "partner", "date", "proposal", "ricci_coffee", "milany_visit"):
             if k in d:
                 setattr(self, k, d[k])
         inv = [list(s) if s and s[0] in ITEMS else None for s in d.get("inventory", [])]
@@ -2019,6 +2408,7 @@ class Game:
         activities.load_state(self, d)
         marina.load_state(self, d)
         hospital.load_state(self, d)
+        self.fix_quarter_len(d.get("quarter_days", 28))
         self.crowd.reset_day()
         self.crowd.load(d.get("crowd", {}))
         self.shipped = [s for s in d.get("shipped", []) if s[0] in ITEMS]
@@ -2041,6 +2431,23 @@ class Game:
         if d.get("version", 1) < SAVE_VERSION:
             self.toasts.push("National City cresceu! Novos lugares e pessoas para conhecer.", C_GOLD)
 
+    def fix_quarter_len(self, old):
+        """Save de quando a estação tinha outro tamanho (28 dias): o dia passa a caber na estação de agora
+        e os prazos guardados como "dia absoluto" andam junto."""
+        if old == DAYS_PER_QUARTER:
+            return
+        old_abs = (self.year - START_YEAR) * 4 * old + (self.quarter - 1) * old + self.day
+        self.day = max(1, min(DAYS_PER_QUARTER, self.day))
+        delta = self.abs_day() - old_abs
+        if self.request and "deadline" in self.request:
+            self.request["deadline"] += delta
+        mar = getattr(self, "marina", None) or {}
+        if mar.get("order") and "deadline" in mar["order"]:
+            mar["order"]["deadline"] += delta
+        for k in ("sunset_day", "regatta_day"):
+            if isinstance(mar.get(k), int):
+                mar[k] += delta
+
     def migrate_city(self):
         """Save do mapa antigo (72x56): leva posições da cidade para o mapa ampliado."""
         city = self.world["city"]
@@ -2050,7 +2457,7 @@ class Game:
             self.player.x += (nx - tx) * TILE
             self.player.y += (ny - ty) * TILE
             if city.is_solid(*self.player.tile):
-                self.player.place_tile(*CITY_DOORS["home"], "down")
+                self.player.place_tile(*CITY_DOORS["residencial"], "down")
                 self.player.y += TILE
         moved = []
         for f in self.forage:
@@ -2243,7 +2650,7 @@ class Game:
             for npc in self.npcs.values():
                 if npc.map == m.name:
                     items.append((npc.base_y, 1, "npc", npc))
-            items.append((self.player.y, 1, "player", self.player))
+            items.append((self.player.seat["sort"] if self.player.seat else self.player.y, 1, "player", self.player))
             items.extend(activities.world_items(self, m))
             for e in self.crowd.on_map(m.name):
                 items.append((e.base_y, 1, "extra", e))
@@ -2285,7 +2692,7 @@ class Game:
                     self.draw_aquarium_fish(surf, x, y)
                 elif e.kind == "station":
                     st = self.stations[e.data]
-                    if st["project"] and st["progress"] >= PROJECTS[st["project"]]["days"]:
+                    if st["project"] and st["progress"] >= self.project_days(st["project"]):
                         bob = math.sin(self.t * 4 + e.data) * 4
                         ic = art.item_icon(st["project"], 2)
                         bx, by = x + TILE // 2, int(y - TILE * 0.4 + bob)
@@ -2321,6 +2728,11 @@ class Game:
                     self.draw_fishing(surf, cam)
         for p in self.particles:
             p.draw(surf, cam)
+        if m.name == self.map_name and with_player:
+            self.draw_eat_fx(surf, cam)
+            self.draw_kiss_fx(surf, cam)
+        if m.name in ("bayside", "residencial"):
+            self.draw_apt_plates(surf, cam)
         if m.name == "city":
             self.pigeons.draw(surf, cam, True)
         self.ambient.draw_world(surf, cam)
@@ -2381,8 +2793,8 @@ class Game:
             if st["project"] is None:
                 return art.station_sprite("empty")
             p = PROJECTS[st["project"]]
-            prog = min(1.0, (st["progress"] + (1 if st["worked"] else 0)) / p["days"])
-            state = "ready" if st["progress"] >= p["days"] else "active"
+            prog = min(1.0, (st["progress"] + (1 if st["worked"] else 0)) / self.project_days(st["project"]))
+            state = "ready" if st["progress"] >= self.project_days(st["project"]) else "active"
             return art.station_sprite(state, p["color"], st["worked"] or state == "ready", prog)
         return art.object_sprite(o.kind)
 
@@ -2471,6 +2883,10 @@ class Game:
                 ui.text(surf, marina.order_text(self), (SCREEN_W - 24, hy), 15, C_GREEN if ok else (120, 190, 240),
                         bold=True, right=True)
                 hy += 20
+            if self.proposal and not self.dating:
+                ui.text(surf, f"Pedido {NPCS[self.proposal]['short']}: {self.proposal_text()}",
+                        (SCREEN_W - 24, hy), 15, C_PINK, bold=True, right=True)
+                hy += 20
             for key, h, ev in [e for e in self.pending_scene_events() if e[1] > 0][:2]:   # 0 corações: escondido
                 where, a, b = self.scene_place(ev["scene"])
                 ui.text(surf, f"Evento {NPCS[key]['short']}: {where} ({self.fmt_hour(a)} a {self.fmt_hour(b)})",
@@ -2479,7 +2895,7 @@ class Game:
             if not dialog_open:
                 ui.draw_hotbar(surf, self)
                 if not self.modals and not self.fade_dir and not self.fishing:
-                    target = self.resolve_target()
+                    target = self.resolve_target() or (("seat", None) if self.player.seat else None)
                     if target:
                         label = self.target_label(target)
                         w = ui.font(17, True).size(label)[0] + 50
@@ -2541,6 +2957,10 @@ class Game:
         if int(self.t * 2) % 2 == 0:
             ui.text(surf, "Jogo salvo. Pressione Enter para começar o novo dia.", (SCREEN_W // 2, SCREEN_H - 34),
                     17, C_MUTED, center=True)
+
+
+def mix_rgb(a, b, t):
+    return tuple(int(a[i] + (b[i] - a[i]) * t) for i in range(3))
 
 
 class Particle:

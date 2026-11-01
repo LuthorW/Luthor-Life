@@ -282,7 +282,13 @@ CAFE_STOCK = SHOPS["cafe"]["stock"]
 
 FLAG_LABELS = {
     "marina_vip": "Regra do diretor da marina: a CEO paga metade do preço nos passeios.",
-    "sam_bonus": "Contratos renegociados: +10% em tudo que você vende.",
+    "sam_bonus": "Sam renegociou os contratos: a Mesa de Contratos paga 10% a mais.",
+    "sam_bonus2": "Novos acordos da Sam: +25% na Mesa de Contratos (35% no total).",
+    "ian_deepfish": "Contatos do Ian: peixes de alto-mar valem 15% a mais.",
+    "milany_care": "Cuidado da Milany: visitar o hospital restaura 20 de energia (uma vez por dia).",
+    "brainy_fast": "Bancadas recalibradas pelo Brainy: projetos ficam prontos 1 dia antes.",
+    "jess_agenda": "Agenda da Jess: das 9h ao meio-dia o relógio anda 10% mais devagar.",
+    "vittoria_coffee": "Café por conta da Vittoria: um café grátis por dia na Ricci Trattoria.",
     "hecate": "Projeto Hecate liberado no Terminal P&D.",
     "drone": "Drone de laboratório: trabalha nos projetos toda manhã.",
     "jess_energy": "Agenda otimizada: +20 de energia máxima.",

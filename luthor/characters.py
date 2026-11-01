@@ -55,9 +55,13 @@ NPCS = {
                        dislike="Hm... obrigada? Acho que vou repassar pra alguém do financeiro."),
         events={0: dict(scene="sam_0", flag="sam_intro", lines=["Luthor, você está de volta. E eu estou de volta.",
                                               "A LuthorCorp precisa de uma CFO. E eu preciso da minha melhor amiga."]),
-                3: dict(scene="sam_3", flag="sam_bonus", lines=["Luthor, revisei todos os contratos de fornecimento da empresa.",
+                2: dict(scene="sam_2", lines=["Luthor, você vai reservar um horário pra gente. Antes das reuniões."]),
+                4: dict(scene="sam_4", flag="sam_bonus", lines=["Luthor, revisei todos os contratos de fornecimento da empresa.",
                                                   "A partir de hoje, a Mesa de Contratos paga 10% a mais por tudo.",
-                                                  "Considere um presente de amiga. E de CFO."])},
+                                                  "Considere um presente de amiga. E de CFO."]),
+                6: dict(scene="sam_6", lines=["Obrigada por estar presente, Letícia. De verdade."]),
+                8: dict(scene="sam_8", flag="sam_bonus2", lines=["Fechei novos acordos: mais 25% nos contratos da Mesa.",
+                                                   "Somando com o bônus de antes, ficou ótimo."])},
     ),
     "brainy": dict(
         name="Querl Dox", short="Brainy", role="CTO",
@@ -93,6 +97,10 @@ NPCS = {
         events={3: dict(scene="brainy_3", flag="hecate", lines=["CEO, tenho uma confissão: existe um projeto que não está no portfólio.",
                                               "O Projeto Hecate. Materiais experimentais, sinais seguros... e um pouco de mistério.",
                                               "Acho que você está pronta. As propostas já estão no Terminal P&D."]),
+                6: dict(flag="brainy_fast", mood="happy", lines=[
+                    "CEO, recalibrei os protocolos de todas as bancadas do laboratório.",
+                    "Com os ajustes, cada projeto termina um dia antes. Fiz as contas três vezes.",
+                    "Quatro, na verdade. A quarta foi só pelo prazer."]),
                 5: dict(scene="brainy_5", flag="drone", lines=["Construí uma coisa pra você. Um drone de laboratório.",
                                              "Ele vai trabalhar em todos os projetos ativos toda manhã, antes de você chegar.",
                                              "Por favor, não o chame de 'robozinho'. Ele é sensível. Eu o programei assim."])},
@@ -126,7 +134,9 @@ NPCS = {
                        like="Ah, que fofa! Obrigada, Srta. Luthor.",
                        neutral="Obrigada! Vou guardar com carinho.",
                        dislike="Ah... obrigada. Vou... arquivar."),
-        events={3: dict(flag="jess_energy", lines=["Srta. Luthor, eu reestruturei toda a sua agenda.",
+        events={5: dict(scene="jess_5", flag="jess_agenda", lines=["Das 9h ao meio-dia, a sua manhã está protegida.",
+                                                    "Nada de reuniões surpresa. Vai parecer que o relógio anda mais devagar."]),
+                3: dict(flag="jess_energy", lines=["Srta. Luthor, eu reestruturei toda a sua agenda.",
                                                    "Menos reuniões inúteis, mais tempo pra você respirar.",
                                                    "Você vai sentir que tem muito mais energia. (+20 de energia máxima)"])},
     ),
@@ -201,6 +211,9 @@ NPCS = {
             1: dict(scene="lucy_1", mood="smile", lines=["Sabe o que eu percebi? Você me olha igual na faculdade. Como se fosse um problema pra resolver.",
                                          "Eu não sou um problema, Letícia. Eu sou... uma pergunta em aberto.",
                                          "Me encontra no Noonan's qualquer noite. Sem gravador. Prometo."]),
+            2: dict(scene="lucy_2", mood="smile", lines=["Sabe o que eu percebi? Você me olha igual na faculdade. Como se fosse um problema pra resolver.",
+                                                     "Eu não sou um problema, Letícia. Eu sou... uma pergunta em aberto.",
+                                                     "Me encontra no Noonan's qualquer noite. Sem gravador. Prometo."]),
             4: dict(scene="lucy_4", mood="happy", gift="policial", lines=["Achei isso na Bayside e lembrei de você. Um mistério sem solução óbvia.",
                                                           "Tipo a gente, né?",
                                                           "Não faz essa cara. Aceita o livro e pronto."]),
@@ -270,6 +283,8 @@ NPCS = {
                        neutral="Grazie! Muito gentil.",
                        dislike="Isso... é industrializado? Dio mio. Bem, obrigada pela intenção."),
         events={
+            2: dict(scene="vittoria_2", mood="happy", flag="vittoria_coffee",
+                    lines=["Passa na Trattoria quando quiser. O café é por minha conta!"]),
             1: dict(scene="vittoria_1", mood="happy", gift="pizza", lines=["Você de novo! Vou começar a reservar sua mesa.",
                                                       "Toma, uma pizza por conta da casa. A Dona Graça fez, eu só servi. Margherita, como em Napoli.",
                                                       "Não conta pros outros clientes, eh?"]),
@@ -498,10 +513,10 @@ NPCS = {
         reactions=dict(love="Você lembrou! Isso é a cara de quem me conhece há anos.", like="Boa escolha, Luthor!",
                        neutral="Valeu, Letícia.", dislike="Hm. Vou deixar no barco. Alguém vai querer."),
         events={0: dict(scene="ian_0", flag="marina_vip", lines=["Fechei o trimestre da marina no azul. E criei uma regra nova como diretor."]),
-                3: dict(scene="ian_3", flag="marina_vip", lines=["Fechei o trimestre da marina no azul. E criei uma regra nova como diretor.",
-                                                  "A CEO paga metade do preço nos passeios. Você me deu autonomia, estou usando.",
-                                                  "(Pesca em alto-mar e passeio ao pôr do sol com 50% de desconto.)"]),
-                6: dict(scene="ian_6", gift="luvas_vela", lines=["Toma, as minhas luvas de vela. Quero que fiquem com você."])},
+                2: dict(scene="ian_2", lines=["Vem ver os meus troféus de regata qualquer dia."]),
+                4: dict(scene="ian_4", flag="ian_deepfish", lines=["Não espalha. Tenho uma reputação de irresponsável a preservar."]),
+                6: dict(scene="ian_6", gift="luvas_vela", lines=["Toma, as minhas luvas de vela. Quero que fiquem com você."]),
+                8: dict(scene="ian_8", lines=["Acho que consigo reservar um tempo pra isso."])},
     ),
 }
 
@@ -653,6 +668,10 @@ DOCTORS = {
                        neutral="Obrigada, de verdade.", dislike="Hm... sério? Como cardiologista, vou fingir que não vi."),
         events={
             0: dict(scene="milany_0", lines=["Amiga, você está de volta! Eu estava ansiosa pra te ver.",]),
+            2: dict(scene="milany_2", lines=["Nem todo dia termina como a gente gostaria."]),
+            4: dict(scene="milany_4", lines=["Minha casa está aberta pra você, amiga."]),
+            6: dict(scene="milany_6", flag="milany_care", lines=["Obrigada por ter vindo, amiga."]),
+            8: dict(scene="milany_8", lines=["Vou guardar essa foto ao lado da antiga."]),
             3: dict(flag="cmh_discount", lines=["Conversei com a diretoria do Conti Moretti.",
             "A partir de hoje, suas consultas saem pela metade do preço. Prevenção não pode ter barreira.",
             "Sua saúde em primeiro lugar. Literalmente."])},
@@ -770,7 +789,7 @@ def doctor_schedule(key, day):
                 m, x, y, d = LEISURE[(idx + day + j * 3) % n]
                 sch.append((t, m, x, y, d))
         sch.append((1200, None, 0, 0, "down"))
-    return sch
+    return _at_home(key, sch)      # quem tem apartamento (a Milany) fica em casa em vez de sumir
 
 
 # aparência da Milany de acordo com o retrato (cabelo castanho, solto e ondulado)
@@ -993,4 +1012,27 @@ for _k, _b in BODY.items():
     NPCS[_k]["look"].update(_b)
     if NPCS[_k].get("look_off"):
         NPCS[_k]["look_off"].update(_b)
+
+
+# Quem mora nos Apartamentos Bayside fica em casa de manhã cedo e à noite (em vez de sumir da cidade)
+def _at_home(key, sch):
+    """Troca os trechos "fora de cena" (None) da rotina pelo apartamento da pessoa, se ela tiver um."""
+    from .world import APARTMENTS, APT_HOME_SPOT
+    apt = APARTMENTS.get(key)
+    if not apt:
+        return sch
+    hx, hy, hd = APT_HOME_SPOT[apt]
+    return [((t, apt, hx, hy, hd) if m is None else (t, m, x, y, d)) for (t, m, x, y, d) in sch]
+
+
+def _home_schedules():
+    from .world import APARTMENTS
+    for key in APARTMENTS:
+        sch = NPCS[key]["schedule"]
+        kinds = sch.values() if isinstance(sch, dict) else [sch]
+        for lst in kinds:
+            lst[:] = _at_home(key, lst)
+
+
+_home_schedules()
 

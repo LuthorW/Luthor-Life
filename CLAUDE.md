@@ -23,7 +23,7 @@ assets/lexcorp.png   logo da Luthor Corp
 saves/               save.json e settings (fora do git)
 docs/                site (index.html, style.css, script.js, img/, fonts/)
 luthor/
-  config.py      SCALE=2, TS=16, TILE=32, tela 1280x720, tempo (7s reais = 10 min), cores C_*
+  config.py      SCALE=2, TS=16, TILE=32, tela 1280x720, tempo (7s reais = 10 min), estação de 14 dias, cores C_*
   game.py        classe Game: estado, loop, interação, HUD, desenho, fim do dia, save/load
   world.py       mapas (interiores desenhados em texto), OBJECT_DEFS, portas CITY_DOORS/INTERIOR_DOORS
   art.py         TODA a pixel art é procedural (tiles, prédios, objetos, personagens 16x32, ícones)
@@ -43,7 +43,10 @@ luthor/
   hospital.py    Conti Moretti: especialidades, consultas, bônus do dia, farmácia, doação
   crowd.py       figurantes (moradores sem conversa) que circulam pela cidade
   activities.py  horta do terraço, coletáveis, bichinho, karaokê, cinema, céu do terraço
-  cutscenes.py   motor de cutscenes (comandos em tuplas) e TODAS as cenas (as do Ian, Barry e Dona Graça no fim)
+  cutscenes.py   motor de cutscenes (comandos em tuplas) e TODAS as cenas (as do Ian, Barry e Dona Graça no fim);
+                 comando ("beijo", a, b) para beijo animado; `dating_scene` devolve a cena <chave>_pedido
+  emotes.py      emotes em estilo emoji (pixel art 20x20 com contorno): coracao, feliz, vergonha, gota, raiva,
+                 triste, zzz, surpresa, beijo, estrela, pergunta, exclamacao, musica, brilho, reticencias
   timetest.py    modo de teste de dia/horário: `python main.py --teste` (F6 abre o painel; não salva nada)
   scenetest.py   modo de teste de cenas: `python main.py --cenas` / `--cena chave` (não salva nada)
   minigames.py   pesca, fliperama Meteoro, fogão, mochila
@@ -154,6 +157,31 @@ luthor/
 - **Bichinhos (activities.py):** gato e cachorro desenhados em `_cat`/`_dog` (4 direções, andar de 4 quadros,
   sentado, piscando, rabo abanando, dormindo); o nome é digitado na adoção (`ui.TextPrompt`, Tab sugere) e pode ser
   trocado na caminha. A caminha fica no canto da sala, `activities.PET_BED` = (24, 14) (igual a `world.build_home`).
+- **Casas (fim de world.py):** portaria `bayside` (aberta 7h–23h) com Lucy, Vittoria, Brainy, Jess, Nia e Barry, e
+  portaria `residencial` (Residencial Luthor, sempre aberta) com Sam, Ian, Milany e o elevador da cobertura: a porta da
+  rua leva à portaria e a cobertura (`home`) sai para ela. `APARTMENTS`, decoração em `APT_STYLE` (quarto separado da sala por parede; cozinha em `KITCHENS`: no
+  Residencial igual à da cobertura, no Bayside compacta; tamanhos em `APT_SIZE`), uma cama para cada
+  morador em `beds.py` (`bed_<chave>`). A porta só abre com o dono em casa e 2 corações (`Game.door_open`); na casa
+  dos outros os móveis só mostram uma frase (`Game.APT_LOOK`). As rotinas trocam o "fora de cena" pela casa
+  (`characters._at_home`, também na rotina diária das médicas); NPCs andam em 3 níveis (cidade → portaria →
+  apartamento/cobertura, `SUB_PARENT`/`LOBBY_DOORS`/`APT_DOORS` em entities.NPC). Morando junto, vira a cobertura.
+- **Comer/beber/ler:** animação acima da cabeça e sons `eat`/`gulp`/`page` (`Game.start_eat_fx`).
+- **Pedido de namoro:** dar as rosas (8 corações) não mostra nada na personagem: marca `Game.proposal` e avisa
+  onde e quando será o pedido (`proposal_text`, linha rosa no HUD). A cena `<chave>_pedido` toca no lugar/horário
+  (`scene_ready`) e, no fim, `accept_proposal` começa o namoro. As cenas de pedido terminam com ("beijo", ...).
+  Porta de apartamento abre sozinha quando há evento com cena marcado ali naquele horário (`Game.door_open`).
+- **Caixa de escolhas (`ui.Choice`):** no pé da tela como no Stardew, pergunta em cima, setinha na opção,
+  no máximo 6 visíveis com rolagem (rodinha do mouse também).
+- **Sentar:** cadeiras, banquetas, bancos, sofás e poltronas (`Game.SEATS`, altura do assento em px de arte).
+  Ela vira para a mesa ao lado (`seat_dir`); `Player.seat` + `draw_seated` (corpo desce, pernas dobradas);
+  andar ou E levanta (E com alguém na frente conversa). Funciona até na casa dos outros.
+- **Bônus das cenas:** Sam 4 (`sam_bonus`, Mesa de Contratos +10%) e 8 (`sam_bonus2`, +25%; 35% no total, em
+  `sell_value`); Vittoria 2 (`vittoria_coffee`: cappuccino grátis 1x por dia na loja da Trattoria, `ricci_coffee`).
+  Ian 4 (`ian_deepfish`: peixes de alto-mar +15%), Milany 6 (`milany_care`: +20 de energia ao entrar no hospital,
+  1x por dia, `milany_visit`), Brainy 6 sem cena (`brainy_fast`: projetos 1 dia mais rápidos, `Game.project_days`),
+  Jess 5 com a cena nova `jess_5` (`jess_agenda`: das 9h às 12h o relógio anda 10% mais devagar).
+- **Beijo:** opção "Beijar" na conversa com quem você namora ou mora junto (`Game.kiss`): as duas se inclinam,
+  som `kiss` e corações subindo; +30 de amizade uma vez por dia (`Game.kissed`).
 - **Atalhos:** I/Tab mochila, O objetivos, R relacionamentos, M mapa (a mesma tecla fecha). Painéis longos usam
   `ui.InfoPanel(..., scroll=True)` (draw_fn devolve o y final) em vez de crescer.
 - **Desmaio às 2h:** acorda no leito do hospital (`HOSPITAL_BED`) com conta.
@@ -340,7 +368,7 @@ godot/testes/*.gd         testes automáticos; `sh testes/rodar_todos.sh <Godot_
 Para ver uma cutscene sem progresso: `python main.py --cenas` (lista, F5 reabre) ou `python main.py --cena lucy_6`.
 Nesse modo `Game.save` é desligado. Títulos da lista vêm de `Game.scene_title`.
 Para testar outro dia/horário/estação/clima: `python main.py --teste` (abre o save sem gravar; F6 abre o painel,
-que também funciona no modo `--cenas`; dá para parar o relógio).
+que também funciona no modo `--cenas`; dá para parar o relógio e mudar os corações com cada personagem).
 
 Não há suíte de testes no repositório. Para checar sem abrir janela, rode o jogo em modo headless:
 
@@ -401,3 +429,6 @@ substitua `pygame.key.get_pressed`. Antes de entregar uma mudança, rode alguns 
 26. Luz dentro dos prédios (luz de teto, cantos mais escuros, objetos que brilham, clima de cada lugar) e cidade
     caprichada (`caprichado.py`): calçadas de pedra, meio-fio, asfalto, os 13 prédios redesenhados, sombras, mesinhas,
     lousas, floreiras, pombos, árvores mais cheias e grama com folhinhas.
+27. Estações de 14 dias (saves antigos convertidos), caixa de escolhas no pé da tela, emotes em emoji,
+    pedido de namoro marcado com beijo animado nas cenas, sentar nas cadeiras e bônus das cenas da Sam e da Vittoria.
+28. Bônus do Ian, da Milany, do Brainy e da Jess (cena nova `jess_5`), beijo na `lucy_10` e emotes mais variados nas cenas.
