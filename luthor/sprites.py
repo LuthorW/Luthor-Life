@@ -594,18 +594,16 @@ def _body_side(g, outfit, frame):
 # roupas especiais desenhadas por cima do corpo básico (base -> roupa usada para o tronco e os braços)
 OUTFIT_BASE = {"trench": "plain", "peacoat": "plain", "skirt_suit": "blazer", "patterned": "blazer",
                "breton": "plain", "bartender": "vest", "tech": "plain", "labcoat": "coat",
-               "leather": "plain", "captain": "blazer"}
+               "leather": "plain", "captain": "blazer", "gown": "plain"}
 
 
 def _outfit_overlay(g, outfit, view, frame):
     side = view == "side"
     if outfit == "trench":
-        # sobretudo comprido com cinto e cachecol (Vittoria)
-        x0, x1 = (4, 9) if side else (4, 11)
-        for y in range(23, 27):
-            g.row(y, x0, x1, "C")
-            g.set(x1 if not side else x0, y, "c")
-        g.row(27, x0 + 1, x1 - 1, "c") if not side else g.row(27, x0, x1 - 1, "c")
+        # sobretudo com cinto e cachecol (Vittoria); mesmo comprimento e largura do casaco da Lucy,
+        # para o corpo continuar igual ao das outras
+        x0, x1 = (5, 9) if side else (5, 10)
+        g.row(23, x0, x1, "c")                          # barra logo abaixo da cintura (como o blazer)
         if side:
             g.row(21, 5, 9, "c"); g.set(9, 21, "J")
             g.row(16, 7, 9, "A"); g.row(17, 7, 9, "A")
@@ -614,15 +612,14 @@ def _outfit_overlay(g, outfit, view, frame):
             g.row(21, 4, 11, "c")
             if view == "front":
                 g.set(7, 21, "J"); g.set(8, 21, "J")
-                for y in range(22, 27):
-                    g.set(7, y, "c")                     # abertura do casaco
+                g.set(7, 22, "c")                        # abertura do casaco
                 g.row(16, 6, 9, "A"); g.row(17, 5, 10, "A")
                 g.set(6, 18, "A"); g.set(6, 19, "A"); g.set(6, 20, "a")
                 g.set(9, 17, "a")
-                g.set(9, 19, "Q"); g.set(5, 23, "Q")
+                g.set(9, 19, "Q")
             else:
                 g.row(16, 6, 9, "A"); g.row(17, 5, 10, "A")
-                g.set(7, 22, "c"); g.set(7, 23, "c"); g.set(7, 24, "c")
+                g.set(7, 22, "c")
     elif outfit == "peacoat":
         # casaco de lã trespassado, gola larga e botões dourados (Lucy)
         x0, x1 = (4, 9) if side else (4, 11)
@@ -742,6 +739,28 @@ def _outfit_overlay(g, outfit, view, frame):
         for (x, y), k in list(g.px.items()):
             if y == 21 and (x <= 4 or x >= 11) and k in ("C", "c", "Q"):
                 g.px[(x, y)] = "J"
+    elif outfit == "gown":
+        # vestido longo de gala, rodado embaixo, com colar dourado (Letícia no closet)
+        for (x, y), k in list(g.px.items()):
+            if 23 <= y <= 27 and k in ("P", "R", "p", "O", "o", "U"):
+                del g.px[(x, y)]
+        if side:
+            sway = 1 if frame == 1 else 0
+            rows = [(23, 5, 9), (24, 4, 10), (25, 4, 10), (26, 3, 10), (27, 3, 11)]
+        else:
+            sway = {1: 1, 2: -1}.get(frame, 0)
+            rows = [(23, 5, 10), (24, 4, 11), (25, 4, 11), (26, 3, 12), (27, 3, 12)]
+        for (y, a, b) in rows:
+            sw = sway if y >= 26 else 0
+            g.row(y, a + sw, b + sw, "C")
+            g.set(b + sw, y, "c")
+        y, a, b = rows[-1]
+        g.row(27, a + sway, b + sway, "c")
+        if not side:
+            g.set(7 + (1 if view == "back" else 0), 25, "c")         # pregas do vestido
+            g.set(9, 26, "c")
+        if view == "front":
+            g.set(6, 18, "J"); g.set(9, 18, "J"); g.set(7, 19, "J"); g.set(8, 19, "J")
     elif outfit == "patterned":
         # blazer preto estampado com flores vermelhas e colar dourado (Dona Graça)
         if side:

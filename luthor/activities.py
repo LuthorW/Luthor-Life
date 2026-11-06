@@ -822,6 +822,10 @@ def spawn_forage(g):
              and (in_area("park", x, y) or in_area("woods", x, y) or in_area("garden", x, y))]
     n_beach = rnd.randint(6, 8) + (2 if g.weather == "chuva" else 0)
     n_park = rnd.randint(6, 9)
+    from . import fundacao
+    eb, ep = fundacao.forage_bonus(g)              # Lanternas do Bosque
+    n_beach += eb
+    n_park += ep
     for pool, kinds, n in ((sand, beach, n_beach), (grass, park, n_park)):
         weights = [FORAGE[k]["weight"] for k in kinds]
         extra = FORAGE_EXTRA.get("park", []) if kinds is park else []

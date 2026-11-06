@@ -680,6 +680,13 @@ def draw_weather_icon(surf, center, kind, night, ticks):
         for (dx, dy) in ((-16, -10), (12, 12), (16, -14)):
             pygame.draw.rect(surf, (250, 244, 214), (cx + dx, cy + dy, 2, 2))
         return
+    if kind == "rainbow":                        # arco-íris com o sol espiando
+        cols = [(240, 84, 84), (250, 154, 64), (250, 222, 92), (110, 210, 110), (90, 168, 250), (176, 108, 226)]
+        for i, c in enumerate(cols):
+            pygame.draw.circle(surf, c, (cx, cy + 10), 21 - i * 3, 3, draw_top_left=True, draw_top_right=True)
+        pygame.draw.circle(surf, (226, 150, 40), (cx + 12, cy + 6), 7)
+        pygame.draw.circle(surf, (255, 214, 96), (cx + 12, cy + 6), 5)
+        return
     cloud = pygame.transform.scale_by(_cloud_art(night), S)
     top = cy - 20
     if night:                                    # lua espiando atrás da nuvem
@@ -688,10 +695,10 @@ def draw_weather_icon(surf, center, kind, night, ticks):
     # pingos (ou flocos) caindo em loop por baixo da nuvem
     t = ticks / 1000.0
     for i, dx in enumerate((-12, -2, 8, 16)):
-        ph = (t * (1.6 if kind == "rain" else 0.7) + i * 0.37) % 1.0
+        ph = (t * (0.7 if kind == "snow" else 1.6) + i * 0.37) % 1.0
         y = top + 26 + ph * 11
-        x = cx + dx - (ph * 4 if kind == "rain" else 0)
-        if kind == "rain":
+        x = cx + dx - (0 if kind == "snow" else ph * 4)
+        if kind in ("rain", "storm"):
             col = (110, 170, 255)
             pygame.draw.line(surf, col, (x, y), (x - 2, y + 6), 2)
         else:
@@ -701,6 +708,11 @@ def draw_weather_icon(surf, center, kind, night, ticks):
             pygame.draw.rect(surf, col, (px - 1, py - 3, 2, 6))
             pygame.draw.rect(surf, col, (px - 3, py - 1, 6, 2))
     surf.blit(cloud, (cx - cloud.get_width() // 2, top))
+    if kind == "storm" and (ticks // 140) % 9 in (0, 2):     # raio piscando por baixo da nuvem
+        bolt = [(cx + 2, top + 18), (cx - 5, top + 30), (cx, top + 30), (cx - 4, top + 41), (cx + 7, top + 26),
+                (cx + 2, top + 26), (cx + 6, top + 18)]
+        pygame.draw.polygon(surf, (255, 226, 90), bolt)
+        pygame.draw.polygon(surf, (190, 130, 30), bolt, 1)
 
 
 def draw_hud(surf, g):
@@ -714,7 +726,10 @@ def draw_hud(surf, g):
     if g.weather == "chuva":
         from . import seasons
         snow = seasons.CURRENT["season"] == "winter"
-        draw_weather_icon(surf, (wx, wy), "snow" if snow else "rain", night, pygame.time.get_ticks())
+        kind = "snow" if snow else ("storm" if getattr(g, "storm", False) else "rain")
+        draw_weather_icon(surf, (wx, wy), kind, night, pygame.time.get_ticks())
+    elif getattr(g, "rainbow", False) and 6 * 60 <= g.minutes < 11 * 60:
+        draw_weather_icon(surf, (wx, wy), "rainbow", False, pygame.time.get_ticks())
     elif night:
         draw_weather_icon(surf, (wx, wy), "moon", True, 0)
     else:

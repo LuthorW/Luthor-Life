@@ -44,9 +44,33 @@ luthor/
   crowd.py       figurantes (moradores sem conversa) que circulam pela cidade
   activities.py  horta do terraço, coletáveis, bichinho, karaokê, cinema, céu do terraço
   cutscenes.py   motor de cutscenes (comandos em tuplas) e TODAS as cenas (as do Ian, Barry e Dona Graça no fim);
-                 comando ("beijo", a, b) para beijo animado; `dating_scene` devolve a cena <chave>_pedido
+                 comando ("beijo", a, b) para beijo animado; `dating_scene` devolve a cena <chave>_pedido;
+                 bebidas nas cenas: ("segurar", nome, item|None), ("beber", nome[, item]), ("brinde", a, b), ("acenar", nome)
+  poses.py       poses dos bonequinhos: sentada (SEAT_LIFT), braços "hold"/"mouth"/"wave"/"up"/"toast"/"umbrella"/"reach"/
+                 "work", rostos happy/read/open/kiss/shut/love, `walk`/`lean`/`tiptoe` e `kiss_pose` (cache). Quadros
+                 com margem `PAD`=6 px de arte de cada lado (braços erguidos em Y): `anchor()` já soma o PAD
+  animacoes.py   regar (regador), bancada (mãos e faíscas), vara de pesca (arremesso, boia, carretilha no minigame,
+                 peixe erguido), deitar na cama (`Sleeper`), bichinho no colo no sofá, aceno dos amigos, gaivotas na
+                 praia, gatinho de rua no Parque Central, modo foto (P) e as bebidas novas (cerveja, caipirinha, taça)
   emotes.py      emotes em estilo emoji (pixel art 20x20 com contorno): coracao, feliz, vergonha, gota, raiva,
                  triste, zzz, surpresa, beijo, estrela, pergunta, exclamacao, musica, brilho, reticencias
+  festas.py      festas das estações (FESTIVALS: barracas/enfeites temporários no mapa da cidade, lugar de cada um,
+                 cena de abertura, atividades), aniversários (BIRTHDAYS, presente x5) e o calendário (tecla C)
+  casal.py       vida a dois (café da manhã, pedidos do dia a dia, aniversário de namoro) e ciúmes leves Lucy/Vittoria
+  casamento.py   Anel de Noivado (Mercado, 14 dias morando junto), pedido no terraço, noivado e o casamento no Jardim do
+                 Mirante (cena montada com os convidados), falas de casadas (`chat_line`)
+  historia.py    história da Luthor Corp: os tios Conrad e Edmund, 5 capítulos (CHAPTERS) com cena + objetivo, atores extras
+                 só das cenas (EXTRAS) e a mesa do conselho no saguão da sede
+  fundacao.py    Fundação Luthor: 6 obras (PROJECTS) com doação de itens/dinheiro na mesa da sede, objetos novos na cidade
+                 (PROPS), benefícios permanentes e a inauguração da praça
+  momentos.py    MOMENTS: 12 cenas curtas entre dois NPCs, no máx. 1 por dia, ao passar perto do lugar no horário
+  eventos.py     cenas e bônus novos dos eventos de coração de quem não tinha (Theo, Bea, Marco, Nia, Harry, Joca,
+                 médicas, Barry, Dona Graça, Brainy, Jess); entram por `setdefault` em `NPCS[k]["events"]`
+  closet.py      closet da Letícia no guarda-roupa da cobertura (LOOKS: compra na hora, 3 de presente, comentários)
+  decor.py       decorar a cobertura pelo computador de casa (CATALOG; só móveis comprados mexem), piano
+  album.py       álbum de fotos do Barry (2 corações): cada cena especial vira foto em saves/album/<cena>.png
+  jogos.py       sinuca e dardos no Noonan's, xadrez com o Brainy (opção na conversa, 1x por dia)
+  clima.py       tempestade (raios e trovões; o clima continua "chuva") e arco-íris na manhã depois da chuva
   timetest.py    modo de teste de dia/horário: `python main.py --teste` (F6 abre o painel; não salva nada)
   scenetest.py   modo de teste de cenas: `python main.py --cenas` / `--cena chave` (não salva nada)
   minigames.py   pesca, fliperama Meteoro, fogão, mochila
@@ -165,24 +189,102 @@ luthor/
   dos outros os móveis só mostram uma frase (`Game.APT_LOOK`). As rotinas trocam o "fora de cena" pela casa
   (`characters._at_home`, também na rotina diária das médicas); NPCs andam em 3 níveis (cidade → portaria →
   apartamento/cobertura, `SUB_PARENT`/`LOBBY_DOORS`/`APT_DOORS` em entities.NPC). Morando junto, vira a cobertura.
-- **Comer/beber/ler:** animação acima da cabeça e sons `eat`/`gulp`/`page` (`Game.start_eat_fx`).
+- **Comer/beber/ler (`Game.start_eat_fx` / `_eat_pose`):** a Letícia segura o item nas mãos (poses de poses.py):
+  comer = prato no peito, três mordidas (leva à boca com a boca aberta, "nhac" com farelos, mastiga), item some;
+  beber = leva o copo à boca e vai inclinando, olhos fechados nos goles; ler = livro aberto no peito (de frente aparece
+  a capa, de lado as páginas), olhando para baixo, duas páginas viram. No fim, carinha feliz (^^) e emoji acima da
+  cabeça (`player_emote`: feliz / estrela). Sentada, continua virada para a mesa; de costas, o item aparece acima da
+  cabeça. Onde fica a mão: `poses.anchor`. Sons `eat`/`gulp`/`page`/`yum`/`reward`.
 - **Pedido de namoro:** dar as rosas (8 corações) não mostra nada na personagem: marca `Game.proposal` e avisa
   onde e quando será o pedido (`proposal_text`, linha rosa no HUD). A cena `<chave>_pedido` toca no lugar/horário
   (`scene_ready`) e, no fim, `accept_proposal` começa o namoro. As cenas de pedido terminam com ("beijo", ...).
+  O nome antigo `namoro_<chave>` é a mesma cena: `cutscenes.same_scene` junta os dois nomes (lista do `--cenas`,
+  "Rever cenas", saves antigos e álbum), para o pedido não aparecer duplicado.
   Porta de apartamento abre sozinha quando há evento com cena marcado ali naquele horário (`Game.door_open`).
 - **Caixa de escolhas (`ui.Choice`):** no pé da tela como no Stardew, pergunta em cima, setinha na opção,
   no máximo 6 visíveis com rolagem (rodinha do mouse também).
-- **Sentar:** cadeiras, banquetas, bancos, sofás e poltronas (`Game.SEATS`, altura do assento em px de arte).
-  Ela vira para a mesa ao lado (`seat_dir`); `Player.seat` + `draw_seated` (corpo desce, pernas dobradas);
-  andar ou E levanta (E com alguém na frente conversa). Funciona até na casa dos outros.
+- **Sentar:** cadeiras, banquetas, bancos, sofás e poltronas (`poses.SEAT_LIFT` = `Game.SEATS`, altura do assento em
+  px de arte). Ela vira para a mesa ao lado (`seat_dir`); `Player.seat` (t/off: desliza até o assento e "plof"),
+  `Player.rise` ao levantar; andar ou E levanta (E com alguém na frente conversa). Funciona até na casa dos outros.
+  Quadros sentada em poses.py (mesmas peças de sprites.py): de frente colo mais claro (cor "G"), joelhos e canelas; de
+  lado coxa para a frente; de costas sem pernas e mãos na mesa. De vez em quando ela balança os pés (`swinging`).
+  **NPCs e figurantes também sentam** quando param em cima de um assento (`NPC._check_seat`, `poses.NPC_SEATS`, que
+  inclui as poltronas do cinema); sentados, olham para a mesa e às vezes para a frente. Cutscenes não mudaram.
 - **Bônus das cenas:** Sam 4 (`sam_bonus`, Mesa de Contratos +10%) e 8 (`sam_bonus2`, +25%; 35% no total, em
   `sell_value`); Vittoria 2 (`vittoria_coffee`: cappuccino grátis 1x por dia na loja da Trattoria, `ricci_coffee`).
   Ian 4 (`ian_deepfish`: peixes de alto-mar +15%), Milany 6 (`milany_care`: +20 de energia ao entrar no hospital,
   1x por dia, `milany_visit`), Brainy 6 sem cena (`brainy_fast`: projetos 1 dia mais rápidos, `Game.project_days`),
   Jess 5 com a cena nova `jess_5` (`jess_agenda`: das 9h às 12h o relógio anda 10% mais devagar).
-- **Beijo:** opção "Beijar" na conversa com quem você namora ou mora junto (`Game.kiss`): as duas se inclinam,
-  som `kiss` e corações subindo; +30 de amizade uma vez por dia (`Game.kissed`).
-- **Atalhos:** I/Tab mochila, O objetivos, R relacionamentos, M mapa (a mesma tecla fecha). Painéis longos usam
+- **Beijo:** opção "Beijar" na conversa com quem você namora ou mora junto (`Game.kiss`): as duas ficam de lado, uma
+  de frente para a outra, a `poses.KISS_DIST` = 16 px de arte (1 tile; perto disso os rostos se embolam), de mãos dadas
+  (braço "reach", as mãos se encontram no meio). Etapas de `poses.kiss_pose`: "close" (olhos fechados), "kiss"
+  (inclinam 1 px, `lean`, os narizes e lábios se tocam; quem é mais baixa fica na ponta dos pés) e "after" (rosto
+  "love": sorriso com bochechas coradas). Som `kiss` e corações subindo; +30 de amizade uma vez por dia (`Game.kissed`).
+  O comando ("beijo", a, b) das cenas usa as mesmas poses. O abraço antigo ("hug"/"hug2") saiu: a dona não gostou.
+- **Copos (entities.DRINK_SPRITES):** bebidas na mão são copinhos em pixel art (cerveja, taça, caipirinha, xícara,
+  refrigerante, drink), não o ícone grande da mochila, para não tapar o rosto. `draw_drink` põe o fundo do copo no
+  ponto de `DRINK_AT` (segurar = peito, beber = só a boca, brinde = altura do peito: os dois copos se tocam entre
+  atores a 1 tile). Gole inclina no máx. 35 graus; de costas, o copo não aparece.
+- **Animações do dia a dia (animacoes.py, `g.act`):** regar, bancada, "pegou" (braços abertos em Y, "viva!", e o peixe flutuando acima da cabeça como no Stardew; braços colados na cabeça pareciam antenas ou orelhas, a dona achou estranho) e dormir travam
+  o andar enquanto duram. A cama não encerra o dia na hora: ela deita (`player.hidden`, a cabeça no travesseiro e o
+  cobertor da própria cama por cima), "zzz" e só então `end_day`. Na pesca, `g.reel` fica ligado durante o minigame.
+- **Guarda-chuva:** chovendo (fora do inverno) todo mundo na rua anda de guarda-chuva (`entities.UMBRELLA["on"]`,
+  ligado por `animacoes.update_fx`); a Letícia usa um roxo. Quem está de guarda-chuva sorri em vez de acenar.
+- **NPCs comendo/bebendo:** sentados em café, Trattoria, Noonan's, Gruppo Ricci, hospital e marina pegam algo de
+  `entities.SNACKS` e dão goles/mordidas de vez em quando (`NPC._tick_snack`).
+- **Aceno:** amigos com 2+ corações (ou namorada) acenam quando a Letícia passa perto, 1x por período (`g.waved`).
+- **Modo foto (P):** esconde HUD e avisos; Enter salva em saves/fotos/; 1 acena, 2 sorri, 3 coração; P/Esc sai.
+- **Sobretudo (trench):** do tamanho do blazer (até a cintura) para o corpo da Vittoria ficar igual ao das outras.
+- **Festas (festas.py):** uma por estação: Festa das Flores (primavera, dia 7, 9h–15h, Parque Central, anfitriã Nia,
+  Dança das Flores no mastro com quem tem 4+ corações), Luau de Verão (verão, dia 7, 18h–23h, praia, Dona Graça, sopa
+  do caldeirão: o ingrediente dá amizade com todos, nunca tira), Feira da Colheita (outono, dia 7, 10h–17h, calçadão
+  central, Sam, concurso pelo valor do item: $600/$300/$100, o item volta) e Noite das Luzes (inverno, dia 10, 18h–22h,
+  Jardim do Mirante, Jess, amigo secreto sorteado no 1º dia do inverno: presente x3 e a Letícia ganha um de volta).
+  `sync` monta os objetos temporários no dia (sólidos em `m.solid`, desmontados no dia seguinte), `override` leva todo
+  mundo para o seu lugar (`spots`, calculado longe das barracas e portas), `check` toca a abertura uma vez ao chegar,
+  barraca = loja só daquele dia. Dia de festa tem sol (menos no inverno) e não dá para marcar encontro à noite.
+  Na Feira, as linhas 37-38 do calçadão ficam atrás dos telhados: enfeites só até a linha 36 (ou no vão entre prédios).
+- **Aniversários:** `festas.BIRTHDAYS` (trimestre, dia), nunca em dia de festa. Presente no dia: amado x5, gostou x3,
+  neutro x2 (+ fala de aniversário), balãozinho na mão dela, fala própria na primeira conversa, aviso na noite anterior,
+  linha rosa no HUD e no painel de relacionamentos. Itens novos: Coroa de Flores, Água de Coco, Torta de Abóbora,
+  Chocolate Quente (barracas) e Porta-retrato.
+- **Vida a dois (casal.py):** morando junto, café da manhã na cozinha em algumas manhãs (sempre no fim de semana),
+  com beijo e um prato embrulhado; um pedido pequeno por dia (item, visita no trabalho ou chegar em casa entre 19h e
+  22h), entregue conversando, +60 de amizade e nada de castigo se não der. Aniversário de namoro a cada 56 dias
+  (`casal["since"]`, contado desde o pedido): jantar com cena (morando junto, no terraço; namorando, no 1º lugar de
+  encontro dela), presente x3 no dia e um Porta-retrato de presente.
+- **Ciúmes leves:** conversas, presentes, encontros, danças e beijos com Lucy/Vittoria contam atenção (últimos 3
+  dias). Se uma recebeu bem mais que a outra, a outra comenta na próxima conversa (no máx. a cada 4 dias); as três
+  respostas sempre dão amizade. Se a Letícia namora uma, a outra não tem ciúmes.
+- **Casamento (casamento.py):** o Anel de Noivado ($3000) só aparece no Mercado depois de 14 dias morando junto
+  (`MIN_DAYS`). Dar o anel marca o pedido para a mesma noite, no terraço (19h–23h); depois do sim, o casamento é
+  7 dias depois (pula festas e aniversários), 15h–19h, no Jardim do Mirante (`GARDEN`): a Sam celebra, a Jess fica de
+  um lado e a madrinha (Nia para a Lucy, Dona Graça para a Vittoria) do outro; os outros NPCs viram convidados. No fim:
+  flag `casadas`, +$2000 e amizade com todos. Estado em `g.casamento`; o painel de relacionamentos mostra o status.
+- **História da Luthor Corp (historia.py):** a partir do 3º dia. Cada capítulo tem cena (linha no HUD, lugar e
+  horário) e, depois, um objetivo que libera o próximo (lançar 5 produtos, faturar $6000, ação a $110, 4 corações com
+  Sam/Brainy/Jess/Ian). No fim (`luthor_livre`): produtos +10%, $3000 e amizade com a equipe. Personagens só de cena
+  (tios, Andrea Rojas, Hamilton, o espião) ficam em `EXTRAS`, com look próprio, e os retratos saem do bonequinho.
+- **Fundação Luthor (fundacao.py):** mesa na sede (`HQ_DESK`). Doar itens da mochila ou dinheiro; a obra completa
+  aparece na cidade na noite seguinte (`night`: ready → built; `apply` põe os objetos de `PROPS` e recalcula `m.solid`).
+  Benefícios: coreto (conversas +10%), peixaria (peixes +10%), horta (cesta às segundas), lanternas (+coletáveis),
+  biblioteca (livros e mercado mais baratos). A praça só abre com as outras 5 prontas; a inauguração dá amizade com todos.
+  Objeto novo na cidade não pode tapar porta nem caminho: teste com `m.find_path`.
+- **Momentos (momentos.py):** cenas entre dois NPCs (`MOMENTS`: lugar, horário, dias, sol, corações mínimos). Tocam no
+  máx. 1 por dia, nunca em dia de festa, quando a Letícia passa perto; +20 de amizade com as duas e vão para a galeria.
+- **Eventos novos (eventos.py):** bônus em `shop_mult` (Bea: mercado -20%, Marco: bar -25%), `food_mult` (Izzie: doces
+  x1,5), `gift_mult` (Addison +15%), `new_fish` (Barry: +$50 por espécie nova), `marco_tab` (jogos de graça) e presentes
+  da manhã (Theo aos sábados, Dona Graça às sextas).
+- **Closet / decoração / álbum:** o look escolhido vale no jogo e nas cenas (`closet.player_look`; "Roupa da estação" =
+  troca sozinha). Na decoração, um móvel não pode tapar a porta, um lugar reservado (namorada, bichinho, cenas) nem
+  deixar canto sem acesso (`decor.can_place`). As fotos do álbum só vão para o disco junto com o save (nos modos de
+  teste, nada); os testes têm que apagar fotos novas de saves/album.
+- **Minigames (jogos.py):** sinuca (6 bolas em 8 tacadas) e dardos (9 dardos) custam `PLAY_COST`; xadrez com regras
+  completas e o Brainy joga mais sério conforme a Letícia ganha.
+- **Clima especial (clima.py):** tempestade é sorteada na véspera (`STORM_CHANCE` por estação) e continua sendo
+  "chuva" para rotinas, peixes e figurantes; relâmpago clareia a tela (`draw_flash`), trovões são efeitos gerados por
+  código. Arco-íris de 6h às 11h num dia de sol depois de chuva (70%). No inverno, nenhum dos dois.
+- **Atalhos:** I/Tab mochila, O objetivos, R relacionamentos, M mapa, C calendário (a mesma tecla fecha), P modo foto. Painéis longos usam
   `ui.InfoPanel(..., scroll=True)` (draw_fn devolve o y final) em vez de crescer.
 - **Desmaio às 2h:** acorda no leito do hospital (`HOSPITAL_BED`) com conta.
 - **Site:** roxo (#8a00e6 / #b84cff) como principal e verde (#6ee78c) como destaque. As capturas de conversa,
@@ -367,6 +469,8 @@ godot/testes/*.gd         testes automáticos; `sh testes/rodar_todos.sh <Godot_
 
 Para ver uma cutscene sem progresso: `python main.py --cenas` (lista, F5 reabre) ou `python main.py --cena lucy_6`.
 Nesse modo `Game.save` é desligado. Títulos da lista vêm de `Game.scene_title`.
+O casamento também está na lista, uma versão por noiva: `--cena casamento_lucy`, `casamento_vittoria`,
+`casamento_pedido_lucy` e `casamento_pedido_vittoria` (montadas na hora por `casamento.wedding_scene`/`proposal_scene`).
 Para testar outro dia/horário/estação/clima: `python main.py --teste` (abre o save sem gravar; F6 abre o painel,
 que também funciona no modo `--cenas`; dá para parar o relógio e mudar os corações com cada personagem).
 
@@ -432,3 +536,15 @@ substitua `pygame.key.get_pressed`. Antes de entregar uma mudança, rode alguns 
 27. Estações de 14 dias (saves antigos convertidos), caixa de escolhas no pé da tela, emotes em emoji,
     pedido de namoro marcado com beijo animado nas cenas, sentar nas cadeiras e bônus das cenas da Sam e da Vittoria.
 28. Bônus do Ian, da Milany, do Brainy e da Jess (cena nova `jess_5`), beijo na `lucy_10` e emotes mais variados nas cenas.
+29. Festas das estações (flores, luau, feira, luzes), aniversários com calendário (C), vida a dois depois do pingente
+    (café da manhã, pedidos, aniversário de namoro) e ciúmes leves entre a Lucy e a Vittoria.
+30. Tempestade e arco-íris, sinuca/dardos/xadrez, closet, decoração da cobertura, álbum do Barry, Fundação Luthor,
+    momentos entre personagens, cenas e bônus para quem não tinha, casamento e a história da Luthor Corp (os tios e o
+    conselho). Site atualizado com as novidades.
+31. Animações novas (poses.py): sentar de verdade (desliza, pernas dobradas, balança os pés), NPCs e figurantes
+    sentados nas cadeiras, comer/beber/ler com o item nas mãos, mordidas, goles, páginas virando e carinha feliz.
+32. Mais animações (animacoes.py): beijo novo (abraço, ponta dos pés), NPCs comendo e bebendo nas mesas, brindes com
+    cerveja/caipirinha/vinho nas cenas de bar, regar, bancada, vara de pesca, deitar na cama, guarda-chuva, aceno,
+    bichinho no colo, gaivotas, gatinho de rua e modo foto. Sobretudo da Vittoria do tamanho do blazer.
+33. Braços erguidos em Y com o peixe flutuando acima da cabeça, beijo refeito (de mãos dadas, narizes se tocando,
+    bochechas coradas depois) e bebidas em copinhos pequenos que não tapam mais o rosto.

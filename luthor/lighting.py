@@ -16,6 +16,7 @@ NIGHT_OUT = (64, 78, 150)          # rua: noite azul
 NIGHT_OPEN = (96, 100, 170)        # terraço (ao ar livre, mas com as luzes da cobertura)
 NIGHT_IN = (190, 178, 214)         # interiores: as luzes estão acesas, escurece pouco
 RAIN = (0.80, 0.83, 0.90)          # chuva: mais escuro e acinzentado (dia e noite)
+STORM = (0.66, 0.69, 0.80)         # tempestade: mais escuro ainda
 # Interiores: (cor de dia, cor de noite, cor da luz do teto, distância entre as luzes em tiles)
 # A cor de dia/noite multiplica a sala; as luzes do teto somam por cima, então perto delas fica claro e quente
 # e os cantos ficam mais escuros (clima de lugar fechado).
@@ -120,7 +121,7 @@ def _base_color(m, open_air, dark, sun, rain):
     if sun > 0 and open_air:                      # fim de tarde: tudo puxa para o dourado
         c = [c[0], c[1] * (1 - 0.13 * sun), c[2] * (1 - 0.30 * sun)]
     if rain:
-        c = [v * f for v, f in zip(c, RAIN)]
+        c = [v * f for v, f in zip(c, STORM if rain == "storm" else RAIN)]
     return tuple(max(0, min(255, int(v))) for v in c), k
 
 

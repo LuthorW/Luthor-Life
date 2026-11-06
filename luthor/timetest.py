@@ -30,7 +30,8 @@ class TimePanel(ui.Modal):
     def __init__(self, g):
         self.g = g
         self.sel = 0
-        self.v = dict(minutes=g.minutes, day=g.day, quarter=g.quarter, year=g.year, weather=g.weather,
+        clima_now = ("tempestade" if getattr(g, "storm", False) else "chuva") if g.weather == "chuva" else             ("arco-íris" if getattr(g, "rainbow", False) else "sol")
+        self.v = dict(minutes=g.minutes, day=g.day, quarter=g.quarter, year=g.year, weather=clima_now,
                       frozen=STATE["frozen"], npc=STATE.get("npc", 0),
                       hearts={k: g.hearts(k) for k in NPC_ORDER if k in g.friendship})
 
@@ -62,7 +63,8 @@ class TimePanel(ui.Modal):
         elif row == "Ano":
             v["year"] = max(2034, v["year"] + d)
         elif row == "Clima":
-            v["weather"] = "chuva" if v["weather"] == "sol" else "sol"
+            opts = ["sol", "chuva", "tempestade", "arco-íris"]
+            v["weather"] = opts[(opts.index(v["weather"]) + d) % len(opts)]
         elif row == "Relógio parado":
             v["frozen"] = not v["frozen"]
         elif row == "Personagem":
@@ -79,7 +81,7 @@ class TimePanel(ui.Modal):
             "Dia": f"{v['day']}  ({WEEK[(v['day'] - 1) % 7]})",
             "Estação": f"{seasons.NAMES[season]}  (Q{v['quarter']})",
             "Ano": str(v["year"]),
-            "Clima": ("neve" if season == "winter" else "chuva") if v["weather"] == "chuva" else "sol",
+            "Clima": "neve" if season == "winter" and v["weather"] in ("chuva", "tempestade") else v["weather"],
             "Relógio parado": "sim" if v["frozen"] else "não",
             "Personagem": self.g.npcs[NPC_ORDER[v["npc"]]].name,
             "Corações": f"{v['hearts'].get(NPC_ORDER[v['npc']], 0)} de {MAX_HEARTS}",
@@ -111,7 +113,9 @@ def apply(g, v):
     """Leva o jogo para o dia/horário escolhido: rotinas, figurantes, coletáveis e estação se ajustam."""
     new_day = (v["day"], v["quarter"], v["year"]) != (g.day, g.quarter, g.year)
     g.day, g.quarter, g.year = v["day"], v["quarter"], v["year"]
-    g.weather = v["weather"]
+    g.weather = "chuva" if v["weather"] in ("chuva", "tempestade") else "sol"
+    g.storm = v["weather"] == "tempestade"
+    g.rainbow = v["weather"] == "arco-íris"
     g.minutes = v["minutes"]
     g.time_acc = 0.0
     STATE["frozen"] = v["frozen"]

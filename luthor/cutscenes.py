@@ -14,6 +14,10 @@ COMANDOS (cada um é uma tupla):
                                       gota, raiva, brilho, zzz, vergonha, triste, feliz, surpresa,
                                       beijo, estrela (desenhos em emotes.py)
   ("beijo", nome1, nome2)             as duas se aproximam e se beijam (estalinho e corações)
+  ("segurar", nome, item)             fica com o item na mão (copo, taça, prato); None = guarda
+  ("beber", nome[, item])             leva o copo à boca e dá um gole (ou uma mordida, se for comida)
+  ("brinde", nome1, nome2)            as duas erguem o copo: tim-tim (dá um copo de vinho a quem não tiver)
+  ("acenar", nome)                    acena com a mão
   ("fala", nome, "texto", humor)      fala com retrato 
   ("narra", "texto")                  narração sem retrato
   ("escolha", "pergunta", [("opção", pontos, "resposta da personagem"), ...])
@@ -31,13 +35,15 @@ COMANDOS (cada um é uma tupla):
 
 import math
 import random
+import time
 
 import pygame
 
-from . import art, ui, audio
+from . import art, ui, audio, poses
 from .config import SCREEN_W, SCREEN_H, TILE, C_TEXT, C_LILAC, C_PINK, C_MUTED, C_GOLD
 from .characters import NPCS, look_for, dress
-from .entities import PLAYER_LOOK, draw_shadow, idle_frame, FOOT
+from .entities import PLAYER_LOOK, draw_shadow, idle_frame, FOOT, draw_held, DRINK_ICONS
+from . import closet
 from .config import SCALE
 
 PLAYER_NAME = "Letícia"
@@ -54,8 +60,15 @@ class Actor:
 
     def __init__(self, name, x, y, d, map_name=None):
         self.name = name
-        look = dress("leticia", PLAYER_LOOK) if name == "player" else look_for(name, map_name)
+        look = closet.player_look() if name == "player" else look_for(name, map_name)
         self.frames = art.character_frames(look)
+        self.look, self.look_key = look, poses.look_key(look)
+        self.pose = None                # pose fixa (beijo)
+        self.held = None                # item na mão ("segurar" / "beber")
+        self.sip_t = 0.0                # levando o copo à boca
+        self.toast_t = 0.0              # erguendo o copo no brinde
+        self.wave_t = 0.0               # acenando
+        self.zbias = 0.01 if name == "player" else 0.0   # na mesma linha, a Letícia fica na frente
         self.fx, self.fy = float(x), float(y)
         self.dir = d
         self.path = []
@@ -83,6 +96,9 @@ class Actor:
     def update(self, dt):
         self.moving = False
         self.hop = max(0.0, self.hop - dt)
+        self.sip_t = max(0.0, self.sip_t - dt)
+        self.toast_t = max(0.0, self.toast_t - dt)
+        self.wave_t = max(0.0, self.wave_t - dt)
         if self.emote_t > 0:
             self.emote_t -= dt
             if self.emote_t <= 0:
@@ -106,13 +122,58 @@ class Actor:
         self.moving = True
         self.anim += dt * 7
 
+    SIP = 1.0
+
+    def pose_now(self):
+        """Pose do momento: beijo, aceno, brinde, gole ou só o copo na mão."""
+        if self.pose:
+            return self.pose
+        held = self.held
+        if self.moving:
+            if not held:
+                return None
+            w = int(self.anim) % 4
+            return dict(arms="hold", walk=4 + w, bob=1 if w in (1, 3) else 0, blink=False,
+                        held=dict(item=held, where="hold"))
+        if self.wave_t > 0:
+            return dict(arms="wave" if int(self.wave_t * 6) % 2 else "wave2", face="happy", blink=False, bob=0)
+        if not held:
+            return None
+        from .data import ITEMS
+        drink = ITEMS.get(held, {}).get("icon") in DRINK_ICONS
+        if self.toast_t > 0:                        # no começo os copos se inclinam um para o outro: tim-tim
+            tilt = -14.0 if self.toast_t > 0.9 else 0.0
+            return dict(arms="toast", face="happy", blink=False, bob=0, held=dict(item=held, where="toast", tilt=tilt))
+        if self.sip_t > 0:
+            k = self.SIP - self.sip_t
+            if drink:
+                tilt = min(35.0, k / 0.45 * 35.0) if k < 0.75 else 35.0 * (self.SIP - k) / 0.25
+                face = "shut" if 0.2 < k < 0.85 else None
+                return dict(arms="mouth", face=face, blink=False, bob=0,
+                            held=dict(item=held, where="mouth", tilt=tilt))
+            return dict(arms="mouth", face="open" if k < 0.35 else None, blink=False, bob=0,
+                        held=dict(item=held, where="mouth"))
+        return dict(arms="hold", face=None, bob=0, held=dict(item=held, where="hold"))
+
     def draw(self, surf, cam):
-        img, bob = idle_frame(self.frames, self.dir, self.moving, self.anim, self.phase)
+        pose = self.pose_now()
+        if pose is None:
+            img, bob = idle_frame(self.frames, self.dir, self.moving, self.anim, self.phase)
+        else:
+            t = time.monotonic() + self.phase
+            blink = pose.get("blink", t % 3.7 < 0.13)
+            bob = pose.get("bob", 1 if (t % 1.6) < 0.8 else 0)
+            img = poses.frame(self.look, self.dir, None, pose.get("arms"), pose.get("face"), blink, 0, self.look_key,
+                              pose.get("walk", 0), pose.get("lean", 0), pose.get("tiptoe", False))
         cx = (self.fx + 0.5) * TILE - cam[0]
         cy = self.base_y - cam[1]
         jump = -int(math.sin(self.hop / 0.45 * math.pi) * 6 * SCALE) if self.hop > 0 else 0
         draw_shadow(surf, int(cx), int(cy) + SCALE, 10 * SCALE if not jump else 8 * SCALE)
-        surf.blit(img, (int(cx - img.get_width() // 2), int(cy - img.get_height() + FOOT + bob + jump)))
+        x, y = int(cx - img.get_width() // 2), int(cy - img.get_height() + FOOT + bob + jump)
+        surf.blit(img, (x, y))
+        if pose and pose.get("held"):
+            hd = pose["held"]
+            draw_held(surf, x, y, self.look, self.dir, hd["item"], hd.get("where", "hold"), hd.get("tilt", 0.0))
         if self.emote:
             draw_emote(surf, int(cx), int(cy - img.get_height() - 6 + jump), self.emote, 1 - max(0, self.emote_t - 1.0))
 
@@ -352,6 +413,32 @@ class Cutscene(ui.Modal):
             self.fx.add(kind, secs, cx, cy)
         elif cmd == "beijo":
             self.start_kiss(args[0], args[1])
+        elif cmd == "segurar":
+            a = self.actors.get(args[0])
+            if a:
+                a.held = args[1] if len(args) > 1 else None
+        elif cmd == "beber":
+            a = self.actors.get(args[0])
+            if a:
+                if len(args) > 1:
+                    a.held = args[1]
+                if a.held:
+                    from .data import ITEMS
+                    a.sip_t = Actor.SIP
+                    audio.sfx("gulp" if ITEMS.get(a.held, {}).get("icon") in DRINK_ICONS else "eat")
+                    self.wait = Actor.SIP
+        elif cmd == "brinde":
+            for n in args[:2]:
+                a = self.actors.get(n)
+                if a:
+                    a.held = a.held or "taca_vinho"
+                    a.toast_t = 1.3
+            audio.sfx("clink")
+            self.wait = 1.3
+        elif cmd == "acenar":
+            a = self.actors.get(args[0])
+            if a:
+                a.wave_t = 1.4
         elif cmd == "esperar":
             self.wait = args[0]
         elif cmd == "fade_in":
@@ -359,8 +446,10 @@ class Cutscene(ui.Modal):
         elif cmd == "fade_out":
             self.fade_dir = 1
 
-    # ----- beijo: chegam lado a lado, se inclinam, estalinho e corações; depois ficam pertinho
-    KISS_WALK, KISS_LEAN, KISS_HOLD, KISS_BACK = 0.6, 0.35, 1.2, 0.4
+    # ----- beijo: chegam frente a frente (a 1 tile), dão as mãos e fecham os olhos, se inclinam e os lábios se
+    # encostam (quem é mais baixa fica na ponta dos pés), estalinho e corações; depois sorriem coradas
+    KISS_WALK, KISS_LEAN, KISS_HOLD, KISS_BACK = 0.6, 0.35, 1.3, 0.6
+    GAP = poses.KISS_DIST / 32                       # metade da distância entre as duas, em tiles
 
     def start_kiss(self, n1, n2):
         a, b = self.actors.get(n1), self.actors.get(n2)
@@ -371,27 +460,28 @@ class Cutscene(ui.Modal):
         row = b.fy
         mx = (a.fx + b.fx) / 2
         left, right = (a, b) if (a.fx, a.name != "player") <= (b.fx, b.name != "player") else (b, a)
-        self.kiss = dict(t=0.0, left=left, right=right, mx=mx, row=row, smack=False,
+        lead = a if a.name == "player" else left
+        self.kiss = dict(t=0.0, left=left, right=right, mx=mx, row=row, smack=False, lead=lead,
                          start={left: (left.fx, left.fy), right: (right.fx, right.fy)})
         left.path, right.path = [], []
+        left.held = right.held = None
 
     def update_kiss(self, dt):
         k = self.kiss
         k["t"] += dt
         t, mx, row = k["t"], k["mx"], k["row"]
         W, L, H, B = self.KISS_WALK, self.KISS_LEAN, self.KISS_HOLD, self.KISS_BACK
+        stage, gap = None, self.GAP
         if t < W:                                     # andam até ficar uma de frente para a outra
-            e = t / W
-            gap, walking = 0.5, True
-        elif t < W + L:
-            e, walking = 1.0, False
-            gap = 0.5 - 0.25 * math.sin((t - W) / L * math.pi / 2)
-        elif t < W + L + H:
-            e, walking, gap = 1.0, False, 0.25
-        else:
-            e, walking = 1.0, False
-            gap = 0.25 + 0.2 * math.sin(min(1.0, (t - W - L - H) / B) * math.pi / 2)
-        for actor, side in ((k["left"], -1), (k["right"], 1)):
+            e, walking = t / W, True
+        elif t < W + L:                               # dão as mãos e fecham os olhos
+            e, walking, stage = 1.0, False, "close"
+        elif t < W + L + H:                           # se inclinam: o beijo
+            e, walking, stage = 1.0, False, "kiss"
+        else:                                         # voltam e sorriem coradas, ainda de mãos dadas
+            e, walking, stage = 1.0, False, "after"
+        a, b = k["left"], k["right"]
+        for actor, side in ((a, -1), (b, 1)):
             sx, sy = k["start"][actor]
             actor.fx = sx + (mx + side * gap - sx) * e
             actor.fy = sy + (row - sy) * e
@@ -399,6 +489,8 @@ class Cutscene(ui.Modal):
             if walking and (abs(sx - (mx + side * gap)) > 0.05 or abs(sy - row) > 0.05):
                 actor.moving = True
                 actor.anim += dt * 7
+            other = b if actor is a else a
+            actor.pose = poses.kiss_pose(stage, actor.look, other.look, actor is k["lead"]) if stage else None
         hx = (mx + 0.5) * TILE
         hy = (row + 1) * TILE - FOOT - 34 * SCALE
         if not k["smack"] and t >= W + L:
@@ -410,6 +502,7 @@ class Cutscene(ui.Modal):
                                       vx=0, vy=random.uniform(-40, -24), life=random.uniform(0.7, 1.1), c=None,
                                       sway=random.uniform(0, 6)))
         if t >= W + L + H + B:
+            a.pose = b.pose = None
             self.kiss = None
 
     def finish(self):
@@ -491,6 +584,9 @@ class Cutscene(ui.Modal):
         cam = (int(self.cam[0]) // 2 * 2, int(self.cam[1]) // 2 * 2)
         self.g.render_map(surf, self.map, cam, minutes=self.minutes, actors=list(self.actors.values()),
                           weather=self.weather, extra=self.fx)
+        if getattr(self, "album_key", None):          # foto para o álbum do Barry (sem faixas nem falas)
+            from . import album
+            album.capture(self, surf)
         bh = int(BAR_H * (1 - (1 - self.bars) ** 2))
         if bh:
             pygame.draw.rect(surf, (0, 0, 0), (0, 0, SCREEN_W, bh))
@@ -682,6 +778,7 @@ SCENES = {
     "lucy_2": dict(map="bar", time=20 * 60 + 15, npc="lucy", steps=[
         ("ator", "lucy", 10, 6, "down"),
         ("ator", "player", 10, 8, "up"),
+        ("segurar", "lucy", "cerveja"),
         ("camera_ja", 19, 35),
         ("fade_in",),
         ("legenda", "Noonan's, à noite", 1.8),
@@ -689,6 +786,7 @@ SCENES = {
         ("andar", "player", 11, 6),
         ("virar", "player", "up"),
         ("virar", "lucy", "down"),
+        ("segurar", "player", "caipirinha"),
         ("emote", "lucy", "exclamacao"),
         ("fala", "lucy", "Você veio mesmo. Comecei a achar que a CEO da Luthor Corp tinha sido engolida por uma agenda impossível.", "happy"),
         ("fala", "player", "Minha agenda tentou. Não conseguiu."),
@@ -696,12 +794,14 @@ SCENES = {
         ("fala", "player", "Só quando tenho provas."),
         ("emote", "lucy", "musica"),
         ("fala", "lucy", "Pedi uma mesa mais afastada. E, como prometi, sem gravador. Hoje não é uma entrevista."),
+        ("beber", "lucy"),
         ("fala", "player", "Obrigada. Eu queria conversar com você sem sentir que estou numa coletiva de imprensa."),
         ("fala", "lucy", "Então vamos começar com uma pergunta simples: como está sendo voltar?"),
         ("fala", "player", "Estranho. Tem coisas que parecem exatamente iguais. Outras mudaram mais do que eu esperava."),
         ("fala", "lucy", "E você? Mudou?"),
         ("fala", "player", "Ainda estou tentando descobrir."),
         ("fala", "lucy", "É uma resposta honesta. Já é alguma coisa."),
+        ("beber", "lucy"),
         ("escolha", "O que dizer?", [
             ("Senti falta dessas conversas.", 60, "Eu também. Mais do que estava disposta a admitir.", "love"),
             ("Ainda não sei se pertenço a esta cidade.", 40, "Talvez você não precise decidir isso hoje. Pode começar com uma noite de cada vez.", "happy"),
@@ -712,6 +812,10 @@ SCENES = {
         ("fala", "player", "Eu vou contar. Não quero que você fique sem entender o que aconteceu."),
         ("fala", "lucy", "Está bem. Por enquanto, podemos só tomar alguma coisa? Uma noite normal, sem passado e sem manchete?", "happy"),
         ("fala", "player", "Acho que consigo negociar isso."),
+        ("virar", "player", "left"),
+        ("virar", "lucy", "right"),
+        ("brinde", "lucy", "player"),
+        ("beber", "player"),
         ("emote", "lucy", "coracao"),
         ("efeito", "brilhos", 1.8),
         ("esperar", 1.5),
@@ -1590,6 +1694,10 @@ SCENES = {
         ("fala", "player", "Você sabe que não sou especialista."),
         ("fala", "vittoria", "Mas é uma pessoa de confiança. E isso já é bastante importante."),
         ("narra", "As duas se acomodam à mesa. Vittoria apresenta os pratos e explica algumas das escolhas que fez na preparação. A conversa começa leve, entre comentários sobre os ingredientes e brincadeiras sobre as habilidades culinárias de Letícia."),
+        ("segurar", "vittoria", "taca_vinho"),
+        ("segurar", "player", "taca_vinho"),
+        ("brinde", "vittoria", "player"),
+        ("beber", "player"),
         ("fala", "player", "Está excelente. Acho que sua nonna aprovaria."),
         ("fala", "vittoria", "Espero que sim! Embora ela provavelmente encontrasse alguma coisa para corrigir."),
         ("fala", "player", "Parece que vocês duas seriam muito parecidas nesse aspecto."),
@@ -1600,6 +1708,8 @@ SCENES = {
         ("fala", "vittoria", "Isso se chama ter padrões elevados!"),
         ("esperar", 1.0),
         ("narra", "Vittoria ri e deixa os talheres sobre a mesa. Depois de algum tempo, a conversa diminui naturalmente. Letícia percebe que chegou o momento de falar sobre o verdadeiro motivo de ter convidado Vittoria para aquela noite."),
+        ("segurar", "vittoria", None),
+        ("segurar", "player", None),
         ("fala", "player", "Vittoria, tem uma coisa que gostaria de conversar com você."),
         ("fala", "vittoria", "Claro! Aconteceu alguma coisa?"),
         ("fala", "player", "Não exatamente. Eu só queria encontrar um momento tranquilo para falar sobre nós duas."),
@@ -2593,10 +2703,13 @@ SCENES = {
         ("fala", "milany", "E você deveria colocar na parede do seu escritório."),
         ("fala", "player", "Vou considerar."),
         ("narra", "Milany se levanta para buscar alguma coisa na cozinha. Quando volta, traz duas bebidas e alguns lanches para acompanhar a partida."),
+        ("segurar", "milany", "soda"),
+        ("segurar", "player", "soda"),
         ("fala", "player", "Você preparou tudo isso?"),
         ("fala", "milany", "Só algumas coisinhas. Não sabia quanto tempo você ficaria."),
         ("fala", "player", "Pelo visto, estava esperando uma partida demorada."),
         ("fala", "milany", "Com você? Sempre."),
+        ("beber", "milany"),
         ("fala", "player", "Devo interpretar isso como um elogio?"),
         ("fala", "milany", "Interprete como quiser."),
         ("escolha", "O que Letícia diz?", [
@@ -3230,12 +3343,16 @@ SCENES = {
         ("esperar", 1.3),
         ("fala", "ian", "É por isso que gosto de você. Sempre tão encorajadora."),
         ("narra", "Ian acompanha Letícia até uma das mesas. Há comida, bebidas e alguns objetos náuticos espalhados como decoração. A confraternização tem um clima descontraído, sem a formalidade de um evento corporativo."),
+        ("segurar", "ian", "cerveja"),
+        ("segurar", "player", "drink"),
         ("fala", "player", "Você organizou tudo isso?"),
         ("fala", "ian", "Com a ajuda da equipe. Eu só dei algumas ideias e tentei não atrapalhar."),
         ("fala", "player", "E conseguiu?"),
         ("fala", "ian", "Prefiro não responder sem a presença do meu advogado."),
         ("fala", "player", "Você está impossível hoje."),
         ("fala", "ian", "Estou feliz. A marina teve um ótimo período, a equipe trabalhou muito e acho importante comemorar."),
+        ("brinde", "ian", "player"),
+        ("beber", "ian"),
         ("fala", "player", "Você tem razão. As pessoas precisam saber que o esforço delas é reconhecido."),
         ("fala", "ian", "Aprendi isso com você, sabia?"),
         ("fala", "player", "Comigo?"),
@@ -3244,6 +3361,8 @@ SCENES = {
         ("fala", "player", "Não precisava colocar essa última parte."),
         ("fala", "ian", "Faz parte do discurso. Não posso deixar de fora as observações importantes."),
         ("narra", "Ian ri e pega uma pequena caixa que havia deixado perto de sua mesa."),
+        ("segurar", "ian", None),
+        ("segurar", "player", None),
         ("fala", "ian", "Aliás, tenho uma coisa para você."),
         ("fala", "player", "Mais uma lembrança náutica?"),
         ("fala", "ian", "Você está aprendendo a me conhecer."),
@@ -3426,6 +3545,14 @@ SCENES = {
 }
 
 
+def same_scene(key):
+    """Nome único de uma cena: "namoro_<chave>" (nome antigo) vira "<chave>_pedido" quando essa cena existe,
+    para o pedido de namoro não aparecer duas vezes nas listas."""
+    if key.startswith("namoro_") and f"{key[7:]}_pedido" in SCENES:
+        return f"{key[7:]}_pedido"
+    return key
+
+
 def dating_scene(key):
     """Cena do pedido de namoro (as rosas): a cena "<chave>_pedido" de SCENES; sem ela, uma cena curta."""
     if f"{key}_pedido" in SCENES:
@@ -3507,4 +3634,8 @@ def date_scene(key, place, game):
         steps.insert(-3, ("fala", key, "Shh, vai começar! Me passa a pipoca? ...A pipoca inteira, de preferência.", "happy"))
     if m == "trattoria" and key == "vittoria":
         steps.insert(-3, ("fala", key, "E nem pensa em pagar. A casa paga. A dona da casa insiste.", "happy"))
+    if m in ("bar", "trattoria", "ricci"):          # um brinde no encontro
+        drink = "taca_vinho" if (m != "bar" or key == "vittoria") else ("cerveja" if key == "lucy" else "caipirinha")
+        i = steps.index(("efeito", "coracoes", 3))
+        steps[i:i] = [("segurar", key, drink), ("segurar", "player", drink), ("brinde", key, "player"), ("beber", key)]
     return dict(map=m, time=20 * 60 + 30, npc=key, steps=steps)

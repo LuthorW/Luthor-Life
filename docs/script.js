@@ -71,6 +71,20 @@
     ["hospital", "Conti Moretti Hospitais"],
     ["cutscene", "Cutscene no píer à noite"],
     ["relationships", "Relacionamentos e corações"],
+    ["festa_flores", "Festa das Flores no Parque Central", true],
+    ["luau", "Luau de Verão na praia"],
+    ["noite_luzes", "Noite das Luzes no Jardim do Mirante"],
+    ["calendario", "Calendário com os aniversários"],
+    ["casamento", "O casamento no Jardim do Mirante", true],
+    ["momento", "Um momento entre a Dona Graça e a Vittoria"],
+    ["conselho", "A reunião do conselho na sede"],
+    ["fundacao", "As obras da Fundação Luthor"],
+    ["xadrez", "Xadrez com o Brainy"],
+    ["sinuca", "Sinuca no Noonan's"],
+    ["closet", "O closet da Letícia"],
+    ["decorar", "Decorando a cobertura"],
+    ["album", "O álbum de fotos do Barry"],
+    ["arco_iris", "Arco-íris depois da chuva"],
   ];
   const gallery = document.getElementById("gallery");
   if (gallery) {

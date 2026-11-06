@@ -3,3 +3,5 @@ assets/portraits_hd/
 # músicas geradas pelo jogo na primeira vez que abre (luthor/audio.py)
 saves/audio/
 /build/
+# fotos tiradas no modo foto (tecla P)
+saves/fotos/

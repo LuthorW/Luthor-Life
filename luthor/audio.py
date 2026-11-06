@@ -221,7 +221,12 @@ def _sfx_defs():
     out["page"] = b
     b = mk(0.25); add_note(b, 0, 0.06, 2600, "noise", 0.12, 0.002, 0.12); add_note(b, 0, 0.05, midi(96), "sine", 0.1, 0.002, 0.1)
     out["splash"] = b
+    for fn in EXTRA_SFX:                     # efeitos de outros módulos (ex.: trovão em clima.py)
+        out.update(fn())
     return out
+
+
+EXTRA_SFX = []
 
 
 # ---------------------------------------------------------------------------

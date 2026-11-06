@@ -11,16 +11,25 @@ import pygame
 from . import ui
 from .config import SCREEN_W, SCREEN_H, C_TEXT, C_MUTED, C_ACCENT, C_GOLD, C_LILAC
 from .characters import ROMANCES
-from .cutscenes import Cutscene, SCENES, dating_scene, move_in_scene
+from .cutscenes import Cutscene, SCENES, dating_scene, move_in_scene, same_scene
+from . import casamento
 
 
 def all_keys():
     keys = list(SCENES)
-    keys += [f"namoro_{k}" for k in ROMANCES] + [f"mudanca_{k}" for k in ROMANCES]
+    # "namoro_x" só entra se a personagem não tiver a cena própria do pedido ("x_pedido"), que já está na lista
+    keys += [f"namoro_{k}" for k in ROMANCES if same_scene(f"namoro_{k}") == f"namoro_{k}"]
+    keys += [f"mudanca_{k}" for k in ROMANCES]
+    # casamento: as cenas são montadas na hora (convidados, madrinha), uma versão para cada noiva
+    keys += [f"casamento_pedido_{k}" for k in ROMANCES] + [f"casamento_{k}" for k in ROMANCES]
     return keys
 
 
-def build(key):
+def build(key, g=None):
+    if key.startswith("casamento_pedido_"):
+        return casamento.proposal_scene(g, key[len("casamento_pedido_"):])
+    if key.startswith("casamento_"):
+        return casamento.wedding_scene(g, key[len("casamento_"):])
     if key.startswith("namoro_"):
         return dating_scene(key.split("_", 1)[1])
     if key.startswith("mudanca_"):
@@ -90,7 +99,7 @@ def open_list(g, sel=0):
 def play(g, key):
     keys = all_keys()
     try:
-        scene = build(key)
+        scene = build(key, g)
     except Exception as e:                     # cena com erro: mostra o motivo em vez de fechar o jogo
         g.toasts.push(f"Erro ao montar a cena '{key}': {e}", (248, 113, 113))
         open_list(g, keys.index(key) if key in keys else 0)
