@@ -18,6 +18,7 @@
     ["graca", "Dona Graça", "Chef da Ricci Trattoria", "city"],
     ["marco", "Marco", "Barman do Noonan's", "city"],
     ["joca", "Seu Joca", "Pescador do píer", "city"],
+    ["celeste", "Celeste Waite", "Estilista da La Boutique", "city"],
     ["ian", "Ian", "Diretor da Marina Luthor", "team"],
     ["milany", "Dra. Milany Moretti", "Centro Cardiovascular", "doc"],
     ["yang", "Dra. Cristina Yang", "Direção Médica", "doc"],
@@ -46,7 +47,7 @@
   const track = document.querySelector(".parade .track");
   if (track) {
     const order = ["leticia", "lucy", "cat", "sam", "brainy", "vittoria", "jess", "milany", "rafa", "nia", "barry", "ian", "dog",
-      "theo", "yang", "bea", "graca", "meredith", "marco", "joca", "izzie", "addison"];
+      "theo", "yang", "bea", "graca", "meredith", "marco", "joca", "izzie", "addison", "celeste"];
     const html = order.map((k) =>
       `<img class="${k === "cat" || k === "dog" ? "pet" : ""}" src="img/chars/${k}.png" alt="">`).join("");
     track.innerHTML = html + html;
@@ -85,6 +86,19 @@
     ["decorar", "Decorando a cobertura"],
     ["album", "O álbum de fotos do Barry"],
     ["arco_iris", "Arco-íris depois da chuva"],
+    ["aniversario", "Festa surpresa no aniversário da Letícia", true],
+    ["andrea", "A Andrea Rojas visita o terraço no inverno"],
+    ["piquenique", "Piquenique no parque com a Vittoria"],
+    ["veleiro", "Veleiro ao pôr do sol com a Lucy"],
+    ["cozinhar", "Jantar a quatro mãos na cobertura"],
+    ["clube", "Clube do livro na Bayside Books"],
+    ["corrida", "Corrida com a Sam na orla, às 6h"],
+    ["inauguracao", "Às 6h, a inauguração da sede do Gruppo Ricci"],
+    ["arquivo", "A Lucy no arquivo da CatCo"],
+    ["desfile", "Desfile da Celeste no píer", true],
+    ["boutique", "La Boutique e a Celeste Waite"],
+    ["lab_ponta", "Laboratório com os equipamentos novos"],
+    ["celular", "O celular da Letícia"],
   ];
   const gallery = document.getElementById("gallery");
   if (gallery) {

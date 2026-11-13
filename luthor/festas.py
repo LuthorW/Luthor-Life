@@ -1215,6 +1215,10 @@ def draw_npc_extra(g, surf, npc, cam, key):
 # ===========================================================================
 # Calendário (tecla C)
 # ===========================================================================
+# Módulos novos põem coisas no calendário: funções (g, q, d, year) -> [(texto, cor)]
+CAL_EXTRA = []
+
+
 class Calendar(ui.Modal):
     W, H = 940, 600
 
@@ -1274,6 +1278,12 @@ class Calendar(ui.Modal):
             if anniv and anniv == (q, d) and year > casal.since_year(g):
                 ui.text(surf, "Namoro!", (cell.centerx, y), 15, C_PINK, bold=True, center=True)
                 y += 20
+            for fn in CAL_EXTRA:
+                for txt, cor in fn(g, q, d, year):
+                    for ln in ui.wrap(txt, 15, cell.w - 12):
+                        ui.text(surf, ln, (cell.centerx, y), 15, cor, bold=True, center=True)
+                        y += 18
+                    y += 2
             for k in birthday_keys(q, d):
                 npc = g.npcs[k]
                 p = g.portrait_for(npc, size=64)

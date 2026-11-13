@@ -117,7 +117,27 @@ luthor/
                  lançamento, fogão, conversa e presente; bônus pequenos por nível e um extra no nível 5. `g.skills`
   mural.py       mural de fotos na parede da cobertura (9,1, em cima da escrivaninha, no lugar de uma janela):
                  até 4 fotos do álbum do Barry ou do modo foto (saves/fotos), escolhidas no app Fotos (`g.mural`)
-  conquistas.py  39 medalhas em 4 categorias (tecla K e menu de pausa), aviso que desliza no canto de baixo
+  conquistas.py  46 medalhas em 4 categorias (tecla K e menu de pausa), aviso que desliza no canto de baixo
+  surpresa.py    aniversário da Letícia (`BDAY` = verão, dia 8): festa surpresa no terraço das 19h às 23h, a Jess de
+                 anfitriã, convidados = namorada + amigas com 2+ corações (`guests`), um presente de cada (`GIFTS`);
+                 perdeu a festa = bolo da Jess de manhã. `g.surpresa`. O casamento nunca cai nesse dia
+  andrea.py      Andrea Rojas (mora em Metrópolis; look de `historia.EXTRAS["rojas"]`): mensagens no celular
+                 (`celular.EXTRA_SENDERS`) e uma visita por estação (`VISITS`: café, praia, Trattoria, terraço) com cena,
+                 aviso na véspera, $400 de parceria, energia, carisma e presente. `g.andrea`
+  colecao.py     primeira coleção da Celeste (depois do desfile, flag `celeste_desfile`): investir $2500 conversando com
+                 ela; em 3 noites lança 4 looks na Boutique, manchete na CatCo e $150 de royalties por semana. `g.colecao`
+  coracoes.py    eventos de coração que faltavam na lore: lucy_5 (arquivo da CatCo), vittoria_5 (inauguração às 6h) e
+                 vittoria_7 (o medo de amar alguém ocupada); saves antigos marcam como vistos se já passaram deles
+  encontros.py   encontros especiais com a namorada: piquenique (Parque Central), veleiro ao pôr do sol (alto-mar),
+                 cinema a dois e jantar a quatro mãos na cobertura; entram em `date_places`, cena própria (`scene`) e
+                 bônus em `after` (energia cheia, pesca, carisma, culinária + prato). `g.encontros`
+  clube.py       clube do livro do Theo: quinta 18h-20h na Bayside Books (Theo com 3+ corações), 8 livros (`BOOKS`),
+                 1ª reunião com cena (Nia e Brainy), depois Dialog + escolha; amizade, carisma e um Livro a cada 3. `g.clube`
+  corrida.py     corrida com a Sam na orla (terça, quinta, sábado, 6h-7h40; 2+ corações): +40 de amizade, energia máxima
+                 +20 no dia e +5 para sempre a cada 5 corridas (até +25, `bonus` em `Game.max_energy`). `g.corrida`
+  laboratorio.py melhorias do laboratório no painel (11,2) da sede: centrífuga (projetos -1 dia), impressora 3D
+                 (produtos +10%), câmara de crescimento (Projeto Gaia) e supercomputador (Projeto Prometeu); cada uma
+                 aparece encostada na parede (`apply`). `g.lab["owned"]`
   interiores.py  interiores caprichados: chão com textura, paredes de 2 tiles com papel de parede/lambri (`STYLES`),
                  sombra dos móveis e enfeites de parede automáticos (`THEMES`)
   natureza.py    mar com profundidade, ondulação e ondas subindo na areia; reflexos do pôr do sol e luar; árvores,
@@ -381,7 +401,7 @@ luthor/
   Sam/Brainy/Jess/Ian). No fim (`luthor_livre`): produtos +10%, $3000 e amizade com a equipe. A reunião do conselho é na
   sala de reuniões da sede (`mesa_reuniao`, que também abre o painel dos capítulos; a Letícia senta na cabeceira). Personagens só de cena
   (tios, Andrea Rojas, Hamilton, o espião) ficam em `EXTRAS`, com look próprio, e os retratos saem do bonequinho.
-  **Andrea Rojas é amiga da Letícia** e mora em outra cidade: conselheira do lado dela, nunca vilã nem rival.
+  **Andrea Rojas é amiga da Letícia** e mora em Metrópolis: conselheira do lado dela, nunca vilã nem rival (andrea.py).
 - **Fundação Luthor (fundacao.py):** mesa na sede (`HQ_DESK`). Doar itens da mochila ou dinheiro; a obra completa
   aparece na cidade na noite seguinte (`night`: ready → built; `apply` põe os objetos de `PROPS` e recalcula `m.solid`).
   Benefícios: coreto (conversas +10%), peixaria (peixes +10%), horta (cesta às segundas), lanternas (+coletáveis),
@@ -412,6 +432,13 @@ luthor/
   10 min do jogo e na noite); ao carregar, `sync` dá de uma vez as que já foram cumpridas, com um aviso só. Estado em `g.conquistas`
   (got, when). Aviso desliza no canto de baixo à esquerda quando não há janela aberta. Presentes dados contam em
   `g.stats["gifts"]`.
+- **Módulos novos (game.NOVOS):** surpresa, andrea, colecao, coracoes, encontros, clube, corrida e laboratorio são
+  chamados de uma vez por `_each(nome, ...)` (init_state, load_state, night, morning, talk_options) e `_first(nome, ...)`
+  (chat_line, check); `save_state` e `hud_lines` também passam por todos. Módulo novo com estado próprio: basta pôr
+  em `NOVOS`. Ganchos genéricos para não mexer nos sistemas antigos: `celular.EXTRA_SENDERS` (quem manda mensagem sem
+  ser NPC), `celular.AGENDA_EXTRA`/`AGENDA_TODAY` (linhas da Agenda), `festas.CAL_EXTRA` (linhas do calendário),
+  `noticias.EXTRA_EVENTS` (manchetes de eventos novos) e `scenetest.DYNAMIC` (cenas montadas na hora no `--cenas`).
+  Projetos que precisam de flag usam `locked_flag` (o Terminal P&D só mostra a proposta com a flag).
 - **Mar e natureza (natureza.py):** o mar troca os tiles "sea"/"sea_foam" (`draw_sea`: mais escuro longe da areia,
   cristas andando para a praia, brilhinhos; no pôr do sol reflete pêssego e lilás). Ondas sobem e voltam pela areia
   (`draw_shore`, o píer fica de fora). Depois da iluminação, `draw_glints` põe o caminho do sol (pôr do sol) e o
@@ -439,6 +466,8 @@ luthor/
   2 a Letícia vira cliente fiel de fim de noite · 4 conversa depois de fechar · 6 a Letícia ajuda às 6h na
   inauguração · 8 primeira folga; a Vittoria tem medo de se apaixonar por alguém tão ocupada quanto ela ·
   10 praia: "Vamos ter uma vida, não só empresas".
+- **No jogo:** as cenas da Lucy (lucy_1/2, 6, 8, 10) e da Vittoria escritas pela dona ficaram como estão; coracoes.py
+  completou o que faltava: lucy_5 (arquivo da CatCo), vittoria_5 (inauguração às 6h) e vittoria_7 (o medo).
 - **Dona Graça:** a dona prefere o retrato ilustrado (não pixel art) para ela.
 
 ## Migração para o Godot 4 (ABANDONADA)
@@ -711,3 +740,6 @@ substitua `pygame.key.get_pressed`. Antes de entregar uma mudança, rode alguns 
 41. Notícias da CatCo que reagem ao que a Letícia faz (banca, TV, e-mails, arquivo, falas), degustação de vinhos com a
     Vittoria na adega do Ricci, voluntariado na brinquedoteca da pediatria (crianças menores), 3 medalhas novas e a
     Andrea Rojas como amiga da Letícia.
+42. Aniversário surpresa da Letícia no terraço, visitas e mensagens da Andrea Rojas, primeira coleção da Celeste,
+    eventos da Lucy e da Vittoria que faltavam na lore, encontros especiais (piquenique, veleiro, cinema e jantar),
+    clube do livro do Theo, corrida com a Sam, melhorias do laboratório, 7 medalhas novas (46) e site atualizado.

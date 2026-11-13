@@ -130,6 +130,20 @@ ACHIEVEMENTS = [
      "pelucia", lambda g: (getattr(g, "pediatria", {}).get("visits", 0), 5)),
     ("sommelier", "lazer", "Paladar de sommelier", "Acerte os três vinhos numa degustação com a Vittoria.", "vinho",
      lambda g: (getattr(g, "degust", {}).get("best", 0), 3)),
+    ("parabens", "amigos", "Parabéns pra você", "Vá à sua festa surpresa de aniversário no terraço.", "bolo",
+     lambda g: (len(getattr(g, "surpresa", {}).get("done", [])), 1)),
+    ("andrea", "amigos", "Amiga de longe", "Receba 4 visitas da Andrea Rojas.", "cafe_especial",
+     lambda g: (getattr(g, "andrea", {}).get("visits", 0), 4)),
+    ("encontros", "amigos", "Roteiro romântico", "Faça os 4 encontros especiais (piquenique, veleiro, cinema e jantar).",
+     "rosas", lambda g: (len(getattr(g, "encontros", {}).get("kinds", [])), 4)),
+    ("colecao", "cidade", "Investidora da moda", "Lance a primeira coleção da Celeste.", "lenco_seda",
+     lambda g: (1 if getattr(g, "colecao", {}).get("launched") else 0, 1)),
+    ("clube", "lazer", "Rata de biblioteca", "Vá a 5 reuniões do clube do livro do Theo.", "livro",
+     lambda g: (getattr(g, "clube", {}).get("meetings", 0), 5)),
+    ("corrida", "lazer", "Fôlego de maratonista", "Corra 10 vezes com a Sam na orla.", "isotonico",
+     lambda g: (getattr(g, "corrida", {}).get("runs", 0), 10)),
+    ("lab_completo", "corp", "Laboratório de ponta", "Compre as 4 melhorias do laboratório.", "prometeu",
+     lambda g: (len(getattr(g, "lab", {}).get("owned", [])), 4)),
 ]
 BY_KEY = {a[0]: a for a in ACHIEVEMENTS}
 

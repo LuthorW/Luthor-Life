@@ -15,6 +15,10 @@ from .cutscenes import Cutscene, SCENES, dating_scene, move_in_scene, same_scene
 from . import casamento
 
 
+# cenas montadas na hora por módulos novos (aniversário, encontros, Andrea...): chave -> função(g) -> cena
+DYNAMIC = {}
+
+
 def all_keys():
     keys = list(SCENES)
     # "namoro_x" só entra se a personagem não tiver a cena própria do pedido ("x_pedido"), que já está na lista
@@ -22,10 +26,13 @@ def all_keys():
     keys += [f"mudanca_{k}" for k in ROMANCES]
     # casamento: as cenas são montadas na hora (convidados, madrinha), uma versão para cada noiva
     keys += [f"casamento_pedido_{k}" for k in ROMANCES] + [f"casamento_{k}" for k in ROMANCES]
+    keys += [k for k in DYNAMIC if k not in keys]
     return keys
 
 
 def build(key, g=None):
+    if key in DYNAMIC:
+        return DYNAMIC[key](g)
     if key.startswith("casamento_pedido_"):
         return casamento.proposal_scene(g, key[len("casamento_pedido_"):])
     if key.startswith("casamento_"):

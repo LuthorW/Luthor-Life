@@ -38,6 +38,10 @@ def load_state(g, d):
             g.noticias[k] = v
 
 
+# Acontecimentos novos que viram manchete (módulos novos registram): tipo -> (prioridade, título, texto)
+EXTRA_EVENTS = {}
+
+
 def event(g, kind, **data):
     """Algo que aconteceu hoje e vira notícia amanhã (lançamento, degustação, pediatria...)."""
     ev = dict(kind=kind, **data)
@@ -155,6 +159,9 @@ def _diff(g, old, new):
             out.append((55, "pediatria", "Visita surpresa na pediatria",
                         "A CEO passou a tarde na brinquedoteca do Conti Moretti. As crianças pedem bis. As médicas "
                         "também."))
+        elif e["kind"] in EXTRA_EVENTS:
+            prio, title, text = EXTRA_EVENTS[e["kind"]]
+            out.append((prio, e["kind"], title, text))
     return out
 
 

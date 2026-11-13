@@ -381,12 +381,38 @@ def save_state(g):
 def load_state(g, d):
     init_state(g)
     p = d.get("phone") or {}
-    g.phone["msgs"] = [m for m in p.get("msgs", []) if isinstance(m, dict) and m.get("npc") in NPCS][-MAX_MSGS:]
+    g.phone["msgs"] = [m for m in p.get("msgs", []) if isinstance(m, dict) and _known(m.get("npc"))][-MAX_MSGS:]
     g.phone["seq"] = int(p.get("seq", len(g.phone["msgs"])))
     g.phone["today"] = int(p.get("today", 0))
     g.phone["stocks"] = [float(x) for x in p.get("stocks", [])][-STOCK_DAYS:]
     if not g.phone["stocks"]:
         g.phone["stocks"] = [float(getattr(g, "stock_prev", 100.0)), float(getattr(g, "stock", 100.0))]
+
+
+# Quem manda mensagem sem ser personagem da cidade (a Andrea Rojas, andrea.py): chave -> dict(name, short, look,
+# on_reply). Módulos novos registram aqui; `AGENDA_EXTRA` recebe funções (g, y, q, d) -> [(texto, cor)] para os
+# próximos dias da Agenda.
+EXTRA_SENDERS = {}
+AGENDA_EXTRA = []
+AGENDA_TODAY = []          # funções (g) -> [(texto, cor)] para o "Hoje" da Agenda (as linhas do HUD dos módulos novos)
+
+
+def sender_name(key, full=False):
+    if key in NPCS:
+        return NPCS[key]["name" if full else "short"]
+    e = EXTRA_SENDERS.get(key, {})
+    return e.get("name" if full else "short", key)
+
+
+def sender_portrait(g, key, size):
+    if key in g.npcs:
+        return g.portrait_for(g.npcs[key], size=size)
+    from . import art
+    return art.portrait(None, EXTRA_SENDERS[key]["look"], size)
+
+
+def _known(key):
+    return key in NPCS or key in EXTRA_SENDERS
 
 
 def replies_for(m):
@@ -406,7 +432,7 @@ def _send(g, key, text, toast=True):
     g.phone["today"] += 1
     if toast:
         audio.sfx("blip")
-        g.toasts.push(f"Mensagem de {NPCS[key]['short']} (T para ler)", C_PINK if key in ROMANCES else C_LILAC)
+        g.toasts.push(f"Mensagem de {sender_name(key)} (T para ler)", C_PINK if key in ROMANCES else C_LILAC)
 
 
 def _fresh_text(g, key):
@@ -461,7 +487,7 @@ def agenda(g):
         today.append((f"Encontro às 20h com {NPCS[g.date['npc']]['short']}: {g.date['desc']}", C_PINK))
     for txt, col in (festas.hud_lines(g) + casamento.hud_lines(g) + casal.hud_lines(g) + fundacao.hud_lines(g)
                      + historia.hud_lines(g) + pedidos.hud_lines(g)
-                     + lugares.hud_lines(g)):
+                     + lugares.hud_lines(g) + [ln for fn in AGENDA_TODAY for ln in fn(g)]):
         today.append((txt, col))
     for key, h, ev in [e for e in g.pending_scene_events() if e[1] > 0]:
         where, a, b = g.scene_place(ev["scene"])
@@ -481,6 +507,8 @@ def agenda(g):
             items.append((f"{f['name']} {f['place']}, {g.fmt_hour(f['start'])} às {g.fmt_hour(f['end'])}", C_GOLD))
         for k in festas.birthday_keys(q, d):
             items.append((f"Aniversário de {NPCS[k]['short']}", C_PINK))
+        for fn in AGENDA_EXTRA:
+            items += fn(g, y, q, d)
         wq = g.casamento.get("wedding_qd") if hasattr(g, "casamento") else None
         if wq and list(wq) == [y, q, d]:
             items.append(("O casamento! Jardim do Mirante, 15h", C_PINK))
@@ -647,11 +675,14 @@ class Phone(ui.Modal):
             def pick(i, m=m, options=options):
                 m["replied"] = True
                 m["reply"], m["back"] = options[i]
-                g.add_friendship(m["npc"], REPLY_POINTS)
+                if m["npc"] in NPCS:
+                    g.add_friendship(m["npc"], REPLY_POINTS)
+                elif EXTRA_SENDERS.get(m["npc"], {}).get("on_reply"):
+                    EXTRA_SENDERS[m["npc"]]["on_reply"](g)
                 habilidades.gain(g, "carisma", 3)
                 audio.sfx("love" if m["npc"] in ROMANCES else "confirm")
-                self.say(f"Você respondeu {NPCS[m['npc']]['short']}. (+amizade)")
-            g.push(ui.Choice(f"Responder {NPCS[m['npc']]['short']}:", [o[0] for o in options], pick))
+                self.say(f"Você respondeu {sender_name(m['npc'])}. (+amizade)")
+            g.push(ui.Choice(f"Responder {sender_name(m['npc'])}:", [o[0] for o in options], pick))
         elif self.app == "fotos":
             rows = self.rows()
             if rows:
@@ -748,10 +779,9 @@ class Phone(ui.Modal):
         rows = self.rows()
         if self.reading is not None:
             m = self.reading
-            npc = g.npcs[m["npc"]]
-            p = g.portrait_for(npc, size=64)
+            p = sender_portrait(g, m["npc"], 64)
             ui.blit_portrait(surf, p, (r.x, r.y))
-            ui.text(surf, NPCS[m["npc"]]["name"], (r.x + 74, r.y + 6), 18, C_TEXT, bold=True)
+            ui.text(surf, sender_name(m["npc"], True), (r.x + 74, r.y + 6), 18, C_TEXT, bold=True)
             ui.text(surf, self._when(m), (r.x + 74, r.y + 30), 13, C_MUTED)
             bubble = pygame.Rect(r.x, r.y + 80, r.w - 30, 10)
             lines = ui.wrap(m["text"], 17, bubble.w - 24)
@@ -790,9 +820,8 @@ class Phone(ui.Modal):
             row = pygame.Rect(r.x, r.y + k * h, r.w, h - 6)
             if i == self.list_sel:
                 ui.box(surf, row, ui.C_PANEL_2, border=ui.C_ACCENT_2)
-            npc = g.npcs[m["npc"]]
-            ui.blit_portrait(surf, g.portrait_for(npc, size=48), (row.x + 6, row.y + 8))
-            ui.text(surf, NPCS[m["npc"]]["short"], (row.x + 62, row.y + 6), 16,
+            ui.blit_portrait(surf, sender_portrait(g, m["npc"], 48), (row.x + 6, row.y + 8))
+            ui.text(surf, sender_name(m["npc"]), (row.x + 62, row.y + 6), 16,
                     C_PINK if m["npc"] in ROMANCES else C_TEXT, bold=not m.get("read"))
             ui.text(surf, self._when(m), (row.right - 8, row.y + 8), 12, C_MUTED, right=True)
             prev = m["text"] if len(m["text"]) < 34 else m["text"][:33].rstrip() + "..."

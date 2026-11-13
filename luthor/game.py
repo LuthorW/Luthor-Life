@@ -54,6 +54,14 @@ from . import lugares    # estúdio da CatCo TV, arquivo, leitos ocupados, porta
 from . import noticias   # manchetes da CatCo sobre o que a Letícia faz
 from . import degustacao  # degustação de vinhos com a Vittoria (sede do Gruppo Ricci)
 from . import pediatria  # brinquedoteca e voluntariado no Conti Moretti
+from . import surpresa   # aniversário da Letícia: festa surpresa no terraço
+from . import andrea     # Andrea Rojas: mensagens e visita a cada estação
+from . import colecao    # primeira coleção da Celeste (investimento da Letícia)
+from . import coracoes   # eventos de coração que completam a história da Lucy e da Vittoria
+from . import encontros  # encontros especiais: piquenique, veleiro, cinema e jantar a quatro mãos
+from . import clube      # clube do livro do Theo (quintas)
+from . import corrida    # corrida matinal com a Sam na orla
+from . import laboratorio  # melhorias do laboratório da sede
 from . import mural      # mural de fotos da cobertura
 from . import celular    # celular da Letícia (tecla T)
 from . import album       # álbum de fotos do Barry
@@ -64,6 +72,29 @@ from . import casamento   # anel, pedido e casamento
 from . import historia    # história da Luthor Corp (os tios e o conselho)
 from . import animacoes   # regar, bancada, vara de pesca, deitar, colo, aceno, gaivotas, gatinho, modo foto
 from .world import CITY_LAYOUT, CITY_DOORS, old_city_xy
+
+# módulos novos com estado próprio (init_state / save_state / load_state, night, morning, hud_lines...)
+NOVOS = (surpresa, andrea, colecao, coracoes, encontros, clube, corrida, laboratorio)
+celular.AGENDA_TODAY.extend(m.hud_lines for m in NOVOS if hasattr(m, "hud_lines"))
+
+
+def _each(name, *args):
+    """Chama `name` em cada módulo novo que tiver essa função."""
+    for mod in NOVOS:
+        fn = getattr(mod, name, None)
+        if fn:
+            fn(*args)
+
+
+def _first(name, *args):
+    """A primeira resposta verdadeira de `name` entre os módulos novos."""
+    for mod in NOVOS:
+        fn = getattr(mod, name, None)
+        if fn:
+            r = fn(*args)
+            if r:
+                return r
+    return None
 from .world import APT_OWNER, APT_NAMES, LOBBY_DOORS, SUB_PARENT, BAYSIDE_HOURS, APT_MIN_HEARTS
 
 SHADOW_KINDS = {"tree": 46, "tree2": 46, "tree3": 46, "palm": 30, "bush": 26, "bush2": 26, "bush3": 26,
@@ -303,6 +334,7 @@ class Game:
         pediatria.init_state(self)
         mural.init_state(self)
         celular.init_state(self)
+        _each("init_state", self)
         animacoes.init(self)
         if hasattr(self, "crowd"):
             self.crowd.reset_day()
@@ -310,7 +342,7 @@ class Game:
     @property
     def max_energy(self):
         return (BASE_ENERGY + (20 if "jess_energy" in self.flags else 0) + (15 if "book_energy" in self.flags else 0)
-                + (15 if "cmh_checkup" in self.flags else 0))
+                + (15 if "cmh_checkup" in self.flags else 0) + corrida.bonus(self))
 
     @property
     def current_map(self):
@@ -434,6 +466,8 @@ class Game:
                 npc.schedule = doctor_schedule(key, self.abs_day())
             festas.override(self, npc)          # dia de festa: todo mundo vai
             casal.override(self, npc)           # aniversário de namoro: ela espera no jantar
+            clube.override(self, npc)           # quinta: o Theo espera o clube do livro
+            corrida.override(self, npc)         # terça, quinta e sábado: a Sam corre na orla
             if snap:
                 npc.snap_to_schedule(self.minutes)
 
@@ -891,6 +925,7 @@ class Game:
                or decor.object_label(self, t) or fundacao.object_label(self, t) or historia.object_label(self, t)
                or pedidos.object_label(self, t) or degustacao.object_label(self, t)
                or pediatria.object_label(self, t) or lugares.object_label(self, t)
+               or laboratorio.object_label(self, t)
                or activities.object_label(self, t) or hospital.object_label(self, t)
                or marina.target_label(self, t))
         if lab:
@@ -1010,7 +1045,8 @@ class Game:
         if (festas.use_object(self, o) or jogos.use_object(self, o) or closet.use_object(self, o)
                 or decor.use_object(self, o) or fundacao.use_object(self, o) or historia.use_object(self, o)
                 or pedidos.use_object(self, o) or degustacao.use_object(self, o)
-                or pediatria.use_object(self, o) or lugares.use_object(self, o)):
+                or pediatria.use_object(self, o) or lugares.use_object(self, o)
+                or laboratorio.use_object(self, o)):
             return
         if k in self.SEATS:                         # dá para sentar até na casa dos outros
             self.sit(o)
@@ -1388,7 +1424,8 @@ class Game:
 
     def project_days(self, key):
         """Dias de um projeto (com as bancadas do Brainy, 1 dia a menos)."""
-        return max(1, PROJECTS[key]["days"] - (1 if "brainy_fast" in self.flags else 0))
+        return max(1, PROJECTS[key]["days"] - (1 if "brainy_fast" in self.flags else 0)
+                   - laboratorio.days_off(self))                       # centrífuga do laboratório
 
     def sell_value(self, item):
         v = ITEMS[item].get("value", 0)
@@ -1405,6 +1442,7 @@ class Game:
             v = int(v * 1.2)
         v = int(v * habilidades.sell_mult(self, ITEMS[item]["kind"]))      # nível 5 das habilidades
         v = int(v * lugares.sell_mult(self, item))                          # anúncio na CatCo
+        v = int(v * laboratorio.sell_mult(self, item))                      # impressora 3D do laboratório
         return v
 
     # --- Pesca ---------------------------------------------------------
@@ -1841,6 +1879,7 @@ class Game:
             opts.append("Convidar para um encontro hoje às 20h"); acts.append(lambda: self.invite_date(npc))
         marina.talk_options(self, npc, opts, acts)
         jogos.talk_options(self, npc, opts, acts)
+        _each("talk_options", self, npc, opts, acts)    # coleção da Celeste, clube do livro, corrida com a Sam
         if not opts:
             if blocked:
                 self.say_busy(npc)
@@ -2071,7 +2110,8 @@ class Game:
         mood = "smile" if self.hearts(key) >= 4 else None
         if key in (self.dating, self.partner):
             mood = "love"
-        line = (festas.chat_line(self, npc) or casamento.chat_line(self, npc) or closet.chat_line(self, npc)
+        line = (_first("chat_line", self, npc) or festas.chat_line(self, npc) or casamento.chat_line(self, npc)
+                or closet.chat_line(self, npc)
                 or clima.chat_line(self, npc))
         if line and mood is None:
             mood = "happy"
@@ -2304,8 +2344,8 @@ class Game:
         """Toca a cena de um evento pendente quando a jogadora está no lugar e no horário da cena."""
         if self.scene != "play" or self.modals or self.fishing or self.fade_dir:
             return
-        if (festas.check(self) or casamento.check(self) or casal.check(self) or fundacao.check(self)
-                or historia.check(self)):
+        if (festas.check(self) or _first("check", self) or casamento.check(self) or casal.check(self)
+                or fundacao.check(self) or historia.check(self)):
             return
         if self.proposal and not self.dating and self.scene_ready(f"{self.proposal}_pedido"):
             key = self.proposal
@@ -2349,7 +2389,9 @@ class Game:
             for n in self.npcs.values():
                 n.check_schedule(self.minutes)
             self.toasts.push(f"Encontro com {npc.data['short']}: +energia, +amizade", C_PINK)
-        self.play_scene(f"encontro_{npc.key}", date_scene(npc.key, place, self), on_end=after, remember=False)
+            encontros.after(self, npc.key, place)       # bônus dos encontros especiais
+        sc = encontros.scene(self, npc.key, place) or date_scene(npc.key, place, self)
+        self.play_scene(f"encontro_{npc.key}", sc, on_end=after, remember=False)
 
     # --- Informações ---------------------------------------------------
     def item_hint(self, item):
@@ -2685,6 +2727,7 @@ class Game:
         pedidos.night(self, notes)                  # bilhetes novos no quadro do Grão Nobre
         lugares.night(self, notes)                  # entrevista e anúncio na CatCo
         celular.night(self, notes)                  # fechamento da LCORP no app Bolsa
+        _each("night", self, notes)                 # aniversário da Letícia, Andrea, coleção da Celeste
         if "drone" in self.flags:
             n = 0
             for st in self.stations:
@@ -2762,6 +2805,7 @@ class Game:
         casamento.morning(self)                     # dia do casamento / anel no bolso
         casal.morning(self)                         # café da manhã juntas e o pedido do dia
         celular.morning(self)                       # mensagens da manhã
+        _each("morning", self)                      # convite da Jess, da Andrea e da Sam
 
     # ------------------------------------------------------------------
     # Salvar / carregar
@@ -2805,6 +2849,9 @@ class Game:
         data.update(pediatria.save_state(self))
         data.update(mural.save_state(self))
         data.update(celular.save_state(self))
+        for mod in NOVOS:
+            if hasattr(mod, "save_state"):
+                data.update(mod.save_state(self))
         data["crowd"] = self.crowd.to_save()
         path = jogos_salvos.path(self.slot)
         tmp = path + ".tmp"
@@ -2871,6 +2918,7 @@ class Game:
         pediatria.load_state(self, d)
         mural.load_state(self, d)
         celular.load_state(self, d)
+        _each("load_state", self, d)
         self.fix_quarter_len(d.get("quarter_days", 28))
         self.crowd.reset_day()
         self.crowd.load(d.get("crowd", {}))
@@ -3396,7 +3444,8 @@ class Game:
                 ui.text(surf, f"Pedido {NPCS[self.proposal]['short']}: {self.proposal_text()}",
                         (SCREEN_W - 24, hy), 15, C_PINK, bold=True, right=True)
                 hy += 20
-            for txt, col in (festas.hud_lines(self) + casamento.hud_lines(self) + casal.hud_lines(self)
+            novos = [ln for m in NOVOS if hasattr(m, "hud_lines") for ln in m.hud_lines(self)]
+            for txt, col in (festas.hud_lines(self) + novos + casamento.hud_lines(self) + casal.hud_lines(self)
                              + pedidos.hud_lines(self) + lugares.hud_lines(self)
                              + fundacao.hud_lines(self) + historia.hud_lines(self)):
                 ui.text(surf, txt, (SCREEN_W - 24, hy), 15, col, bold=True, right=True)

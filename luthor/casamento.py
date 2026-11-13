@@ -83,7 +83,8 @@ def _pick_wedding(g):
     y, q, d = g.year, g.quarter, g.day
     for _ in range(7):
         y, q, d = _step(y, q, d)
-    while festas.festival_on(q, d) or festas.birthday_keys(q, d):
+    from . import surpresa
+    while festas.festival_on(q, d) or festas.birthday_keys(q, d) or (q, d) == surpresa.BDAY:
         y, q, d = _step(y, q, d)
     return g.abs_day(y, q, d), [y, q, d]
 def wedding_label(g):
