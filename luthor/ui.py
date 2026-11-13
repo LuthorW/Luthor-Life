@@ -95,53 +95,159 @@ def wrap(msg, size, width, bold=False):
 
 
 _panel_cache = {}
+U = 2                                   # 1 pixel de arte na interface (as molduras seguem a grade da pixel art)
+GEM, GEM_LT, GEM_DK, GEM_LINE = (232, 186, 82), (255, 236, 164), (178, 122, 46), (86, 50, 22)
+
+
+def _mix(a, b, t):
+    return tuple(int(a[i] + (b[i] - a[i]) * t) for i in range(3))
+
+
+def _shade(c, f):
+    return tuple(max(0, min(255, int(v * f))) for v in c[:3])
+
+
+def cut_rect(s, color, r, cut=1):
+    """Retângulo com cantos em escadinha (cut = degraus de 1 px de arte), como as molduras do Stardew."""
+    x, y, w, h = pygame.Rect(r)
+    cut = max(0, min(cut, w // (2 * U), h // (2 * U)))
+    for i in range(cut):
+        ins = (cut - i) * U
+        s.fill(color, (x + ins, y + i * U, w - 2 * ins, U))
+        s.fill(color, (x + ins, y + h - (i + 1) * U, w - 2 * ins, U))
+    s.fill(color, (x, y + cut * U, w, h - 2 * cut * U))
+
+
+def _gem(s, cx, cy):
+    """Pedrinha dourada em losango (7x7 px de arte) nos cantos dos painéis grandes."""
+    for r, col in ((3, GEM_LINE), (2, GEM)):
+        for dy in range(-r, r + 1):
+            k = r - abs(dy)
+            s.fill(col, (cx + (-k) * U, cy + dy * U, (2 * k + 1) * U, U))
+    s.fill(GEM_LT, (cx - U, cy - U, U, U)); s.fill(GEM_LT, (cx, cy - 2 * U, U, U))
+    s.fill(GEM_DK, (cx + U, cy + U, U, U)); s.fill(GEM_DK, (cx, cy + 2 * U, U, U))
+
+
+def panel_image(size, alpha=235, border=C_BORDER, radius=14, fill=C_PANEL):
+    """Moldura em pixel art: contorno escuro, chanfro claro em cima/à esquerda e escuro embaixo/à direita, faixa
+    na cor da borda, filete interno e fundo com degradê; pedrinhas douradas nos cantos dos painéis grandes."""
+    border = tuple(border or C_BORDER)
+    key = (tuple(size), alpha, border, radius, tuple(fill))
+    img = _panel_cache.get(key)
+    if img is not None:
+        return img
+    w, h = size
+    c = 2 if radius >= 10 else 1
+    img = pygame.Surface((w + U, h + 2 * U), pygame.SRCALPHA)
+    cut_rect(img, (0, 0, 0, 80), (U, 2 * U, w, h), c)                      # sombra
+    cut_rect(img, (24, 12, 36, 255), (0, 0, w, h), c)                       # contorno
+    cut_rect(img, (*_shade(border, 0.58), 255), (U, U, w - 2 * U, h - 2 * U), c - 1)          # chanfro escuro
+    cut_rect(img, (*_mix(border, (255, 255, 255), 0.42), 255), (U, U, w - 3 * U, h - 3 * U), c - 1)  # claro
+    cut_rect(img, (*border, 255), (2 * U, 2 * U, w - 4 * U, h - 4 * U), c - 2)                   # faixa
+    img.fill((30, 16, 46, 255), (3 * U, 3 * U, w - 6 * U, h - 6 * U))                      # filete interno
+    bx, by, bw, bh = 4 * U, 4 * U, w - 8 * U, h - 8 * U
+    top = tuple(min(255, int(v * 1.35) + 6) for v in fill)
+    for y in range(0, bh, U):
+        t = y / max(1, bh - 1)
+        col = tuple(int(top[i] + (fill[i] - top[i]) * min(1, t * 2.2)) for i in range(3))
+        img.fill((*col, alpha), (bx, by + y, bw, min(U, bh - y)))
+    img.fill((*_mix(top, (255, 255, 255), 0.18), alpha), (bx, by, bw, U))               # brilho em cima
+    img.fill((*_shade(fill, 0.7), alpha), (bx, by + bh - U, bw, U))                       # sombra embaixo
+    if min(w, h) >= 96:
+        for (gx, gy) in ((3 * U, 3 * U), (w - 4 * U, 3 * U), (3 * U, h - 4 * U), (w - 4 * U, h - 4 * U)):
+            _gem(img, gx, gy)
+    if len(_panel_cache) > 300:
+        _panel_cache.clear()
+    _panel_cache[key] = img
+    return img
 
 
 def panel(surf, rect, alpha=235, border=C_BORDER, radius=14, fill=C_PANEL):
-    """Painel fofo: sombra, gradiente suave, borda dupla."""
+    """Painel com moldura em pixel art (veja panel_image)."""
     rect = pygame.Rect(rect)
-    border = border or C_BORDER
-    key = (rect.size, alpha, tuple(border), radius, tuple(fill))
-    img = _panel_cache.get(key)
-    if img is None:
-        w, h = rect.size
-        img = pygame.Surface((w + 6, h + 6), pygame.SRCALPHA)
-        pygame.draw.rect(img, (0, 0, 0, 70), (4, 5, w, h), border_radius=radius)
-        body = pygame.Surface((w, h), pygame.SRCALPHA)
-        top = tuple(min(255, int(c * 1.35) + 6) for c in fill)
-        for y in range(h):
-            t = y / max(1, h - 1)
-            c = tuple(int(top[i] + (fill[i] - top[i]) * min(1, t * 2.2)) for i in range(3))
-            pygame.draw.line(body, (*c, alpha), (0, y), (w, y))
-        mask = pygame.Surface((w, h), pygame.SRCALPHA)
-        pygame.draw.rect(mask, (255, 255, 255, 255), (0, 0, w, h), border_radius=radius)
-        body.blit(mask, (0, 0), special_flags=pygame.BLEND_RGBA_MIN)
-        img.blit(body, (0, 0))
-        pygame.draw.rect(img, (28, 16, 40, 255), (0, 0, w, h), 3, border_radius=radius)
-        pygame.draw.rect(img, (*border, 255), (3, 3, w - 6, h - 6), 2, border_radius=max(2, radius - 3))
-        pygame.draw.line(img, (255, 255, 255, 45), (radius, 6), (w - radius, 6))
-        if len(_panel_cache) > 300:
-            _panel_cache.clear()
-        _panel_cache[key] = img
-    surf.blit(img, rect.topleft)
+    surf.blit(panel_image(rect.size, alpha, border, radius, fill), rect.topleft)
+
+
+def box(surf, rect, fill, border=None, cut=1, light=None):
+    """Caixinha em pixel art (cartões, linhas de lista): contorno, borda opcional e brilho de 1 px em cima."""
+    r = pygame.Rect(rect)
+    cut_rect(surf, (20, 10, 30), r, cut)
+    inner = r.inflate(-2 * U, -2 * U)
+    if border:
+        cut_rect(surf, border, inner, cut - 1)
+        inner = inner.inflate(-2 * U, -2 * U)
+    surf.fill(fill, inner)
+    surf.fill(light or _mix(fill, (255, 255, 255), 0.16), (inner.x, inner.y, inner.w, U))
+    surf.fill(_shade(fill, 0.72), (inner.x, inner.bottom - U, inner.w, U))
+    return inner
+
+
+def slot(surf, rect, selected=False, fill=(18, 12, 28)):
+    """Espaço de item afundado (barra de itens, mochila); o escolhido ganha moldura clara e cantinhos dourados."""
+    r = pygame.Rect(rect)
+    cut_rect(surf, (10, 6, 16), r, 1)
+    inner = r.inflate(-2 * U, -2 * U)
+    surf.fill(fill, inner)
+    surf.fill((6, 3, 10), (inner.x, inner.y, inner.w, U))
+    surf.fill((6, 3, 10), (inner.x, inner.y, U, inner.h))
+    surf.fill(_mix(fill, C_BORDER_DIM, 0.6), (inner.x + U, inner.bottom - U, inner.w - U, U))
+    surf.fill(_mix(fill, C_BORDER_DIM, 0.6), (inner.right - U, inner.y + U, U, inner.h - U))
+    if selected:
+        cut_rect(surf, C_ACCENT_2, r, 1)
+        surf.fill((255, 255, 255), (r.x + 2 * U, r.y + U, r.w - 4 * U, U))
+        hole = r.inflate(-4 * U, -4 * U)
+        surf.fill(fill, hole)
+        L = 4 * U
+        for (cx, cy, sx, sy) in ((r.x, r.y, 1, 1), (r.right - U, r.y, -1, 1), (r.x, r.bottom - U, 1, -1),
+                                 (r.right - U, r.bottom - U, -1, -1)):
+            surf.fill(GEM, (min(cx, cx + sx * (L - U)), cy, L, U))
+            surf.fill(GEM, (cx, min(cy, cy + sy * (L - U)), U, L))
+
+
+def highlight(surf, rect, color=C_ACCENT, alpha=120):
+    """Faixa da opção escolhida (listas e menus), com cantos em escadinha e brilho em cima."""
+    r = pygame.Rect(rect)
+    hl = pygame.Surface(r.size, pygame.SRCALPHA)
+    cut_rect(hl, (*color, alpha), hl.get_rect(), 1)
+    hl.fill((*_mix(color, (255, 255, 255), 0.5), min(255, alpha + 60)), (U, 0, r.w - 2 * U, U))
+    hl.fill((*_shade(color, 0.6), alpha), (U, r.h - U, r.w - 2 * U, U))
+    surf.blit(hl, r.topleft)
 
 
 def name_tag(surf, x, y, name, color=None):
     f = font(20, True)
     w = f.size(name)[0] + 28
     r = pygame.Rect(x, y, w, 32)
-    pygame.draw.rect(surf, (28, 16, 40), r.inflate(6, 6), border_radius=16)
-    pygame.draw.rect(surf, color or C_ACCENT, r, border_radius=14)
-    pygame.draw.rect(surf, (255, 255, 255), (r.x + 10, r.y + 4, w - 20, 2), border_radius=1)
+    col = color or C_ACCENT
+    cut_rect(surf, (24, 12, 36), r.inflate(2 * U, 2 * U), 2)
+    cut_rect(surf, _shade(col, 0.62), r, 1)
+    cut_rect(surf, _mix(col, (255, 255, 255), 0.35), (r.x, r.y, r.w - U, r.h - U), 1)
+    surf.fill(col, r.inflate(-2 * U, -2 * U))
+    surf.fill(_mix(col, (255, 255, 255), 0.55), (r.x + 3 * U, r.y + 2 * U, r.w - 6 * U, U))
     text(surf, name, (r.centerx, r.y + 4), 20, C_TEXT, bold=True, center=True)
     return r
 
 
-def hearts_row(surf, x, y, points, k=2):
+def hearts_row(surf, x, y, points, k=2, total=MAX_HEARTS, locked_from=None):
+    """Fileira de corações. A partir de `locked_from` eles aparecem trancados (cadeado), ainda não liberados."""
     n = points // HEART_POINTS
-    for i in range(MAX_HEARTS):
+    for i in range(total):
         img = art.heart(i < n, k)
-        surf.blit(img, (x + i * (img.get_width() + 3), y))
+        hx = x + i * (img.get_width() + 3)
+        if locked_from is not None and i >= locked_from:
+            dim = img.copy()
+            dim.fill((90, 80, 110, 255), special_flags=pygame.BLEND_RGBA_MULT)
+            surf.blit(dim, (hx, y))
+            w, h = img.get_size()                     # cadeadinho em pixel art no meio do coração
+            u = max(1, k)
+            bx, by = hx + w // 2 - 3 * u, y + h // 2 - u
+            pygame.draw.rect(surf, (210, 190, 120), (bx, by, 6 * u, 4 * u))
+            pygame.draw.rect(surf, (210, 190, 120), (bx + u, by - 3 * u, u, 3 * u))
+            pygame.draw.rect(surf, (210, 190, 120), (bx + 4 * u, by - 3 * u, u, 3 * u))
+            pygame.draw.rect(surf, (210, 190, 120), (bx + u, by - 3 * u, 4 * u, u))
+            pygame.draw.rect(surf, (90, 70, 40), (bx + 2 * u + u // 2, by + u, u, 2 * u))
+        else:
+            surf.blit(img, (hx, y))
 
 
 # ---------------------------------------------------------------------------
@@ -215,7 +321,7 @@ class Dialog(Modal):
                 p = pygame.transform.smoothscale(p, (size, size))
             px, py = x0, bottom - size
             if not has_alpha:            # foto quadrada (sem transparência): ganha moldura
-                pygame.draw.rect(surf, C_ACCENT, (px - 4, py - 4, size + 8, size + 8), border_radius=8)
+                cut_rect(surf, C_ACCENT, (px - 4, py - 4, size + 8, size + 8), 2)
             blit_portrait(surf, p, (px, py))
             x0 = px + size + 14
         rect = pygame.Rect(x0, bottom - self.H, SCREEN_W - 24 - x0, self.H)
@@ -295,16 +401,15 @@ class Choice(Modal):
             text(surf, l, (rect.x + 32, y), 24, bold=True)
             y += 32
         if qlines:
-            pygame.draw.line(surf, C_BORDER, (rect.x + 28, y + 2), (rect.right - 28, y + 2), 2)
+            surf.fill(C_BORDER_DIM, (rect.x + 28, y + 2, rect.w - 56, U))
+            surf.fill((12, 6, 20), (rect.x + 28, y + 2 + U, rect.w - 56, U))
             y += 10
         bob = int(math.sin(self.t * 7) * 3)
         for i in range(self.top, self.top + vis):
             r = pygame.Rect(rect.x + 22, y, rect.w - 44, self.ROW - 4)
             on = i == self.sel
             if on:
-                hl = pygame.Surface(r.size, pygame.SRCALPHA)
-                pygame.draw.rect(hl, (*C_ACCENT, 120), hl.get_rect(), border_radius=8)
-                surf.blit(hl, r.topleft)
+                highlight(surf, r)
                 ax, ay = r.x + 12 + bob, r.centery          # setinha apontando para a opção
                 pygame.draw.polygon(surf, C_ACCENT_2, [(ax, ay - 8), (ax + 12, ay), (ax, ay + 8)])
             text(surf, self.options[i], (r.x + 36, r.y + 4), 22, C_TEXT if on else C_MUTED)
@@ -367,8 +472,7 @@ class Shop(Modal):
             r = pygame.Rect(rect.x + 20, y, rect.w - 40, 46)
             enabled = e.get("enabled", lambda: True)()
             if i == self.sel:
-                pygame.draw.rect(surf, C_PANEL_2, r, border_radius=8)
-                pygame.draw.rect(surf, C_ACCENT_2, r, 2, border_radius=8)
+                box(surf, r, C_PANEL_2, border=C_ACCENT_2)
             if e.get("item"):
                 surf.blit(art.item_icon(e["item"], 2), (r.x + 8, r.y + 7))
             col = C_TEXT if enabled else C_MUTED
@@ -378,7 +482,7 @@ class Shop(Modal):
             y += 50
         e = entries[self.sel]
         dr = pygame.Rect(rect.x + 20, rect.bottom - 68, rect.w - 40, 50)
-        pygame.draw.rect(surf, (14, 10, 22), dr, border_radius=8)
+        slot(surf, dr, fill=(14, 10, 22))
         if self.flash_t > 0:
             text(surf, self.flash, (dr.x + 14, dr.y + 13), 18, C_GREEN if self.flash_ok else C_RED)
         else:
@@ -436,12 +540,15 @@ class InfoPanel(Modal):
         self.off = min(self.off, self.max_off)
         surf.blit(sheet, (rect.x, rect.y + self.TOP), (0, self.TOP + self.off, rect.w, view_h))
         if self.max_off:
+            # linha entre o título e o conteúdo que rola (o texto some atrás dela, não "gruda" no título)
+            surf.fill((70, 52, 100), (rect.x + 24, rect.y + self.TOP - U, rect.w - 48, U))
             # barrinha de rolagem
             bar = pygame.Rect(rect.right - 14, rect.y + self.TOP, 4, view_h)
-            pygame.draw.rect(surf, (60, 50, 80), bar, border_radius=2)
+            surf.fill((40, 30, 58), bar)
             kh = max(24, int(view_h * view_h / (view_h + self.max_off)))
             ky = bar.y + int((view_h - kh) * self.off / self.max_off)
-            pygame.draw.rect(surf, C_ACCENT_2, (bar.x, ky, 4, kh), border_radius=2)
+            surf.fill(C_ACCENT_2, (bar.x, ky, 4, kh))
+            surf.fill(C_LILAC, (bar.x, ky, 4, U))
             text(surf, "Setas / roda: rolar", (rect.x + 28, rect.bottom - 34), 16, C_MUTED)
         text(surf, "Esc / E: fechar", (rect.right - 24, rect.bottom - 34), 16, C_MUTED, right=True)
 
@@ -499,14 +606,13 @@ class TextPrompt(Modal):
         text(surf, self.title, (rect.centerx, rect.y + 18), 24, C_TEXT, bold=True, center=True)
         if self.info:
             text(surf, self.info, (rect.centerx, rect.y + 52), 16, C_MUTED, center=True)
-        box = pygame.Rect(rect.x + 60, rect.y + 86, rect.w - 120, 52)
-        pygame.draw.rect(surf, C_PANEL_2, box, border_radius=10)
-        pygame.draw.rect(surf, C_ACCENT_2, box, 2, border_radius=10)
+        field = pygame.Rect(rect.x + 60, rect.y + 86, rect.w - 120, 52)
+        box(surf, field, C_PANEL_2, border=C_ACCENT_2, cut=2)
         img = font(30, True).render(self.value, False, C_GOLD)
-        surf.blit(img, (box.centerx - img.get_width() // 2, box.y + 10))
+        surf.blit(img, (field.centerx - img.get_width() // 2, field.y + 10))
         if int(self.t * 2) % 2 == 0:              # cursor piscando
-            cx = box.centerx + img.get_width() // 2 + 3
-            pygame.draw.rect(surf, C_GOLD, (cx, box.y + 12, 3, 28))
+            cx = field.centerx + img.get_width() // 2 + 3
+            pygame.draw.rect(surf, C_GOLD, (cx, field.y + 12, 3, 28))
         hint = "Digite o nome   Enter: confirmar   Esc: voltar"
         if self.suggestions:
             hint = "Digite o nome   Tab: sugestão   Enter: confirmar   Esc: voltar"
@@ -577,13 +683,12 @@ class NumberPrompt(Modal):
         text(surf, self.title, (rect.centerx, rect.y + 20), 24, C_LILAC, bold=True, center=True)
         if self.info:
             text(surf, self.info, (rect.centerx, rect.y + 54), 17, C_MUTED, center=True)
-        box = pygame.Rect(0, 0, 220, 64)
-        box.center = (rect.centerx, rect.y + 120)
-        pygame.draw.rect(surf, C_PANEL_2, box, border_radius=10)
-        pygame.draw.rect(surf, C_ACCENT_2, box, 2, border_radius=10)
-        text(surf, f"{self.n:,}".replace(",", "."), (box.centerx, box.y + 10), 40, C_TEXT, bold=True, center=True)
+        field = pygame.Rect(0, 0, 220, 64)
+        field.center = (rect.centerx, rect.y + 120)
+        box(surf, field, C_PANEL_2, border=C_ACCENT_2, cut=2)
+        text(surf, f"{self.n:,}".replace(",", "."), (field.centerx, field.y + 10), 40, C_TEXT, bold=True, center=True)
         for dx, sym in ((-150, "<"), (150, ">")):
-            text(surf, sym, (box.centerx + dx, box.y + 14), 32, C_MUTED, bold=True, center=True)
+            text(surf, sym, (field.centerx + dx, field.y + 14), 32, C_MUTED, bold=True, center=True)
         total = int(round(self.price * self.n))
         text(surf, f"Total: $ {total:,}".replace(",", "."), (rect.centerx, rect.y + 168), 22, self.color, bold=True,
              center=True)
@@ -610,19 +715,19 @@ class Toasts:
         y = 16
         for msg, color, icon, life in self.items:
             alpha = min(1.0, life / 0.5)
-            w = font(18).size(msg)[0] + (52 if icon else 28)
-            s = pygame.Surface((w, 38), pygame.SRCALPHA)
-            pygame.draw.rect(s, (*C_PANEL, int(225 * alpha)), s.get_rect(), border_radius=10)
-            pygame.draw.rect(s, (*C_BORDER_DIM, int(255 * alpha)), s.get_rect(), 2, border_radius=10)
-            x = 14
+            w = font(18).size(msg)[0] + (56 if icon else 32)
+            s = panel_image((w, 40), 228, C_BORDER_DIM, 8).copy()
+            if alpha < 1:
+                s.set_alpha(int(255 * alpha))
+            x = 16
             if icon:
-                s.blit(art.item_icon(icon, 2), (8, 3))
-                x = 44
+                s.blit(art.item_icon(icon, 2), (10, 4))
+                x = 48
             img = font(18).render(msg, not PIXEL_FONT, color)
             img.set_alpha(int(255 * alpha))
-            s.blit(img, (x, 8))
+            s.blit(img, (x, 9))
             surf.blit(s, (16, y))
-            y += 44
+            y += 46
 
 
 # ---------------------------------------------------------------------------
@@ -718,7 +823,7 @@ def draw_weather_icon(surf, center, kind, night, ticks):
 def draw_hud(surf, g):
     # Relógio / data
     r = pygame.Rect(SCREEN_W - 236, 12, 224, 118)
-    panel(surf, r, alpha=225)
+    panel(surf, r, alpha=240)
     text(surf, g.date_label(short=True), (r.x + 16, r.y + 10), 18, C_LILAC, bold=True)
     text(surf, g.time_label(), (r.x + 16, r.y + 34), 34, C_TEXT, bold=True)
     wx, wy = r.right - 44, r.y + 56            # abaixo da data, para não cobrir o nome da estação
@@ -744,13 +849,14 @@ def draw_hud(surf, g):
         pygame.draw.polygon(surf, col, [(ax - 7, ay - 4), (ax + 7, ay - 4), (ax, ay + 5)])
     # Dinheiro
     m = pygame.Rect(SCREEN_W - 236, 136, 224, 44)
-    panel(surf, m, alpha=225, border=(200, 160, 80))
+    panel(surf, m, alpha=240, border=(200, 160, 80), radius=8)
     text(surf, "$", (m.x + 16, m.y + 9), 22, C_GOLD, bold=True)
     text(surf, f"{g.money:,}".replace(",", "."), (m.right - 16, m.y + 9), 22, C_GOLD, bold=True, right=True)
     # Energia (escondida enquanto uma fala está aberta, para não ficar atrás do retrato)
     if any(isinstance(m, Dialog) for m in g.modals):
         text(surf, g.current_map.label, (SCREEN_W - 24, 186), 15, C_MUTED, right=True)
         return
+    # barra simples, como era antes (a dona preferiu sem brilho nem risquinhos)
     e = pygame.Rect(SCREEN_W - 46, SCREEN_H - 214, 32, 180)
     panel(surf, e, alpha=225, radius=10)
     inner = pygame.Rect(e.x + 7, e.y + 26, e.w - 14, e.h - 34)
@@ -766,19 +872,15 @@ def draw_hud(surf, g):
 
 def draw_hotbar(surf, g):
     n = HOTBAR_SIZE
-    slot = 56
+    slot_w = 56
     gap = 4
-    w = n * (slot + gap) - gap + 16
+    w = n * (slot_w + gap) - gap + 16
     x0 = (SCREEN_W - w) // 2
-    y0 = SCREEN_H - slot - 22
-    panel(surf, (x0, y0, w, slot + 14), alpha=220, radius=12)
+    y0 = SCREEN_H - slot_w - 22
+    panel(surf, (x0, y0, w, slot_w + 14), alpha=220, radius=8)
     for i, s in enumerate(g.inventory[:HOTBAR_SIZE]):
-        r = pygame.Rect(x0 + 8 + i * (slot + gap), y0 + 7, slot, slot)
-        pygame.draw.rect(surf, (16, 12, 24), r, border_radius=8)
-        if i == g.selected:
-            pygame.draw.rect(surf, C_ACCENT_2, r, 3, border_radius=8)
-        else:
-            pygame.draw.rect(surf, C_BORDER_DIM, r, 1, border_radius=8)
+        r = pygame.Rect(x0 + 8 + i * (slot_w + gap), y0 + 7, slot_w, slot_w)
+        slot(surf, r, i == g.selected)
         if s:
             icon = art.item_icon(s[0], 3)
             surf.blit(icon, (r.centerx - icon.get_width() // 2, r.centery - icon.get_height() // 2))
@@ -846,16 +948,16 @@ class ScrollPanel(Modal):
         for i in range(first, min(len(rows), first + view.h // self.row_h + 2)):
             r = pygame.Rect(rect.x + 20, top + i * self.row_h - int(self.off), rect.w - 48, self.row_h - 6)
             if i == self.sel:
-                pygame.draw.rect(surf, C_PANEL_2, r, border_radius=10)
-                pygame.draw.rect(surf, C_ACCENT_2, r, 2, border_radius=10)
+                box(surf, r, C_PANEL_2, border=C_ACCENT_2, cut=2)
             self.draw_row(surf, r, rows[i], i == self.sel)
         surf.set_clip(None)
         if max_off:
             bar = pygame.Rect(rect.right - 18, top, 4, view.h)
-            pygame.draw.rect(surf, (60, 50, 80), bar, border_radius=2)
+            surf.fill((40, 30, 58), bar)
             kh = max(24, int(view.h * view.h / total))
             ky = bar.y + int((view.h - kh) * self.off / max_off)
-            pygame.draw.rect(surf, C_ACCENT_2, (bar.x, ky, 4, kh), border_radius=2)
+            surf.fill(C_ACCENT_2, (bar.x, ky, 4, kh))
+            surf.fill(C_LILAC, (bar.x, ky, 4, U))
             text(surf, f"{self.sel + 1}/{len(rows)}", (rect.x + 30, rect.bottom - 34), 15, C_MUTED)
         text(surf, "Setas / roda: rolar   Esc / E: fechar", (rect.right - 24, rect.bottom - 34), 16, C_MUTED,
              right=True)

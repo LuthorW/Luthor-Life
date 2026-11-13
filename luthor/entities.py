@@ -8,6 +8,7 @@ import pygame
 from . import art
 from . import sprites  # noqa: F401  (personagens no estilo Stardew)
 from . import poses    # sentada, comendo, lendo
+from . import assentos # para onde cada assento olha
 from .config import TILE, SCALE
 
 FOOT = 2 * SCALE  # distância do pé até a base do tile
@@ -421,6 +422,8 @@ class NPC:
         self.phase = random.uniform(0, 10)
         self.schedule = self.base_schedule("default")
         self.seat_lift = None           # sentada numa cadeira/sofá/banqueta (altura do assento) ou None
+        self.seat_face = None           # para onde o assento olha (assentos.py)
+        self.seat_sort = None           # ordem de desenho sentada (antes do encosto/braço da frente)
         self.seat_t = 0.0               # tempo desde que sentou (para o "plof")
         self._seat_key = None
         self._seat_val = None
@@ -636,6 +639,10 @@ class NPC:
                 if abs(self.fx - tx) < 0.02 and abs(self.fy - ty) < 0.02:
                     o = world[self.map].object_at(tx, ty)
                 self._seat_val = poses.NPC_SEATS.get(o.kind) if o is not None else None
+                if self._seat_val is not None:      # senta virada para a mesa/TV
+                    self.seat_face = assentos.face(world[self.map], o)
+                    self.seat_sort = assentos.sitter_sort(o)
+                    self.dir = self.seat_face
             lift = self._seat_val
         else:
             self._seat_key = None
@@ -713,11 +720,19 @@ class NPC:
         if self.idle_t <= 0 and self.goal:
             self.idle_t = random.uniform(3, 8)
             if self.seat_lift is not None:          # sentada: olha para a mesa e, às vezes, para a frente
-                self.dir = random.choice([self.goal[3], self.goal[3], self.goal[3], "down"])
+                d = self.seat_face or self.goal[3]
+                self.dir = random.choice([d, d, d, "down" if d in ("left", "right") else d])
                 return
             self.dir = random.choice([self.goal[3], self.goal[3], "down", "left", "right"])
             if random.random() < 0.5:
                 self.dir = self.goal[3]
+
+    @property
+    def sort_y(self):
+        """Chave da ordem de desenho: sentada, logo depois do assento (e antes do encosto/braço da frente)."""
+        if self.seat_lift is not None and self.seat_sort is not None:
+            return self.seat_sort
+        return self.base_y
 
     def current_frames(self):
         """Roupa da estação (characters.dress); médicas trocam o jaleco pela roupa de fora ao sair do hospital."""

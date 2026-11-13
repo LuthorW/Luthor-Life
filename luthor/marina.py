@@ -30,6 +30,10 @@ DEEP_FISH = {
                       hours=(360, 1560), color=(170, 180, 190)),
     "marlim": dict(name="Marlim-Azul", value=450, diff=86, where="deep", quarters=[1, 2, 3, 4], hours=(360, 1140),
                    color=(60, 90, 190)),
+    "cacao": dict(name="Cação", value=230, diff=64, where="deep", quarters=[1, 2, 3, 4], hours=(1080, 1560),
+                  color=(110, 120, 130)),
+    "peixe_lua": dict(name="Peixe-Lua", value=300, diff=70, where="deep", quarters=[2, 3], hours=(600, 1260),
+                      color=(190, 200, 210)),
 }
 for _k, _f in DEEP_FISH.items():
     FISH[_k] = _f

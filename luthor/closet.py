@@ -1,8 +1,9 @@
-"""Closet da Letícia: trocar de roupa no guarda-roupa da cobertura.
+"""Closet da Letícia: trocar de roupa no guarda-roupa da cobertura (ou no provador da La Boutique).
 
-Alguns looks ela já tem, outros vêm do catálogo da Boutique Bayside (compra na hora, pelo próprio closet) e três
-chegam de presente (Lucy, Vittoria e Ian a 6 corações). As personagens comentam cada look novo uma vez.
+Alguns looks ela já tem, os outros se compram na La Boutique (boutique.py) e quatro chegam de presente (Lucy,
+Vittoria, Ian e Celeste a 6 corações). As personagens comentam cada look novo uma vez.
 O look escolhido vale para o bonequinho no jogo e nas cenas; "Roupa da estação" é o jeito antigo (troca sozinha).
+Aba Acessórios: os acessórios guardados no closet (`acc`) e os da mochila; um por espaço (`worn`: espaço -> item).
 """
 import random
 
@@ -59,19 +60,20 @@ GIFTS = [
                          "Até as que enjoam no mar.\""),
 ]
 
-STATE = {"cur": "estacao"}
+STATE = {"cur": "estacao", "acc": {}}
 
 
 # ---------------------------------------------------------------------------
 # Estado
 # ---------------------------------------------------------------------------
 def init_state(g):
-    g.closet = dict(cur="estacao", owned=sorted(START), seen=[])
+    g.closet = dict(cur="estacao", owned=sorted(START), seen=[], acc=[], worn={})
     STATE["cur"] = "estacao"
     _refresh(g)
 
 
 def _refresh(g):
+    STATE["acc"] = worn_look(g)
     if getattr(g, "player", None) is not None:
         g.player.set_look(player_look())
 
@@ -81,27 +83,72 @@ def save_state(g):
 
 
 def load_state(g, d):
+    from .boutique import ACCESSORIES
     c = d.get("closet") or {}
     owned = [k for k in c.get("owned", []) if k in LOOKS]
+    acc = [k for k in c.get("acc", []) if k in ACCESSORIES]
+    worn = {s: k for s, k in (c.get("worn") or {}).items() if k in acc and ACCESSORIES[k]["slot"] == s}
     g.closet = dict(cur=c.get("cur", "estacao") if c.get("cur") in LOOKS else "estacao",
-                    owned=sorted(set(owned) | START), seen=list(c.get("seen", [])))
+                    owned=sorted(set(owned) | START), seen=list(c.get("seen", [])), acc=acc, worn=worn)
     STATE["cur"] = g.closet["cur"]
     _refresh(g)
 
 
-def player_look(key=None):
-    """Look atual da Letícia (o jogo e as cenas usam este)."""
+def worn_look(g, worn=None):
+    """Mudanças no look de todos os acessórios em uso (ou dos de `worn`, para experimentar na loja)."""
+    from .boutique import ACCESSORIES
+    worn = g.closet.get("worn", {}) if worn is None else worn
+    out = {}
+    for key in worn.values():
+        if key in ACCESSORIES:
+            out.update(ACCESSORIES[key]["look"])
+    return out
+
+
+def player_look(key=None, acc=None):
+    """Look atual da Letícia (o jogo e as cenas usam este), com os acessórios por cima."""
     key = key or STATE["cur"]
+    acc = STATE["acc"] if acc is None else acc
     ov = LOOKS.get(key, LOOKS["estacao"])[2]
-    if not ov:
-        return characters.dress("leticia", PLAYER_LOOK)
-    return {**PLAYER_LOOK, **ov}
+    base = characters.dress("leticia", PLAYER_LOOK) if not ov else {**PLAYER_LOOK, **ov}
+    return {**base, **acc} if acc else base
 
 
 def wear(g, key):
     g.closet["cur"] = key
     STATE["cur"] = key
     _refresh(g)
+
+
+def wear_acc(g, item):
+    """Veste o acessório (tira o que estava no mesmo espaço). Se vier da mochila, ele passa a morar no closet."""
+    from .boutique import ACCESSORIES
+    a = ACCESSORIES[item]
+    if item not in g.closet["acc"]:
+        if not g.count_item(item):
+            return False
+        g.remove_item(item)
+        g.closet["acc"].append(item)
+    g.closet["worn"][a["slot"]] = item
+    _refresh(g)
+    return True
+
+
+def take_off(g, slot=None):
+    if slot is None:
+        g.closet["worn"].clear()
+    else:
+        g.closet["worn"].pop(slot, None)
+    _refresh(g)
+
+
+def use_item(g, item):
+    """F com um acessório da mochila: veste na hora (ele vai para o closet; para dar de presente, compre outro)."""
+    from .boutique import ACCESSORIES
+    if not wear_acc(g, item):
+        return
+    audio.sfx("confirm")
+    g.toasts.push(f"Usando {ACCESSORIES[item]['name']}. Ele fica guardado no closet da cobertura.", C_GREEN, item)
 
 
 # ---------------------------------------------------------------------------
@@ -157,11 +204,10 @@ SPECIAL = {
 
 def chat_line(g, npc):
     key = g.closet["cur"]
-    if key == "estacao":
-        return None
     tag = f"{npc.key}:{key}"
-    if tag in g.closet["seen"]:
-        return None
+    if key == "estacao" or tag in g.closet["seen"]:
+        from . import boutique
+        return boutique.chat_line(g, npc)          # acessórios novos também ganham comentário
     g.closet["seen"].append(tag)
     line = SPECIAL.get(npc.key, {}).get(key)
     return line or random.choice(GENERIC.get(key, ["Roupa nova? Ficou ótima."]))
@@ -173,11 +219,13 @@ def chat_line(g, npc):
 def object_label(g, o):
     if o.kind == "wardrobe" and g.map_name == "home":
         return "Closet"
+    if o.kind == "provador":
+        return "Provador (trocar de roupa)"
     return None
 
 
 def use_object(g, o):
-    if o.kind == "wardrobe" and g.map_name == "home":
+    if (o.kind == "wardrobe" and g.map_name == "home") or o.kind == "provador":
         audio.sfx("door")
         g.push(Closet(g))
         return True
@@ -192,118 +240,193 @@ def gift_source(key):
 
 
 class Closet(ui.Modal):
+    """Duas abas: Roupas (vestir o que tem) e Acessórios (um por espaço). Comprar é na La Boutique."""
+    TABS = ("Roupas", "Acessórios")
+
     def __init__(self, g):
         self.g = g
-        self.sel = ORDER.index(g.closet["cur"]) if g.closet["cur"] in ORDER else 0
-        self.top = 0
+        self.tab = 0
+        self.sel = [ORDER.index(g.closet["cur"]) if g.closet["cur"] in ORDER else 0, 0]
+        self.top = [0, 0]
         self.t = 0.0
         self.msg, self.msg_t = "", 0.0
 
+    def acc_rows(self):
+        """Primeira linha: tirar todos; depois os acessórios do closet e os da mochila."""
+        from .boutique import ACC_ORDER
+        g = self.g
+        have = [k for k in ACC_ORDER if k in g.closet["acc"] or g.count_item(k)]
+        return [None] + have
+
+    def rows(self):
+        return ORDER if self.tab == 0 else self.acc_rows()
+
     def handle(self, ev):
+        n = len(self.rows())
         if ev.type == pygame.MOUSEWHEEL:
-            self.sel = (self.sel - ev.y) % len(ORDER)
+            self.sel[self.tab] = (self.sel[self.tab] - ev.y) % n
             audio.sfx("move")
             return
         if ev.type != pygame.KEYDOWN:
             return
         if ev.key in (pygame.K_UP, pygame.K_w):
-            self.sel = (self.sel - 1) % len(ORDER); audio.sfx("move")
+            self.sel[self.tab] = (self.sel[self.tab] - 1) % n; audio.sfx("move")
         elif ev.key in (pygame.K_DOWN, pygame.K_s):
-            self.sel = (self.sel + 1) % len(ORDER); audio.sfx("move")
+            self.sel[self.tab] = (self.sel[self.tab] + 1) % n; audio.sfx("move")
+        elif ev.key in (pygame.K_LEFT, pygame.K_RIGHT, pygame.K_a, pygame.K_d, pygame.K_TAB, pygame.K_q):
+            self.tab = 1 - self.tab; audio.sfx("move")
         elif ev.key in ui.CONFIRM:
             self.choose()
         elif ev.key in ui.CANCEL:
             self.done = True
 
+    def say(self, msg, t=2.4):
+        self.msg, self.msg_t = msg, t
+
     def choose(self):
         g = self.g
-        key = ORDER[self.sel]
+        if self.tab == 1:
+            self.choose_acc()
+            return
+        key = ORDER[self.sel[0]]
         name, price, _ov, _d = LOOKS[key]
         if key in g.closet["owned"]:
             wear(g, key)
             audio.sfx("confirm")
-            self.msg, self.msg_t = f"Vestindo: {name}", 2.0
+            self.say(f"Vestindo: {name}", 2.0)
             return
+        audio.sfx("blip")
         if price is None:
             src = gift_source(key)
             who = NPCS[src[0]]["short"] if src else "alguém"
-            self.msg, self.msg_t = f"Esse só chega de presente ({who}, {src[1] if src else 6} corações).", 2.5
-            audio.sfx("blip")
-            return
-        if g.money < price:
-            self.msg, self.msg_t = f"Faltam ${price - g.money} para esse look.", 2.0
-            audio.sfx("blip")
-            return
+            self.say(f"Esse só chega de presente ({who}, {src[1] if src else 6} corações).")
+        else:
+            self.say(f"À venda na La Boutique, ao lado do Grão Nobre (${price}).")
 
-        def buy(i):
-            if i != 0:
+    def choose_acc(self):
+        from .boutique import ACCESSORIES, SLOTS
+        g = self.g
+        rows = self.acc_rows()
+        key = rows[min(self.sel[1], len(rows) - 1)]
+        if key is None:
+            if not g.closet["worn"]:
+                audio.sfx("blip")
+                self.say("Nenhum acessório em uso." if len(rows) > 1 else
+                         "Você ainda não tem acessórios. A La Boutique fica ao lado do Grão Nobre.", 3.0)
                 return
-            g.money -= price
-            g.closet["owned"].append(key)
-            wear(g, key)
-            audio.sfx("buy")
-            self.msg, self.msg_t = f"Comprado e vestido: {name}!", 2.5
-        g.push(ui.Choice(f"Encomendar \"{name}\" da Boutique Bayside por ${price}? A entrega é na hora.",
-                         ["Comprar e vestir", "Agora não"], buy))
+            take_off(g)
+            audio.sfx("confirm")
+            self.say("Tirou todos os acessórios.")
+            return
+        a = ACCESSORIES[key]
+        if g.closet["worn"].get(a["slot"]) == key:
+            take_off(g, a["slot"])
+            audio.sfx("confirm")
+            self.say(f"Tirou: {a['name']}")
+            return
+        from_bag = key not in g.closet["acc"]
+        wear_acc(g, key)
+        audio.sfx("confirm")
+        self.say(f"Usando: {a['name']} ({SLOTS[a['slot']]})" + (". Saiu da mochila e ficou no closet." if from_bag else ""),
+                 3.0)
 
     def update(self, dt):
         self.t += dt
         self.msg_t = max(0.0, self.msg_t - dt)
 
     def draw(self, surf):
+        from .boutique import ACCESSORIES, SLOTS
         g = self.g
-        outer = pygame.Rect(0, 0, 860, 560)
-        outer.center = (SCREEN_W // 2 - 40, SCREEN_H // 2)
+        outer = pygame.Rect(0, 0, 860, 580)
+        outer.center = (SCREEN_W // 2 - 50, SCREEN_H // 2 - 10)
         ui.panel(surf, outer, alpha=255)
         ui.text(surf, "Closet da Letícia", (outer.x + 28, outer.y + 16), 28, C_GOLD, bold=True)
         ui.text(surf, f"Dinheiro: ${g.money}", (outer.right - 28, outer.y + 24), 18, C_TEXT, right=True)
-        # lista
-        rows = 10
-        if self.sel < self.top:
-            self.top = self.sel
-        elif self.sel >= self.top + rows:
-            self.top = self.sel - rows + 1
-        y = outer.y + 64
-        for i in range(self.top, min(len(ORDER), self.top + rows)):
-            key = ORDER[i]
-            name, price, _ov, _d = LOOKS[key]
-            r = pygame.Rect(outer.x + 20, y, 420, 40)
-            if i == self.sel:
-                pygame.draw.rect(surf, C_ACCENT, r, border_radius=8)
-            ui.text(surf, name, (r.x + 14, r.y + 8), 20, C_TEXT if i == self.sel else C_MUTED)
-            if key == g.closet["cur"]:
-                tag, col = "usando", C_GREEN
-            elif key in g.closet["owned"]:
-                tag, col = "seu", C_LILAC
-            elif price is None:
-                src = gift_source(key)
-                tag, col = (f"presente: {NPCS[src[0]]['short']}" if src else "presente"), C_PINK
+        tx = outer.x + 24
+        for i, name in enumerate(self.TABS):
+            r = pygame.Rect(tx, outer.y + 62, 150, 34)
+            if i == self.tab:
+                ui.box(surf, r, ui.C_PANEL_2, border=ui.C_ACCENT_2)
             else:
-                tag, col = f"${price}", C_GOLD
-            ui.text(surf, tag, (r.right - 14, r.y + 9), 18, col, right=True)
-            y += 44
-        if self.top > 0:
-            pygame.draw.polygon(surf, C_MUTED, [(outer.x + 230, outer.y + 56), (outer.x + 222, outer.y + 62),
-                                                (outer.x + 238, outer.y + 62)])
-        if self.top + rows < len(ORDER):
-            by = outer.y + 64 + rows * 44
-            pygame.draw.polygon(surf, C_MUTED, [(outer.x + 230, by + 6), (outer.x + 222, by), (outer.x + 238, by)])
+                ui.slot(surf, r, fill=(24, 16, 34))
+            ui.text(surf, name, (r.centerx, r.y + 6), 19, C_TEXT if i == self.tab else C_MUTED,
+                    bold=i == self.tab, center=True)
+            tx += 160
+        rows = self.rows()
+        sel = self.sel[self.tab] = min(self.sel[self.tab], len(rows) - 1)
+        nrows = 9
+        top = self.top[self.tab]
+        if sel < top:
+            top = sel
+        elif sel >= top + nrows:
+            top = sel - nrows + 1
+        self.top[self.tab] = top
+        y = outer.y + 108
+        for i in range(top, min(len(rows), top + nrows)):
+            key = rows[i]
+            r = pygame.Rect(outer.x + 20, y, 440, 42)
+            if i == sel:
+                ui.box(surf, r, ui.C_PANEL_2, border=ui.C_ACCENT_2)
+            col = C_TEXT if i == sel else C_MUTED
+            if self.tab == 0:
+                name, price, _ov, _d = LOOKS[key]
+                ui.text(surf, name, (r.x + 14, r.y + 9), 20, col, bold=i == sel)
+                if key == g.closet["cur"]:
+                    tag, tc = "usando", C_GREEN
+                elif key in g.closet["owned"]:
+                    tag, tc = "seu", C_LILAC
+                elif price is None:
+                    src = gift_source(key)
+                    tag, tc = (f"presente: {NPCS[src[0]]['short']}" if src else "presente"), C_PINK
+                else:
+                    tag, tc = "na boutique", C_GOLD
+            elif key is None:
+                ui.text(surf, "Sem acessórios (tirar todos)", (r.x + 14, r.y + 9), 20, col, bold=i == sel)
+                tag, tc = "", C_MUTED
+            else:
+                a = ACCESSORIES[key]
+                surf.blit(art.item_icon(key, 2), (r.x + 8, r.y + 5))
+                ui.text(surf, a["name"], (r.x + 52, r.y + 9), 20, col, bold=i == sel)
+                if g.closet["worn"].get(a["slot"]) == key:
+                    tag, tc = "usando", C_GREEN
+                elif key in g.closet["acc"]:
+                    tag, tc = SLOTS[a["slot"]].lower(), C_LILAC
+                else:
+                    tag, tc = "na mochila", C_GOLD
+            if tag:
+                ui.text(surf, tag, (r.right - 14, r.y + 10), 17, tc, right=True)
+            y += 46
+        if top > 0:
+            ui.text(surf, "mais acima", (outer.x + 240, outer.y + 100), 13, C_MUTED, center=True)
+        if top + nrows < len(rows):
+            ui.text(surf, "mais abaixo", (outer.x + 240, outer.y + 108 + nrows * 46 - 4), 13, C_MUTED, center=True)
         # prévia: a Letícia girando devagar
-        key = ORDER[self.sel]
-        name, price, _ov, desc = LOOKS[key]
-        frames = art.character_frames(player_look(key))
+        key = rows[sel]
+        if self.tab == 0:
+            look = player_look(key)
+            name, _p, _ov, desc = LOOKS[key]
+        elif key is None:
+            look = player_look(acc={})
+            name, desc = "Sem acessórios", "Só a roupa, sem nada por cima."
+        else:
+            a = ACCESSORIES[key]
+            worn = dict(g.closet["worn"])
+            worn[a["slot"]] = key
+            look = player_look(acc=worn_look(g, worn))
+            name, desc = a["name"], a["desc"]
+        frames = art.character_frames(look)
         d = ("down", "left", "up", "right")[int(self.t / 1.4) % 4]
         img = frames[(d, int(self.t * 6) % 4 if int(self.t / 1.4) % 2 else 0)]
         big = pygame.transform.scale_by(img, 3)
-        px = outer.x + 470 + (360 - big.get_width()) // 2
-        stage = pygame.Rect(outer.x + 470, outer.y + 64, 360, 300)
-        pygame.draw.rect(surf, (40, 28, 58), stage, border_radius=12)
+        stage = pygame.Rect(outer.x + 480, outer.y + 108, 352, 290)
+        ui.slot(surf, stage, fill=(40, 28, 58))
         pygame.draw.ellipse(surf, (28, 18, 40), (stage.centerx - 60, stage.bottom - 46, 120, 26))
-        surf.blit(big, (px, stage.bottom - 34 - big.get_height()))
+        surf.blit(big, (stage.centerx - big.get_width() // 2, stage.bottom - 34 - big.get_height()))
         ui.text(surf, name, (stage.centerx, stage.bottom + 12), 24, C_TEXT, bold=True, center=True)
         for i, ln in enumerate(ui.wrap(desc, 17, 350)[:3]):
-            ui.text(surf, ln, (stage.centerx, stage.bottom + 46 + i * 22), 17, C_MUTED, center=True)
+            ui.text(surf, ln, (stage.centerx, stage.bottom + 44 + i * 21), 17, C_MUTED, center=True)
         if self.msg_t > 0:
-            ui.text(surf, self.msg, (outer.centerx, outer.bottom - 62), 20, C_GREEN, bold=True, center=True)
-        ui.text(surf, "Cima/baixo: escolher   E: vestir ou comprar   Esc: sair", (outer.centerx, outer.bottom - 32),
-                16, C_MUTED, center=True)
+            for i, ln in enumerate(ui.wrap(self.msg, 19, outer.w - 60)[:2]):
+                ui.text(surf, ln, (outer.centerx, outer.bottom - 70 + i * 22), 19, C_GREEN, bold=True, center=True)
+        ui.text(surf, "Cima/baixo: escolher   Esquerda/direita: aba   E: vestir ou tirar   Esc: sair",
+                (outer.centerx, outer.bottom - 28), 16, C_MUTED, center=True)

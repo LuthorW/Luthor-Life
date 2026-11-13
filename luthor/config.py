@@ -39,6 +39,7 @@ RUN_SPEED = 5.2 * TILE
 HEART_POINTS = 250
 MAX_HEARTS = 10
 ROMANCE_CAP_HEARTS = 8      # sem namorar, o romance trava em 8 corações
+FRIEND_CAP_HEARTS = 8       # amizades (todo mundo menos a Lucy e a Vittoria) vão no máximo até 8 corações
 TALK_POINTS = 20
 GIFT_POINTS = {"love": 80, "like": 45, "neutral": 20, "dislike": -20}
 

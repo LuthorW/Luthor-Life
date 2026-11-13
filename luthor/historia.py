@@ -6,10 +6,10 @@ São cinco capítulos. Cada um tem uma cena num lugar e horário (linha no HUD) 
   2. Visita inesperada ....... frente da sede, 9h-13h  objetivo: faturar $6.000 no total
   3. O espião ................ laboratório, 19h-23h .. objetivo: ação LCORP a $110
   4. O dossiê falso .......... CatCo, 13h-17h ...... objetivo: 4 corações com Sam, Brainy, Jess e Ian
-  5. O conselho ............. sede, 10h-14h (mesa do conselho) — fim: os tios vendem as ações
+  5. O conselho ............. sala de reuniões, 10h-14h — fim: os tios vendem as ações
 
 Prêmio do fim: produtos valem 10% a mais (flag luthor_livre), $3.000 de dividendos e amizade com a equipe.
-A mesa do conselho fica no saguão da sede e mostra o capítulo atual.
+A mesa da sala de reuniões da sede (escritorio.py) mostra o capítulo atual.
 """
 import pygame
 
@@ -27,7 +27,7 @@ EXTRAS = {
     "tio_edmund": dict(name="Edmund Luthor", role="Tio da Letícia · acionista",
                        look=dict(look((120, 116, 120), SKIN_L, (70, 40, 46), (236, 226, 210), (46, 40, 44), (30, 24, 24),
                                       "short"), outfit="blazer", beard="full", beard_color=(170, 166, 170))),
-    "rojas": dict(name="Andrea Rojas", role="Conselheira independente",
+    "rojas": dict(name="Andrea Rojas", role="Amiga da Letícia · conselheira, mora em outra cidade",
                   look=dict(look((40, 30, 34), SKIN_T, (170, 40, 56), (240, 230, 232), (40, 34, 44), (30, 24, 30), "long"),
                             outfit="blazer")),
     "hamilton": dict(name="Sr. Hamilton", role="Conselheiro",
@@ -67,11 +67,10 @@ CHAPTERS = [
          spot=(21, 17)),
     dict(key="historia_3", title="O espião", map="hq", hours=(19, 23), where="no laboratório da sede"),
     dict(key="historia_4", title="O dossiê falso", map="catco", hours=(13, 17), where="na redação da CatCo"),
-    dict(key="historia_5", title="O conselho", map="hq", hours=(10, 14), where="na mesa do conselho, na sede"),
+    dict(key="historia_5", title="O conselho", map="hq", hours=(10, 14), where="na sala de reuniões da sede"),
 ]
 TITLES = {c["key"]: f"Luthor Corp: {c['title'].lower()}" for c in CHAPTERS}
 TEAM4 = ("sam", "brainy", "jess", "ian")
-TABLE = (15, 14)
 
 
 def goal(g, ch):
@@ -167,47 +166,20 @@ def sell_mult(g, item):
     return 1.1 if "luthor_livre" in g.flags and ITEMS[item]["kind"] == "product" else 1.0
 
 
-# --- mesa do conselho ------------------------------------------------------------
-def _mesa_conselho():
-    s = new(64, 30)
-    wood = (92, 58, 44)
-    for x in (6, 20, 34, 48):                              # encostos das cadeiras de trás
-        R(s, (60, 44, 70), x, 2, 10, 9)
-        R(s, (84, 62, 98), x + 1, 3, 8, 6)
-    R(s, shade(wood, 0.6), 0, 14, 64, 14)
-    R(s, wood, 0, 9, 64, 7)
-    R(s, shade(wood, 1.25), 0, 9, 64, 1)
-    R(s, (122, 60, 180), 4, 11, 56, 2)                     # passadeira roxa
-    for x in (8, 26, 44):                                  # pastas e copos d'água
-        R(s, (240, 240, 246), x, 10, 7, 4)
-        R(s, (150, 150, 170), x + 1, 11, 5, 1)
-        R(s, (190, 220, 240), x + 10, 9, 2, 3)
-    for x in (2, 60):
-        R(s, shade(wood, 0.45), x, 16, 2, 13)
-    return s
-
-
-art.OBJECT_BUILDERS.update({"mesa_conselho": _mesa_conselho})
-world.OBJECT_DEFS.update({"mesa_conselho": (4, 1, True, "obj")})
-
-
+# --- mesa da sala de reuniões -------------------------------------------------
 def apply(g):
-    hq = g.world.get("hq")
-    if hq is None or any(o.kind == "mesa_conselho" for o in hq.objects):
-        return
-    hq.add("mesa_conselho", *TABLE, data=("historia", "mesa"))
-    for x in range(TABLE[0], TABLE[0] + 4):
-        hq.solid[TABLE[1]][x] = True
+    """A reunião do conselho é na sala de reuniões da sede (escritorio.furnish_reunioes): nada a montar."""
+    return
 
 
 def object_label(g, o):
-    if o.kind == "mesa_conselho":
-        return "Mesa do conselho"
+    if o.kind == "mesa_reuniao":
+        return "Mesa de reuniões"
     return None
 
 
 def use_object(g, o):
-    if o.kind != "mesa_conselho":
+    if o.kind != "mesa_reuniao":
         return False
     audio.sfx("page")
 
@@ -246,11 +218,12 @@ def use_object(g, o):
 
 # --- cenas -----------------------------------------------------------------------
 SCENES["historia_1"] = dict(map="hq", time=9 * 60, npc="sam", steps=[
-    ("ator", "sam", 6, 6, "left"), ("ator", "player", 5, 10, "up"),
-    ("camera_ja", 5, 6), ("fade_in",),
+    ("ator", "sam", 4, 6, "up"), ("ator", "player", 5, 9, "up"),
+    ("camera_ja", 4, 5), ("fade_in",),
     ("legenda", "História da Luthor Corp: capítulo 1", 2.2),
-    ("andar", "player", 5, 6), ("virar", "player", "right"),
+    ("andar", "player", 5, 3), ("andar", "player", 4, 3), ("virar", "player", "down"),
     ("fala", "sam", "Luthor, senta. Chegou uma carta registrada. Do escritório dos seus tios.", "bad"),
+    ("andar", "player", 3, 3), ("sentar", "player"),
     ("narra", "Papel timbrado, letra caprichada. Assinado: Conrad e Edmund Luthor."),
     ("fala", "sam", "Eles têm 30% das ações. Querem uma reunião extraordinária do conselho para \"avaliar a gestão\"."),
     ("fala", "sam", "Tradução: tirar você da cadeira."),
@@ -267,7 +240,7 @@ SCENES["historia_1"] = dict(map="hq", time=9 * 60, npc="sam", steps=[
 ])
 
 SCENES["historia_2"] = dict(map="city", time=10 * 60, npc="sam", steps=[
-    ("ator", "tio_conrad", 21, 16, "down"), ("ator", "tio_edmund", 20, 17, "right"), ("ator", "player", 26, 17, "left"),
+    ("ator", "tio_conrad", 21, 17, "down"), ("ator", "tio_edmund", 20, 16, "right"), ("ator", "player", 26, 17, "left"),
     ("camera_ja", 22, 17), ("fade_in",),
     ("legenda", "Capítulo 2: visita inesperada", 2.2),
     ("andar", "player", 23, 17),
@@ -281,7 +254,7 @@ SCENES["historia_2"] = dict(map="city", time=10 * 60, npc="sam", steps=[
     ("fala", "player", "Cheguem perto dela e vocês vão conhecer a Luthor que o meu pai criou de verdade."),
     ("emote", "tio_edmund", "gota"),
     ("fala", "tio_conrad", "Nos vemos no conselho, sobrinha."),
-    ("andar_", "tio_edmund", 14, 17), ("andar", "tio_conrad", 15, 16),
+    ("andar_", "tio_conrad", 14, 17), ("esperar", 0.9), ("andar", "tio_edmund", 20, 17), ("andar", "tio_edmund", 15, 17),
     ("sai", "tio_conrad"), ("sai", "tio_edmund"),
     ("narra", "Suas mãos estão tremendo. Mas você não desviou o olhar nenhuma vez."),
     ("ator", "jess", 21, 16, "down"),
@@ -293,10 +266,10 @@ SCENES["historia_2"] = dict(map="city", time=10 * 60, npc="sam", steps=[
 ])
 
 SCENES["historia_3"] = dict(map="hq", time=21 * 60, npc="brainy", steps=[
-    ("ator", "espiao", 11, 3, "down"), ("ator", "brainy", 12, 3, "left"), ("ator", "player", 17, 10, "up"),
+    ("ator", "espiao", 11, 2, "down"), ("ator", "brainy", 12, 3, "left"), ("ator", "player", 17, 10, "up"),
     ("camera_ja", 13, 5), ("fade_in",),
     ("legenda", "Capítulo 3: o espião", 2.2),
-    ("andar", "player", 17, 5), ("andar", "player", 13, 5), ("andar", "player", 13, 4), ("virar", "player", "left"),
+    ("andar", "player", 17, 5), ("andar", "player", 17, 3), ("andar", "player", 14, 3), ("virar", "player", "left"),
     ("virar", "brainy", "right"),
     ("fala", "brainy", "CEO. Desculpe o horário. Eu deixei uma armadilha no Terminal P&D. Ela pegou alguém."),
     ("fala", "espiao", "Eu só ia copiar uns arquivos! Me pagaram! Eu juro que não sabia para quem era!", "bad"),
@@ -338,16 +311,20 @@ SCENES["historia_4"] = dict(map="catco", time=15 * 60, npc="lucy", steps=[
 ])
 
 SCENES["historia_5"] = dict(map="hq", time=11 * 60, npc="sam", steps=[
-    ("ator", "sam", 15, 13, "down"), ("ator", "rojas", 16, 13, "down"), ("ator", "hamilton", 17, 13, "down"),
-    ("ator", "tio_edmund", 18, 13, "down"), ("ator", "brainy", 15, 15, "up"), ("ator", "ian", 16, 15, "up"),
-    ("ator", "jess", 13, 15, "up"), ("ator", "tio_conrad", 19, 14, "left"), ("ator", "player", 12, 16, "up"),
-    ("camera_ja", 16, 13), ("fade_in",),
+    ("ator", "jess", 28, 4, "down"), ("ator", "brainy", 29, 4, "down"), ("ator", "rojas", 30, 4, "down"),
+    ("ator", "sam", 31, 4, "down"),
+    ("ator", "ian", 28, 7, "up"), ("ator", "hamilton", 29, 7, "up"), ("ator", "tio_edmund", 30, 7, "up"),
+    ("ator", "tio_conrad", 31, 7, "up"),
+    ("sentar", "jess"), ("sentar", "brainy"), ("sentar", "rojas"), ("sentar", "sam"),
+    ("sentar", "ian"), ("sentar", "hamilton"), ("sentar", "tio_edmund"), ("sentar", "tio_conrad"),
+    ("ator", "player", 29, 10, "up"),
+    ("camera_ja", 29, 6), ("fade_in",),
     ("legenda", "Capítulo 5: reunião extraordinária do conselho", 2.4),
-    ("andar", "player", 14, 16), ("andar", "player", 14, 14), ("virar", "player", "right"),
+    ("andar", "player", 29, 8), ("andar", "player", 32, 8), ("andar", "player", 32, 5), ("sentar", "player"),
     ("fala", "tio_conrad", "Vamos ser breves. A Luthor Corp precisa de uma liderança madura."),
     ("fala", "tio_conrad", "Propomos a saída da senhora Letícia Luthor da presidência."),
     ("fala", "tio_edmund", "Com todo o respeito à memória do nosso irmão, claro.", "smile"),
-    ("fala", "rojas", "Antes de votar, eu quero ouvir a CEO."),
+    ("fala", "rojas", "Eu peguei o primeiro voo quando soube desta reunião. Antes de votar, quero ouvir a minha amiga.", "smile"),
     ("fala", "sam", "Mostra para eles, Luthor.", "smile"),
     ("escolha", "O que você apresenta?", [
         ("As pessoas: a equipe, a cidade e a Fundação.", 60, "Empresa é gente. E a cidade inteira está do nosso lado."),
@@ -358,15 +335,17 @@ SCENES["historia_5"] = dict(map="hq", time=11 * 60, npc="sam", steps=[
     ("fala", "brainy", "E a matéria da CatCo de sexta. A Lucy e a Nia confirmaram tudo com o escritório de Gotham."),
     ("emote", "tio_conrad", "raiva"), ("emote", "tio_edmund", "gota"),
     ("fala", "ian", "A Marina Luthor fechou o trimestre no azul. Eu voto com a Letícia. Desde as férias no interior.", "happy"),
-    ("fala", "rojas", "Eu também. E proponho outra coisa: quem contratou espionagem contra a própria empresa vende as ações."),
+    ("fala", "rojas", "Eu também. E proponho outra coisa: quem contratou espionagem contra a própria empresa vende as ações.", "happy"),
     ("fala", "hamilton", "Apoiado. Por unanimidade, menos dois."),
     ("narra", "A votação termina rápido. As mãos levantadas não deixam dúvida."),
     ("fala", "tio_conrad", "Isso não termina aqui."),
-    ("virar", "player", "right"),
+    ("levantar", "player"), ("andar", "player", 32, 6), ("virar", "player", "left"),
     ("fala", "player", "Termina, tio. Vocês vendem as ações, a Luthor Corp compra."),
     ("fala", "player", "E vocês nunca mais chegam perto de ninguém que eu amo."),
-    ("andar_", "tio_edmund", 18, 16), ("andar", "tio_conrad", 19, 16),
-    ("andar_", "tio_edmund", 12, 16), ("andar", "tio_conrad", 13, 16),
+    ("levantar", "tio_edmund"), ("levantar", "tio_conrad"),
+    ("andar_", "tio_edmund", 30, 8), ("andar", "tio_conrad", 31, 8),
+    ("andar_", "tio_edmund", 30, 10), ("andar", "tio_conrad", 29, 8),
+    ("andar", "tio_conrad", 29, 10),
     ("sai", "tio_conrad"), ("sai", "tio_edmund"),
     ("fala", "sam", "Você sabe o que isso quer dizer? A Luthor Corp é nossa. Sem tios. Sem sombra.", "happy"),
     ("fala", "jess", "Eu anotei tudo. Inclusive a cara deles na hora da votação.", "happy"),

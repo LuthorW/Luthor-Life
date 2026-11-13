@@ -11,7 +11,7 @@ from .cutscenes import SCENES
 from .config import C_LILAC
 
 # chave: dict(a, b, titulo, onde (mapa, x, y = ponto perto do qual toca), horas (de, até), dias (dias da semana
-# 0=segunda... ou None), sol (só sem chuva), corações (soma mínima com as duas), passos)
+# 0=segunda... ou None), sol (só sem chuva), corações (mínimo com CADA uma das duas), passos)
 MOMENTS = {
     "momento_barry_nia": dict(
         a="barry", b="nia", title="Barry e Nia: a borboleta", where=("city", 20, 27), hours=(8, 12), sun=True,
@@ -63,12 +63,12 @@ MOMENTS = {
             ("fala", "barry", "Lucy, a coletiva é do outro lado da cidade. Eu chego em vinte minutos. Você não.", "happy"),
             ("emote", "lucy", "pergunta"),
             ("fala", "barry", "Brincadeira! Eu chamo um táxi pra gente. Correndo, mas de táxi."),
-            ("andar", "player", 51, 17), ("virar", "lucy", "right"), ("virar", "barry", "right"),
+            ("andar", "player", 48, 17), ("virar", "player", "up"), ("virar", "lucy", "down"), ("virar", "barry", "down"),
             ("fala", "lucy", "Letícia. Se for sobre a coletiva da prefeitura, eu já tenho três perguntas pra você.", "smile"),
             ("fala", "player", "Eu nem estou na coletiva."),
             ("fala", "lucy", "Por isso mesmo. Depois a gente conversa.", "shy"),
             ("emote", "barry", "reticencias"),
-            ("andar_", "barry", 47, 17), ("andar", "lucy", 46, 17),
+            ("andar_", "barry", 51, 17), ("andar", "lucy", 50, 16),
             ("esperar", 0.4), ("fade_out",),
         ]),
     "momento_graca_vittoria": dict(
@@ -84,7 +84,7 @@ MOMENTS = {
             ("fala", "graca", "Cappuccino é bebida, minha filha. Senta aqui que tem arroz, feijão e um bife acebolado."),
             ("fala", "vittoria", "Isso não está no cardápio de uma trattoria.", "smile"),
             ("fala", "graca", "No meu está. Dona do Gruppo Ricci também almoça."),
-            ("andar", "player", 84, 33), ("virar", "graca", "right"), ("virar", "vittoria", "right"),
+            ("andar", "player", 82, 33), ("virar", "player", "up"), ("virar", "graca", "down"), ("virar", "vittoria", "down"),
             ("fala", "graca", "E você também, Letícia! Duas empresárias com cara de fome. Já pra dentro!", "happy"),
             ("emote", "vittoria", "feliz"),
             ("fala", "player", "Dona Graça, eu tenho uma reunião às..."),
@@ -95,7 +95,7 @@ MOMENTS = {
         a="joca", b="ian", title="Seu Joca e Ian: a isca", where=("city", 60, 56), hours=(6, 10), sun=True,
         hearts=2, player=(60, 53, "down"),
         steps=[
-            ("ator", "joca", 60, 58, "down"), ("ator", "ian", 61, 57, "down"),
+            ("ator", "joca", 59, 58, "down"), ("ator", "ian", 61, 58, "down"),
             ("camera_ja", 60, 57), ("fade_in",),
             ("fala", "ian", "Seu Joca, com todo o respeito: isca artificial pega mais robalo."),
             ("fala", "joca", "Rapaz, eu pesco aqui desde antes de você saber andar de barco."),
@@ -104,9 +104,10 @@ MOMENTS = {
             ("emote", "joca", "exclamacao"),
             ("fala", "joca", "Olha aí! Fisgou. Com camarão. Camarão de verdade.", "happy"),
             ("emote", "ian", "gota"),
-            ("andar", "player", 60, 56), ("virar", "ian", "up"),
+            ("andar", "player", 60, 57), ("virar", "ian", "up"),
             ("fala", "ian", "Letícia, não diz nada. Eu sei. Eu vi.", "shy"),
             ("fala", "player", "Eu só ia dizer bom dia."),
+            ("virar", "joca", "up"),
             ("fala", "joca", "Diz bom dia e leva um robalo, dona Letícia! Pescado do jeito certo.", "happy"),
             ("esperar", 0.4), ("fade_out",),
         ]),
@@ -123,7 +124,7 @@ MOMENTS = {
             ("fala", "jess", "Você decorou o meu horário?"),
             ("fala", "rafa", "Decorei o horário de todo mundo. O seu é o único que corre.", "smile"),
             ("emote", "jess", "vergonha"),
-            ("andar", "player", 34, 17), ("virar", "jess", "left"), ("virar", "rafa", "left"),
+            ("andar", "player", 35, 17), ("virar", "player", "right"), ("virar", "jess", "left"), ("virar", "rafa", "down"),
             ("fala", "jess", "Chefe! Seu cappuccino. Eu ia levar pro escritório, juro.", "shy"),
             ("fala", "player", "Respira, Jess. A reunião das nove é minha. Ela espera."),
             ("fala", "rafa", "Viu? Até a CEO concorda. Senta dois minutos.", "happy"),
@@ -140,7 +141,7 @@ MOMENTS = {
             ("fala", "theo", "Dez páginas por noite. É menos do que a lista de compras dos seus clientes."),
             ("fala", "bea", "Tá bom. Mas eu pago em tangerina. Uma por capítulo.", "happy"),
             ("emote", "theo", "coracao"),
-            ("andar", "player", 55, 33), ("virar", "theo", "left"), ("virar", "bea", "left"),
+            ("andar", "player", 57, 33), ("virar", "player", "up"), ("virar", "theo", "down"), ("virar", "bea", "down"),
             ("fala", "player", "Uma livraria e um mercado fazendo negócio na calçada. A Sam ia adorar."),
             ("fala", "theo", "Não conta para ela. Ela vai querer um contrato.", "smile"),
             ("emote", "bea", "feliz"),
@@ -158,7 +159,7 @@ MOMENTS = {
             ("emote", "meredith", "reticencias"),
             ("fala", "meredith", "Aposta: na próxima, eu faço em quatro horas."),
             ("fala", "yang", "Fechado. Quem perder paga o jantar. No restaurante caro.", "happy"),
-            ("andar", "player", 76, 17), ("virar", "meredith", "left"), ("virar", "yang", "left"),
+            ("andar", "player", 78, 17), ("virar", "player", "up"), ("virar", "meredith", "down"), ("virar", "yang", "down"),
             ("fala", "player", "Boa noite, doutoras. Eu ouvi \"restaurante caro\"?"),
             ("fala", "yang", "Você não está na aposta. Mas pode ser a juíza.", "smile"),
             ("fala", "meredith", "Ela é a juíza. E vai pagar a sobremesa.", "happy"),
@@ -169,7 +170,7 @@ MOMENTS = {
         a="izzie", b="addison", title="Izzie e Addison: os cupcakes", where=("city", 29, 38), hours=(12, 15),
         days=(5, 6), sun=True, hearts=2, player=(33, 39, "left"),
         steps=[
-            ("ator", "izzie", 28, 37, "right"), ("ator", "addison", 31, 37, "left"),
+            ("ator", "izzie", 28, 37, "right"), ("ator", "addison", 30, 37, "left"),
             ("camera_ja", 30, 38), ("fade_in",),
             ("fala", "izzie", "Esse é de limão, esse é de cenoura e esse é... experimental.", "happy"),
             ("fala", "addison", "\"Experimental\" é o de pimenta, não é?", "bad"),
@@ -178,7 +179,7 @@ MOMENTS = {
             ("esperar", 0.4),
             ("emote", "addison", "surpresa"),
             ("fala", "addison", "...Tá. Isso é muito bom. Não conta para ninguém que eu disse.", "smile"),
-            ("andar", "player", 31, 39), ("virar", "izzie", "down"), ("virar", "addison", "down"),
+            ("andar", "player", 29, 38), ("virar", "player", "up"), ("virar", "izzie", "down"), ("virar", "addison", "down"),
             ("fala", "izzie", "Letícia! Pega um. Qualquer um. Menos o último, que é da Addison.", "happy"),
             ("fala", "addison", "Pode pegar o último. Eu já comi três.", "shy"),
             ("emote", "izzie", "coracao"),
@@ -196,7 +197,7 @@ MOMENTS = {
             ("fala", "graca", "Segundo: amassa com carinho. Você está socando o limão como se ele te devesse dinheiro."),
             ("emote", "marco", "gota"),
             ("fala", "graca", "Terceiro: prova antes de servir. Bar bom é bar que prova.", "happy"),
-            ("andar", "player", 53, 47), ("virar", "marco", "left"), ("virar", "graca", "left"),
+            ("andar", "player", 55, 47), ("virar", "player", "up"), ("virar", "marco", "down"), ("virar", "graca", "down"),
             ("fala", "marco", "Letícia! Aula particular. Amanhã a caipirinha do Noonan's vai ser outra.", "happy"),
             ("fala", "player", "Vou provar. Por motivos científicos."),
             ("segurar", "player", "caipirinha"), ("beber", "player"),
@@ -209,12 +210,13 @@ MOMENTS = {
         steps=[
             ("ator", "sam", 72, 53, "left"), ("ator", "milany", 75, 53, "left"),
             ("camera_ja", 67, 53), ("fade_in",),
-            ("andar_", "sam", 66, 53), ("andar", "milany", 68, 53),
+            ("andar_", "sam", 66, 53), ("andar", "milany", 68, 53), ("virar", "sam", "right"),
             ("fala", "milany", "Sam... como médica... eu recomendo... uma pausa.", "bad"),
             ("fala", "sam", "Faltam só dois quilômetros. Você que disse que correr faz bem pro coração.", "happy"),
             ("fala", "milany", "Eu disse caminhar. Correr atrás de uma CFO é outra especialidade."),
             ("emote", "milany", "gota"),
-            ("andar", "player", 64, 53), ("virar", "sam", "left"), ("virar", "milany", "left"),
+            ("andar", "player", 62, 54), ("andar", "player", 67, 54), ("virar", "player", "up"),
+            ("virar", "sam", "down"), ("virar", "milany", "down"),
             ("fala", "sam", "Letícia! Vem com a gente. A Milany está adorando.", "happy"),
             ("fala", "milany", "A Milany está mentindo pela primeira vez na vida.", "smile"),
             ("fala", "player", "Eu acompanho até a padaria. Depois vocês duas ganham um café."),
@@ -223,7 +225,7 @@ MOMENTS = {
         ]),
     "momento_lucy_vittoria": dict(
         a="lucy", b="vittoria", title="Lucy e Vittoria: a entrevista", where=("city", 64, 17), hours=(10, 16),
-        days=(0, 1, 2, 3, 4), hearts=6, player=(69, 17, "left"),
+        days=(0, 1, 2, 3, 4), hearts=4, player=(69, 17, "left"),
         steps=[
             ("ator", "lucy", 63, 16, "right"), ("ator", "vittoria", 65, 16, "left"),
             ("camera_ja", 65, 17), ("fade_in",),
@@ -232,7 +234,7 @@ MOMENTS = {
             ("fala", "lucy", "Vizinhos. Tipo... uma certa CEO?", "smile"),
             ("fala", "vittoria", "Isso é jornalismo ou fofoca, senhorita Williams?"),
             ("fala", "lucy", "Em National City, as duas coisas pagam o mesmo.", "happy"),
-            ("andar", "player", 67, 17), ("virar", "lucy", "right"), ("virar", "vittoria", "right"),
+            ("andar", "player", 64, 17), ("virar", "player", "up"), ("virar", "lucy", "down"), ("virar", "vittoria", "down"),
             ("emote", "lucy", "exclamacao"), ("emote", "vittoria", "exclamacao"),
             ("fala", "player", "...Eu estou interrompendo alguma coisa?"),
             ("fala", "lucy", "Nada! Entrevista de negócios. Muito séria.", "shy"),
@@ -277,7 +279,7 @@ def _ok(g, k, m):
         return False
     if m.get("sun") and g.weather != "sol":
         return False
-    if g.hearts(m["a"]) + g.hearts(m["b"]) < m["hearts"]:
+    if min(g.hearts(m["a"]), g.hearts(m["b"])) < m["hearts"]:      # corações com as duas
         return False
     # quem está num encontro marcado com a Letícia não aparece num momento
     if g.date and not g.date.get("done") and g.date["npc"] in (m["a"], m["b"]) and g.minutes >= 18 * 60:

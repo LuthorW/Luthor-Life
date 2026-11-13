@@ -8,6 +8,9 @@ o mesmo lugar em sequência.
 
 A equipe do Conti Moretti (as lideranças clínicas) também chega pela rua, cumpre o turno
 alternando entre consultórios, internação e recepção, e vai embora no fim do expediente.
+
+Trabalhadores (`WORKERS`): figurantes com lugar fixo e horário (redatores da CatCo, recepcionistas, porteiros das
+portarias e pacientes na sala de espera do hospital). Chegam pela rua, ficam no posto e vão embora no fim do turno.
 """
 import math
 import random
@@ -25,7 +28,7 @@ VENUES = {
     "cafe": (7 * 60, 19 * 60), "catco": (8 * 60, 20 * 60), "ricci": (9 * 60, 18 * 60), "marina": (8 * 60, 20 * 60), "books": (9 * 60, 21 * 60),
     "market": (7 * 60, 19 * 60), "trattoria": (11 * 60 + 30, 23 * 60), "bar": (17 * 60, 25 * 60),
     "cinema": (12 * 60, 24 * 60), "hospital": (7 * 60, 22 * 60), "park": (6 * 60 + 30, 21 * 60),
-    "beach": (7 * 60, 20 * 60),
+    "beach": (7 * 60, 20 * 60), "boutique": (10 * 60, 19 * 60),
 }
 WEEKEND_ONLY_CLOSED = {"catco", "ricci"}     # escritórios quase vazios no fim de semana
 ENTRIES = [(1, 17), (110, 20), (1, 49), (110, 52), (10, 17), (68, 21), (79, 49), (42, 46)]
@@ -41,6 +44,63 @@ EYES = [(70, 50, 30), (60, 120, 190), (60, 150, 90), (110, 80, 50), (40, 30, 30)
 
 NAMES = ["Ana", "Bruno", "Carla", "Diego", "Elisa", "Fábio", "Gabi", "Hugo", "Iara", "João", "Kátia", "Leo",
          "Marta", "Nico", "Olga", "Pedro", "Rita", "Tom", "Vera", "Zé"]
+
+
+# trabalhadores fixos: chave, nome, lugar, posto (x, y, direção), horário, dias da semana, roupa, o que estão fazendo.
+# chance < 1 = nem todo dia (pacientes da sala de espera)
+WORKDAYS = (0, 1, 2, 3, 4)
+ALLDAYS = (0, 1, 2, 3, 4, 5, 6)
+WORKERS = [
+    dict(key="w_red1", name="Otávio", map="catco", spot=(4, 3, "down"), hours=(9 * 60, 17 * 60 + 30), days=WORKDAYS,
+         outfit="cardigan", thoughts=["Otávio, redator de política: \"Três fontes. Eu sempre confirmo com três.\"",
+                                      "Otávio digita com dois dedos, muito rápido. Ninguém entende como."]),
+    dict(key="w_red2", name="Paula", map="catco", spot=(7, 3, "down"), hours=(8 * 60 + 40, 18 * 60), days=WORKDAYS,
+         outfit="blouse", thoughts=["Paula, da editoria de cultura, revisa a crítica do filme novo do Cine National.",
+                                    "Paula: \"Se a Lucy perguntar, eu já entreguei o texto. Quase.\""]),
+    dict(key="w_red3", name="Caio", map="catco", spot=(11, 3, "down"), hours=(9 * 60 + 30, 19 * 60), days=WORKDAYS,
+         outfit="shirt", thoughts=["Caio, repórter de esportes, assiste a três jogos ao mesmo tempo no monitor.",
+                                   "Caio: \"O Noonan's vai passar a final hoje? Pergunta séria.\""]),
+    dict(key="w_red4", name="Lívia", map="catco", spot=(7, 7, "down"), hours=(10 * 60, 18 * 60 + 30), days=WORKDAYS,
+         outfit="blazer", thoughts=["Lívia, editora de economia, está montando o gráfico da LCORP para amanhã.",
+                                    "Lívia: \"Sua ação subiu, sabia? Eu sei de tudo, é o meu trabalho.\""]),
+    dict(key="w_ricci", name="Bianca", map="ricci", spot=(14, 8, "down"), hours=(9 * 60, 18 * 60), days=WORKDAYS,
+         outfit="blazer", thoughts=["Bianca, a recepcionista do Gruppo Ricci, confirma uma entrega de tomates italianos.",
+                                    "Bianca: \"A senhora Ricci está numa reunião. Ou fingindo que está, para comer.\""]),
+    dict(key="w_hosp", name="Sandra", map="hospital", spot=(11, 9, "down"), hours=(7 * 60, 21 * 60), days=ALLDAYS,
+         outfit="blouse", cloth=(18, 63, 53),
+         thoughts=["Sandra, da recepção do Conti Moretti: \"Senha 42, consultório 2!\"",
+                   "Sandra organiza as fichas por cor. Ninguém mais tem permissão para mexer."]),
+    dict(key="w_bay", name="Seu Arlindo", map="bayside", spot=(20, 6, "down"), hours=(7 * 60, 23 * 60), days=ALLDAYS,
+         outfit="vest", cloth=(60, 64, 90),
+         thoughts=["Seu Arlindo, o porteiro do Bayside, sabe quem entrou, quem saiu e quem esqueceu a chave.",
+                   "Seu Arlindo: \"Chegou encomenda para a Nia de novo. Cristais, eu acho.\""]),
+    dict(key="w_res", name="Dona Cida", map="residencial", spot=(13, 4, "down"), hours=(7 * 60, 22 * 60),
+         days=ALLDAYS, outfit="cardigan", cloth=(110, 80, 140),
+         thoughts=["Dona Cida, a porteira do Residencial Luthor, faz palavras cruzadas entre um morador e outro.",
+                   "Dona Cida: \"Boa noite, dona Letícia! O elevador da cobertura está tinindo.\""]),
+    # pacientes na sala de espera do hospital (um pouco por dia, em horários diferentes)
+    dict(key="w_pac1", name="Seu Jorge", map="hospital", spot=(2, 11, "up"), hours=(8 * 60, 11 * 60 + 30),
+         days=ALLDAYS, chance=0.75, outfit="cardigan",
+         thoughts=["Seu Jorge espera a consulta de cardiologia. \"Eu só subi uma escada. Uma!\""]),
+    dict(key="w_pac2", name="Marina", map="hospital", spot=(4, 13, "up"), hours=(10 * 60, 14 * 60), days=ALLDAYS,
+         chance=0.75, outfit="shirt", thoughts=["Marina está com o pé enfaixado. \"Torci na regata. Valeu a pena.\""]),
+    dict(key="w_pac3", name="Dona Lurdes", map="hospital", spot=(3, 11, "up"), hours=(13 * 60, 17 * 60 + 30),
+         days=ALLDAYS, chance=0.75, outfit="blouse",
+         thoughts=["Dona Lurdes trouxe bolo para a recepção. \"É de cenoura. Para a Sandra, que é um anjo.\""]),
+    # crianças da pediatria brincando na brinquedoteca do saguão (pediatria.py)
+    dict(key="w_pac4", name="Juninho", map="hospital", spot=(20, 13, "right"), hours=(14 * 60, 19 * 60),
+         days=ALLDAYS, chance=0.8, outfit="shirt", height=-6,
+         thoughts=["Juninho, de braço engessado, coleciona assinaturas no gesso. Já tem doze.",
+                   "Juninho: \"Quando eu crescer eu vou ser pescador. Ou médico. Ou os dois.\""]),
+    dict(key="w_kid1", name="Bia", map="hospital", spot=(23, 13, "left"), hours=(9 * 60, 13 * 60), days=ALLDAYS,
+         chance=0.8, outfit="blouse", height=-6, cloth=(240, 150, 190),
+         thoughts=["Bia desenha com o giz de cera rosa. Só o rosa. \"É a minha cor.\"",
+                   "Bia: \"Você é a moça da Luthor Corp? Você conhece o robô?\""]),
+    dict(key="w_kid2", name="Davi", map="hospital", spot=(22, 14, "up"), hours=(11 * 60, 16 * 60), days=ALLDAYS,
+         chance=0.8, outfit="shirt", height=-6, cloth=(90, 160, 230),
+         thoughts=["Davi monta uma torre de bloquinhos. Ela cai. Ele ri mais alto que a torre.",
+                   "Davi: \"Amanhã eu vou embora pra casa! A doutora Izzie disse.\""]),
+]
 
 
 def _look(rnd):
@@ -80,13 +140,25 @@ class Crowd:
         rnd = random.Random(2034)
         self.extras = [Extra(f"x{i}", NAMES[i], _look(rnd)) for i in range(len(NAMES))]
         self.staff = []      # as médicas agora são personagens completas (doctors.py)
+        self.workers = []
+        for i, w in enumerate(WORKERS):
+            lk = _look(random.Random(f"w{i}"))
+            lk["outfit"] = w.get("outfit", lk["outfit"])
+            if "cloth" in w:
+                lk["cloth"] = w["cloth"]
+            if "height" in w:
+                lk["height"] = w["height"]
+            e = Extra(w["key"], w["name"], lk)
+            e.job = w
+            self.workers.append(e)
         self.reserved = self._reserved_spots()
+        self.reserved |= {(w["map"], w["spot"][0], w["spot"][1]) for w in WORKERS}
         self.spots = {v: self._spots_for(v) for v in VENUES}
         self.venue_last = {}            # lugar -> último figurante enviado
 
     # ------------------------------------------------------------------
     def all(self):
-        return self.extras + self.staff
+        return self.extras + self.staff + self.workers
 
     def _reserved_spots(self):
         res = set()
@@ -137,7 +209,8 @@ class Crowd:
                 elif o.kind in ("bookshelf", "bookshelf2", "bookshelf3", "produce", "produce2", "fridge2",
                                 "flowerstand", "desk_news", "printer", "cooler", "arcade", "jukebox", "pharma_counter",
                                 "aquarium", "vending", "hbed", "cafe_counter", "shop_counter", "ticket", "popcorn",
-                                "hreception", "counter_it", "rope", "tv_wall"):
+                                "hreception", "counter_it", "rope", "tv_wall", "arara", "arara2", "vitrine_joias",
+                                "estante_bolsas", "espelho_chao", "manequim", "manequim2"):
                     for xx in range(o.x, o.x + o.w):
                         out.append((xx, o.y + o.h, "up"))
         good = []
@@ -271,6 +344,39 @@ class Crowd:
                 if v:
                     self._send(e, v, minutes, g)
         self.tick_staff(g)
+        self.tick_workers(g)
+
+    # --- trabalhadores fixos -------------------------------------------------
+    def works_now(self, e, g):
+        j = e.job
+        a, b = j["hours"]
+        if g.weekday not in j["days"] or not a <= g.minutes < b:
+            return False
+        if j.get("chance", 1) < 1:          # sorteio fixo por dia: quem veio hoje fica até o fim
+            return random.Random(f"{e.key}{g.abs_day()}").random() < j["chance"]
+        return True
+
+    def tick_workers(self, g):
+        for e in self.workers:
+            j = e.job
+            if e.state == "going" and e.arrived:
+                e.state = "staying"
+            on = self.works_now(e, g)
+            if on and e.state == "off" and e.today == 0:
+                x, y, d = j["spot"]
+                door = CITY_DOORS.get(j["map"], (42, 46))
+                ex, ey = min(ENTRIES, key=lambda p: abs(p[0] - door[0]) + abs(p[1] - door[1]))
+                e.place("city", ex, ey, "down")
+                e.venue, e.spot = j["map"], (x, y, d)
+                e.goal = (j["map"], x, y, d)
+                e.path = None
+                e.arrived = False
+                e.state = "going"
+                e.today = 1
+            elif not on and e.state in ("going", "staying"):
+                self._go_home(e)
+            if e.state == "leaving" and e.map is None:
+                e.state = "off"
 
     # --- equipe do hospital ------------------------------------------------
     STAFF_SPOTS = {"yang": [(21, 5, "up"), (13, 9, "down"), (15, 2, "down"), (25, 5, "up")],
@@ -336,7 +442,7 @@ class Crowd:
         return None
 
     def extra_at(self, mapn, tx, ty):
-        for e in self.extras:
+        for e in self.extras + self.workers:
             if e.map == mapn and abs(e.fx - tx) < 0.6 and abs(e.fy - ty) < 0.6:
                 return e
         return None
@@ -353,9 +459,15 @@ EXTRA_THOUGHTS = {
     "hospital": ["Aguardando para ser chamado.", "Lendo um folheto da Conti Moretti."],
     "park": ["Aproveitando o sol no parque.", "Dando milho para os pombos."],
     "beach": ["Olhando o mar.", "Pegando um bronze."],
+    "boutique": ["Segurando dois vestidos e sem conseguir escolher.", "Experimentando óculos escuros no espelho."],
     None: ["Está com pressa. Nem te viu passar."],
 }
 
 
 def thought(e):
+    job = getattr(e, "job", None)
+    if job:
+        if e.state == "staying":
+            return random.choice(job["thoughts"])
+        return f"{e.name} está a caminho do trabalho."
     return random.choice(EXTRA_THOUGHTS.get(e.venue if e.state == "staying" else None, EXTRA_THOUGHTS[None]))

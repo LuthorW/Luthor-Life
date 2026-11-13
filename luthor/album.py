@@ -13,7 +13,7 @@ from . import art, ui, audio, world, decor
 from .art import new, R, P
 from .config import SCREEN_W, SCREEN_H, SAVE_DIR, SCALE, TILE, C_TEXT, C_MUTED, C_GOLD, C_GREEN, C_LILAC, C_PINK, C_ACCENT
 
-DIR = os.path.join(SAVE_DIR, "album")
+DIR = os.path.join(SAVE_DIR, "album")          # espaço 1; os outros usam album2, album3 (jogos_salvos.album_dir)
 SKIP = ("cafe_da_manha",)
 SKIP_PREFIX = ("encontro_",)
 THUMB = (480, 300)
@@ -26,24 +26,39 @@ EXTRA_TITLES = {"festa_flores": "Festa das Flores", "festa_luau": "Luau de Verã
 # Estado
 # ---------------------------------------------------------------------------
 def init_state(g):
-    g.album = dict(keys=[], frame=None, given=False)
+    g.album = dict(keys=[], frame=None, given=False, fresh=True)    # fresh: jogo novo (some quando salva)
     g.album_photos = {}
     g.album_dirty = set()
 
 
 def save_state(g):
     """Grava as fotos novas (só acontece num save de verdade)."""
+    folder = _dir(g)
     if g.album_dirty:
         try:
-            os.makedirs(DIR, exist_ok=True)
+            os.makedirs(folder, exist_ok=True)
             for k in list(g.album_dirty):
                 img = g.album_photos.get(k)
                 if img is not None:
-                    pygame.image.save(img, os.path.join(DIR, f"{k}.png"))
+                    pygame.image.save(img, os.path.join(folder, f"{k}.png"))
             g.album_dirty = set()
         except OSError:
             pass
-    return {"album": g.album}
+    if g.album.get("fresh") and os.path.isdir(folder):
+        # jogo novo num espaço que já tinha jogo: as fotos do jogo antigo saem junto com ele
+        for f in os.listdir(folder):
+            if f.lower().endswith(".png") and f[:-4] not in g.album["keys"]:
+                try:
+                    os.remove(os.path.join(folder, f))
+                except OSError:
+                    pass
+        g.album.pop("fresh", None)
+    return {"album": {k: v for k, v in g.album.items() if k != "fresh"}}
+
+
+def _dir(g):
+    from . import jogos_salvos
+    return jogos_salvos.album_dir(getattr(g, "slot", 1))
 
 
 def load_state(g, d):
@@ -54,8 +69,9 @@ def load_state(g, d):
     g.album = dict(keys=keys, frame=a.get("frame"), given=bool(a.get("given", False)))
     g.album_photos = {}
     g.album_dirty = set()
+    folder = _dir(g)
     for k in g.album["keys"]:
-        path = os.path.join(DIR, f"{k}.png")
+        path = os.path.join(folder, f"{k}.png")
         if os.path.exists(path):
             try:
                 g.album_photos[k] = pygame.image.load(path).convert()

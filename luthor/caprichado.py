@@ -404,7 +404,7 @@ def _catco(W, H, night):
         R(s, (130, 166, 210) if not night else (255, 246, 210), x + 1, H - 25, 32, 2)
         for k in range(1, 3):
             R(s, (18, 30, 56), x + k * 11, H - 25, 1, 20)
-    R(s, (18, 30, 56), 61, H - 27, 22, 27)                   # porta (tile da porta = 64..80)
+    R(s, (18, 30, 56), 61, H - 27, 22, 27)                   # porta no meio (9 tiles: tile da porta = 64..80)
     R(s, LIT if night else (160, 200, 236), 63, H - 25, 18, 25)
     R(s, (220, 236, 250), 63, H - 25, 3, 25)
     R(s, (18, 30, 56), 71, H - 25, 2, 25)
@@ -521,93 +521,156 @@ def _trattoria(W, H, night):
 
 
 def _bar(W, H, night):
-    """Noonan's: tijolo escuro, letreiro neon (texto em draw_label), janelas âmbar e porta vermelha."""
+    """Noonan's: pub de tijolo com a frente de madeira verde, letreiro dourado no meio (texto em draw_label),
+    janelas âmbar de vidrinhos e a porta vermelha no canto direito (tile da porta = 112..128)."""
     r = random.Random("bar")
-    tijolo, argamassa = (82, 52, 54), (58, 38, 42)
+    tijolo, argamassa = (110, 58, 50), (78, 42, 40)
+    verde, verde_esc, ouro = (34, 78, 58), (20, 48, 36), (214, 172, 92)
     s = new(W, H)
     bricks(s, 0, 8, W, H - 8, tijolo, argamassa)
-    cornice(s, 2, W, (40, 30, 34), 7)
-    R(s, (28, 20, 24), 0, 0, W, 3)
-    for x in (10, 44, 78, 108):
-        window(s, x, 18, 12, 18, (40, 30, 30), (100, 120, 150), night and r.random() < 0.7,
-               sill=(120, 100, 96))
-    for x in (10, 44, 78, 108):
-        window(s, x, 50, 12, 14, (40, 30, 30), (100, 120, 150), night and r.random() < 0.5)
-    R(s, (24, 16, 20), 6, H - 46, W - 12, 15)               # painel do neon
-    R(s, (60, 40, 50), 6, H - 46, W - 12, 1)
-    R(s, (36, 26, 30), 0, H - 30, W, 30)
-    shopfront(s, 6, H - 26, 40, 18, (30, 20, 20), True, glass=(255, 190, 110))
-    shopfront(s, 52, H - 26, 40, 18, (30, 20, 20), True, glass=(255, 190, 110))
-    R(s, (255, 90, 150), 58, H - 22, 14, 4)                 # "OPEN" em neon (barrinhas)
-    R(s, (255, 170, 200), 59, H - 21, 12, 2)
-    door(s, 112, H - 28, 14, 28, (30, 20, 20), (130, 40, 52), night)
-    lantern(s, 104, H - 26, True)
+    cornice(s, 2, W, (52, 40, 40), 7)
+    R(s, (34, 26, 28), 0, 0, W, 3)
+    for y, hh, chance in ((18, 18, 0.7), (50, 14, 0.5)):    # janelas de cima, alinhadas pelo meio do prédio
+        for x in (10, 42, 74, 106):
+            window(s, x, y, 12, hh, (44, 30, 30), (100, 120, 150), night and r.random() < chance,
+                   sill=(140, 112, 100))
+    # frente do pub: madeira verde com frisos dourados
+    R(s, verde_esc, 0, H - 48, W, 48)
+    R(s, verde, 2, H - 46, W - 4, 46)
+    R(s, ouro, 0, H - 48, W, 1)
+    # letreiro: faixa de largura inteira, letras centralizadas (draw_label)
+    R(s, verde_esc, 4, H - 45, W - 8, 15)
+    R(s, ouro, 4, H - 45, W - 8, 1); R(s, ouro, 4, H - 31, W - 8, 1)
+    R(s, ouro, 4, H - 45, 1, 15); R(s, ouro, W - 5, H - 45, 1, 15)
+    for x in (7, W - 9):                                      # trevinhos nas pontas do letreiro
+        R(s, (90, 170, 100), x, H - 40, 2, 2); R(s, (90, 170, 100), x - 1, H - 38, 4, 1)
+    R(s, verde_esc, 0, H - 29, W, 2)
+    # duas janelas de pub (vidrinhos âmbar) e o painel de madeira embaixo
+    for x in (8, 56):
+        R(s, verde_esc, x - 2, H - 27, 44, 20)
+        R(s, LIT if night else (255, 196, 118), x, H - 25, 40, 14)
+        R(s, (255, 226, 160), x, H - 25, 40, 1)
+        for gx in range(x + 8, x + 40, 8):
+            R(s, verde_esc, gx, H - 25, 1, 14)
+        R(s, verde_esc, x, H - 19, 40, 1)
+        R(s, shade(verde, 1.15), x - 2, H - 9, 44, 1)
+        R(s, verde_esc, x, H - 7, 40, 6)
+        R(s, verde, x + 2, H - 6, 16, 4); R(s, verde, x + 22, H - 6, 16, 4)
+    R(s, (255, 90, 150), 66, H - 23, 14, 4)                   # "OPEN" em neon (barrinhas)
+    R(s, (255, 190, 210), 67, H - 22, 12, 2)
+    for i, c in enumerate(((180, 120, 60), (230, 200, 120), (120, 60, 40))):   # pints na janela da esquerda
+        R(s, c, 14 + i * 10, H - 16, 4, 5); R(s, (250, 240, 220), 14 + i * 10, H - 17, 4, 1)
+    # porta lateral vermelha com bandeira de pub em cima
+    door(s, 112, H - 28, 14, 28, (20, 40, 30), (150, 40, 52), night)
+    R(s, ouro, 111, H - 30, 16, 1)
+    lantern(s, 104, H - 25, True)
+    R(s, (40, 30, 30), 98, H - 58, 12, 1)                     # placa pendurada (caneca)
+    R(s, (40, 30, 30), 100, H - 57, 1, 3); R(s, (40, 30, 30), 107, H - 57, 1, 3)
+    R(s, ouro, 98, H - 54, 12, 10); R(s, verde_esc, 99, H - 53, 10, 8)
+    R(s, (240, 200, 110), 101, H - 51, 5, 5); R(s, (255, 250, 236), 101, H - 52, 5, 1)
+    R(s, (240, 200, 110), 106, H - 50, 1, 3)
     side_light(s, W, H, 8)
     return s
 
 
 def _cinema(W, H, night, t=0):
-    """Cine National: fachada art déco roxa, frisos dourados, marquise com lâmpadas e cartazes."""
+    """Cine National: fachada art déco roxa, simétrica, frisos dourados, estrela no topo, marquise com lâmpadas
+    (texto em draw_label), cartazes iluminados e a porta dupla bem no meio (tile da porta = 64..80)."""
     corpo, frisos = (66, 42, 98), (222, 186, 96)
+    cx = W // 2
     s = new(W, H)
     R(s, corpo, 0, 10, W, H - 10)
     R(s, (44, 28, 66), 0, 4, W, 7)
     R(s, frisos, 0, 4, W, 1); R(s, frisos, 0, 10, W, 1)
-    for x in (W // 2 - 16, W // 2 + 8):                      # torrezinhas em degrau
-        R(s, (44, 28, 66), x, 0, 8, 5); R(s, frisos, x, 0, 8, 1)
-    for x in range(6, W - 6, 12):                           # pilastras com frisos
-        R(s, shade(corpo, 1.18), x, 14, 6, H - 72)
-        R(s, shade(corpo, 0.8), x + 5, 14, 1, H - 72)
+    R(s, (44, 28, 66), cx - 14, 0, 28, 5); R(s, frisos, cx - 14, 0, 28, 1)   # frontão em degrau no meio
+    for x, y in ((0, 0), (-1, 1), (1, 1), (-2, 2), (2, 2), (0, 2), (-1, 3), (1, 3), (0, 4)):   # estrela
+        P(s, (255, 230, 140), cx + x, 2 + y)
+    n = 11                                                    # pilastras com frisos, espelhadas no meio
+    left = (W - (n - 1) * 12 - 6) // 2
+    for i in range(n):
+        x = left + i * 12
+        R(s, shade(corpo, 1.18), x, 14, 6, H - 74)
+        R(s, shade(corpo, 0.8), x + 5, 14, 1, H - 74)
         R(s, frisos, x, 14, 6, 1)
-    for x in range(12, W - 12, 12):                         # janelinhas entre as pilastras
-        window(s, x + 1, 22, 4, 30, (40, 26, 60), (120, 100, 170), night, cross=False)
+        if i < n - 1:                                         # janelinhas entre as pilastras
+            window(s, x + 8, 22, 4, 30, (40, 26, 60), (120, 100, 170), night, cross=False)
+    R(s, frisos, 0, H - 61, W, 1)
     # marquise iluminada
     R(s, (40, 26, 60), 2, H - 58, W - 4, 24)
     R(s, (240, 220, 140), 4, H - 56, W - 8, 20)
     R(s, (30, 20, 40), 6, H - 53, W - 12, 14)
-    for x in range(5, W - 5, 4):
+    for x in range(5, W - 4, 4):
         on = night or (x // 4) % 2 == 0
         P(s, (255, 244, 180) if on else (200, 176, 100), x, H - 57)
         P(s, (255, 244, 180) if on else (200, 176, 100), x, H - 36)
     R(s, shade(corpo, 0.7), 0, H - 33, W, 3)
-    for x in (6, W - 26):                                   # cartazes
-        R(s, frisos, x - 1, H - 31, 22, 26)
-        R(s, (240, 236, 226), x, H - 30, 20, 24)
-        R(s, (200, 60, 60) if x < 40 else (60, 110, 190), x + 2, H - 28, 16, 14)
-        R(s, (40, 30, 40), x + 3, H - 12, 14, 2)
-    R(s, (40, 26, 60), 61, H - 30, 38, 30)                  # porta dupla (tile da porta = 64..80)
-    for dx in (63, 81):
-        R(s, LIT if night else (170, 140, 210), dx, H - 28, 16, 28)
+    for x, cor in ((8, (200, 60, 60)), (W - 30, (60, 110, 190))):   # cartazes com moldura de lâmpadas
+        R(s, frisos, x - 1, H - 31, 24, 27)
+        R(s, (240, 236, 226), x, H - 30, 22, 25)
+        R(s, cor, x + 2, H - 28, 18, 14)
+        R(s, shade(cor, 1.3), x + 6, H - 25, 10, 6)
+        R(s, (40, 30, 40), x + 3, H - 12, 16, 2); R(s, (40, 30, 40), x + 5, H - 9, 12, 1)
+        for yy in range(H - 30, H - 5, 4):
+            P(s, (255, 244, 180) if night else (230, 210, 150), x - 1, yy)
+            P(s, (255, 244, 180) if night else (230, 210, 150), x + 22, yy)
+    # bilheteria e porta dupla no meio
+    R(s, (40, 26, 60), cx - 20, H - 31, 40, 31)
+    R(s, frisos, cx - 20, H - 32, 40, 1)
+    for dx in (cx - 18, cx + 1):
+        R(s, LIT if night else (170, 140, 210), dx, H - 28, 17, 28)
         R(s, (210, 190, 240) if not night else (255, 240, 200), dx, H - 28, 3, 28)
-    R(s, frisos, 61, H - 31, 38, 1)
+        R(s, (40, 26, 60), dx, H - 15, 17, 1)
+        P(s, frisos, dx + (14 if dx < cx else 2), H - 14)
+    R(s, (40, 26, 60), cx - 1, H - 28, 2, 28)
     side_light(s, W, H, 10)
     return s
 
 
 def _apartments(W, H, night):
-    """Apartamentos Bayside: reboco bege, sacadas com grade e plantas, marquise na entrada."""
+    """Apartamentos Bayside: reboco bege, sacadas com grade e plantas, faixa com o nome (texto em draw_label),
+    base de pedra e a entrada bem no meio, com marquise (prédio de 7 tiles: tile da porta = 48..64)."""
     r = random.Random("apartments")
     parede = (214, 196, 166)
+    pedra = (196, 186, 172)
+    cx = W // 2
     s = new(W, H)
     R(s, parede, 0, 8, W, H - 8)
     for y in range(10, H, 4):
         R(s, shade(parede, 0.97), 0, y, W, 1)
     cornice(s, 2, W, (150, 128, 104), 7)
-    for y in range(18, H - 34, 22):
-        for x in (8, 46, 86):
+    cols = (8, cx - 7, W - 22)                                # 3 colunas de janelas, simétricas
+    for y in (16, 37, 58, 79):
+        for x in cols:
             window(s, x, y, 14, 14, (110, 96, 84), (160, 200, 226), night and r.random() < 0.55)
-            R(s, (90, 80, 76), x - 3, y + 15, 20, 2)               # sacada
+            R(s, (90, 80, 76), x - 3, y + 15, 20, 2)          # sacada
             for gx in range(x - 3, x + 17, 3):
                 R(s, (90, 80, 76), gx, y + 11, 1, 4)
             R(s, (90, 80, 76), x - 3, y + 11, 20, 1)
             if r.random() < 0.6:
                 R(s, (70, 146, 74), x - 2, y + 12, 5, 3)
                 P(s, r.choice([(255, 130, 170), (255, 220, 110), (200, 150, 255)]), x - 1, y + 12)
-    R(s, (120, 100, 80), 54, H - 32, 36, 4)                  # marquise
-    R(s, shade((120, 100, 80), 1.3), 54, H - 32, 36, 1)
-    door(s, 64, H - 28, 16, 28, (80, 64, 50), (110, 84, 60), night)
-    lantern(s, 56, H - 24, night); lantern(s, 84, H - 24, night)
-    vaso(s, 4, H - 10); vaso(s, W - 12, H - 10)
+    # faixa do nome (draw_label escreve APARTAMENTOS BAYSIDE no meio)
+    R(s, (92, 70, 54), 4, H - 44, W - 8, 12)
+    R(s, (200, 164, 104), 4, H - 44, W - 8, 1); R(s, (200, 164, 104), 4, H - 33, W - 8, 1)
+    R(s, (62, 46, 36), 4, H - 32, W - 8, 1)
+    # base de pedra
+    R(s, pedra, 0, H - 30, W, 30)
+    for y in range(H - 30, H, 6):
+        R(s, shade(pedra, 0.86), 0, y, W, 1)
+        for x in range(((y // 6) % 2) * 6, W, 12):
+            R(s, shade(pedra, 0.86), x, y, 1, 6)
+    R(s, shade(pedra, 1.12), 0, H - 30, W, 1)
+    for x in (10, W - 26):                                     # janelas do térreo com floreira
+        window(s, x, H - 24, 16, 12, (110, 96, 84), (160, 200, 226), night and r.random() < 0.6,
+               box=(255, 130, 170))
+    # entrada no meio: marquise, porta e duas arandelas
+    R(s, (120, 100, 80), cx - 16, H - 33, 32, 4)
+    R(s, shade((120, 100, 80), 1.3), cx - 16, H - 33, 32, 1)
+    R(s, shade((120, 100, 80), 0.7), cx - 16, H - 30, 32, 1)
+    R(s, (150, 140, 128), cx - 10, H - 29, 20, 29)
+    door(s, cx - 7, H - 28, 14, 28, (80, 64, 50), (110, 84, 60), night)
+    lantern(s, cx - 15, H - 24, night); lantern(s, cx + 11, H - 24, night)
+    vaso(s, 1, H - 10); vaso(s, W - 9, H - 10)
     side_light(s, W, H, 8)
     return s
 
@@ -911,6 +974,20 @@ def building_sprite(style, w, h, extra, night=False):
 art.building_sprite = building_sprite
 
 
+_GLYPH = {}
+
+
+def _sign(surf, msg, cx, top, bottom, size, color, shadow=True):
+    """Escreve o letreiro com as letras (não a caixa da fonte) bem no meio da faixa entre top e bottom."""
+    key = (msg, size)
+    if key not in _GLYPH:
+        br = ui.font(size, True).render(msg, False, (255, 255, 255)).get_bounding_rect()
+        _GLYPH[key] = (br.y, br.h)
+    gy, gh = _GLYPH[key]
+    ui.text(surf, msg, (cx, (top + bottom) // 2 - gy - gh // 2), size, color, bold=True, center=True,
+            shadow=shadow)
+
+
 def draw_label(g, surf, b, spr, x, y, night):
     """Letreiros dos prédios novos. Devolve True se escreveu (senão o Game usa os letreiros antigos)."""
     if b.style not in BUILDERS:
@@ -919,12 +996,12 @@ def draw_label(g, surf, b, spr, x, y, night):
     H = spr.get_height()
     S = SCALE
     if b.style == "tower":
-        ui.text(surf, "LUTHOR CORP", (cx, y + H - 49 * S + 4), 26, (223, 197, 255), bold=True, center=True)
+        _sign(surf, "LUTHOR CORP", cx, y + H - 49 * S, y + H - 34 * S, 26, (223, 197, 255))   # painel escuro
     elif b.style == "catco":
         logo = art.load_image("catco.png", (28 * S, 28 * S))
         if logo:
             surf.blit(logo, (cx - 14 * S, y - 6 * S))
-        ui.text(surf, "CATCO", (cx, y + H - 45 * S + 3), 24, (30, 60, 104), bold=True, center=True, shadow=False)
+        _sign(surf, "CATCO", cx, y + H - 45 * S, y + H - 32 * S, 24, (30, 60, 104), shadow=False)  # faixa branca
     elif b.style == "cafe":
         ui.text(surf, "GRÃO NOBRE", (cx, y + 47 * S - 3), 19, (255, 226, 150), bold=True, center=True)
     elif b.style == "books":
@@ -934,10 +1011,12 @@ def draw_label(g, surf, b, spr, x, y, night):
     elif b.style == "trattoria":
         ui.text(surf, "RICCI TRATTORIA", (cx, y + 56 * S - 2), 17, (150, 40, 46), bold=True, center=True, shadow=False)
     elif b.style == "bar":
-        col = (255, 90, 150) if night or int(g.t * 2) % 7 else (120, 60, 90)
-        ui.text(surf, "NOONAN'S", (cx, y + H - 46 * S + 3), 24, col, bold=True, center=True)
+        col = (255, 214, 120) if not night else ((255, 226, 140) if int(g.t * 2) % 9 else (190, 150, 90))
+        _sign(surf, "NOONAN'S", cx, y + H - 44 * S, y + H - 31 * S, 22, col)             # faixa verde
     elif b.style == "cinema":
-        ui.text(surf, "CINE NATIONAL", (cx, y + H - 53 * S + 3), 20, (255, 230, 140), bold=True, center=True)
+        _sign(surf, "CINE NATIONAL", cx, y + H - 53 * S, y + H - 39 * S, 20, (255, 230, 140))
+    elif b.style == "apartments":
+        _sign(surf, "APARTAMENTOS BAYSIDE", cx, y + H - 43 * S, y + H - 33 * S, 15, (246, 228, 190))
     elif b.style == "home":
         ui.text(surf, "RESIDENCIAL LUTHOR", (cx, y + 5 * S - 1), 15, (250, 230, 220), bold=True, center=True)
     elif b.style == "ricci":
@@ -950,6 +1029,8 @@ def draw_label(g, surf, b, spr, x, y, night):
         ui.text(surf, "CONTI MORETTI", (cx, y + H - 42 * S + 2), 19, (246, 243, 236), bold=True, center=True)
     elif b.style == "marina":
         ui.text(surf, "MARINA LUTHOR", (cx, y + 40 * S + 1), 17, (240, 214, 140), bold=True, center=True)
+    elif b.style == "boutique":
+        ui.text(surf, "LA BOUTIQUE", (cx, y + 58 * S - 1), 15, (240, 214, 140), bold=True, center=True)
     return True
 
 

@@ -435,6 +435,8 @@ def fish_done(g, fish, res):
 # ---------------------------------------------------------------------------
 LAP_SEATS = ("sofa", "sofa_grey", "armchair", "poltrona_roxa")
 LAP_ANCHOR = {"front": (8.0, 25.0), "side": (9.5, 23.5)}
+WIDE_SEATS = ("sofa", "sofa_grey")
+BACKREST_TOP = 14           # sofá visto de costas (assentos._sofa_up): topo do encosto, em px de arte acima do chão
 
 
 def _update_lap(g, dt):
@@ -454,8 +456,8 @@ def _update_lap(g, dt):
         g.lap_wait = 0.0
         return
     o = g.current_map.object_at(*pl.tile) if hasattr(g.current_map, "object_at") else None
-    if pl.dir == "up" or not o or o.kind not in LAP_SEATS:
-        g.lap_wait = 0.0
+    if not o or o.kind not in LAP_SEATS or (pl.dir == "up" and o.kind not in WIDE_SEATS):
+        g.lap_wait = 0.0                             # de costas, só no sofá: o bichinho deita no encosto
         return
     g.lap_wait = getattr(g, "lap_wait", 0.0) + dt
     if g.lap_wait > 2.2 and math.hypot(pet.x - pl.x, pet.y - pl.y) < 6 * TILE:
@@ -519,14 +521,22 @@ class LapPet:
         from .activities import pet_frames, _coat_name
         fr = pet_frames(pet.kind, pet.coat, _coat_name(pet.kind, pet.coat))
         img = fr[("sleep", 0)]
-        view = poses.VIEW[pl.dir]
-        ax, ay = LAP_ANCHOR.get(view, LAP_ANCHOR["front"])
-        if pl.dir == "left":
-            ax = 16 - ax
-        x = pl.img_top[0] + (ax + poses.PAD) * SCALE - cam[0]
-        y = pl.img_top[1] + ay * SCALE - cam[1]
         breath = SCALE // 2 if math.sin(g.lap["t"] * 2.2) > 0 else 0
-        surf.blit(img, (int(x - img.get_width() / 2), int(y - img.get_height() + 3 * SCALE - breath)))
+        o = pl.seat.get("obj") if pl.seat else None
+        if pl.dir == "up" and o is not None:          # sofá de costas: enroladinho no encosto, do lado dela
+            tx = int(pl.x // TILE)
+            side = 1 if tx < o.x + o.w - 1 else -1
+            x = pl.x + side * TILE - cam[0]
+            y = o.base_y - BACKREST_TOP * SCALE - cam[1]
+            surf.blit(img, (int(x - img.get_width() / 2), int(y - img.get_height() + 2 * SCALE - breath)))
+        else:
+            view = poses.VIEW[pl.dir]
+            ax, ay = LAP_ANCHOR.get(view, LAP_ANCHOR["front"])
+            if pl.dir == "left":
+                ax = 16 - ax
+            x = pl.img_top[0] + (ax + poses.PAD) * SCALE - cam[0]
+            y = pl.img_top[1] + ay * SCALE - cam[1]
+            surf.blit(img, (int(x - img.get_width() / 2), int(y - img.get_height() + 3 * SCALE - breath)))
         if pet.emote:
             from .cutscenes import draw_emote
             draw_emote(surf, int(x), int(y - img.get_height()), pet.emote, 1 - max(0, pet.emote_t - 1.4))
@@ -954,7 +964,8 @@ def world_items(g, m):
     if act and act["kind"] == "dormir" and m.name == g.map_name:
         out.append((act["bed"].base_y + 1, 1, "anim", Sleeper(g, act["bed"])))
     if getattr(g, "lap", None) and g.pet and g.pet.map == m.name and m.name == g.map_name and g.player.seat:
-        out.append(((g.player.seat["sort"] if g.player.seat else g.player.y) + 0.5, 1, "anim", LapPet(g)))
+        # depois da camada da frente do assento (assentos.FRONT_BIAS): o braço/encosto não cobre o bichinho
+        out.append(((g.player.seat["sort"] if g.player.seat else g.player.y) + 1.5, 1, "anim", LapPet(g)))
     cat = getattr(g, "stray", None)
     if m.name == "city" and cat and cat.x is not None and cat.visible(g):
         out.append((cat.base_y, 1, "anim", cat))

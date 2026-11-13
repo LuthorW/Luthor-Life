@@ -387,9 +387,10 @@ class Inventory(ui.Modal):
         for i, s in enumerate(self.g.inventory):
             row, col = divmod(i, self.COLS)
             r = pygame.Rect(rect.x + 20 + col * (slot + gap), rect.y + 64 + row * (slot + 22), slot, slot)
-            pygame.draw.rect(surf, (16, 12, 24), r, border_radius=8)
-            border = C_ACCENT_2 if i == self.cur else (C_GOLD if i == self.held else C_BORDER_DIM)
-            pygame.draw.rect(surf, border, r, 3 if i in (self.cur, self.held) else 1, border_radius=8)
+            ui.slot(surf, r, i == self.cur)
+            if i == self.held and i != self.cur:                 # item pego para trocar de lugar
+                ui.cut_rect(surf, C_GOLD, r, 1)
+                surf.fill((16, 12, 24), r.inflate(-2 * ui.U, -2 * ui.U))
             if s:
                 icon = art.item_icon(s[0], 3)
                 surf.blit(icon, (r.centerx - 24, r.centery - 24))

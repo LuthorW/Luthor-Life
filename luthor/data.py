@@ -63,6 +63,23 @@ FISH = {
                   color=(120, 110, 90)),
     "koi": dict(name="Carpa Koi Dourada", value=320, diff=82, where="pond", quarters=[2], hours=(600, 1080),
                 color=(255, 180, 60)),
+    # peixes novos
+    "cavala": dict(name="Cavalinha", value=45, diff=24, where="sea", quarters=[1, 2, 3, 4], hours=(360, 1200),
+                   color=(90, 130, 170)),
+    "baiacu": dict(name="Baiacu", value=60, diff=36, where="sea", quarters=[1, 2], hours=(600, 1080),
+                   color=(230, 210, 140)),
+    "pescada": dict(name="Pescada-Amarela", value=70, diff=32, where="sea", quarters=[2, 3], hours=(360, 1560),
+                    color=(220, 190, 110)),
+    "arraia": dict(name="Arraia", value=140, diff=58, where="sea", quarters=[2, 3], hours=(1080, 1560),
+                   color=(120, 110, 130)),
+    "lambari": dict(name="Lambari", value=25, diff=12, where="pond", quarters=[1, 2, 3, 4], hours=(360, 1200),
+                    color=(200, 210, 220)),
+    "tucunare": dict(name="Tucunaré", value=120, diff=52, where="pond", quarters=[2, 3], hours=(360, 1140),
+                     color=(190, 170, 60)),
+    "enguia": dict(name="Enguia", value=130, diff=60, where="pond", quarters=[3, 4], hours=(1140, 1560),
+                   weather="chuva", color=(70, 80, 60)),
+    "pirarucu": dict(name="Pirarucu Gigante", value=700, diff=90, where="pond", quarters=[3], hours=(1260, 1560),
+                     color=(160, 60, 50), legendary=True),
 }
 JUNK = {"lata": dict(name="Lata Amassada", value=1), "jornal": dict(name="CatCo Molhada", value=1)}
 
@@ -311,12 +328,12 @@ FLAG_LABELS = {
 
 NEWS = [
     "CatCo Magazine elege a Luthor Corp a empresa mais inovadora do ano.",
-    "Apagão de domingo: Lucy Williams e Barry Allen investigam a infraestrutura da cidade.",
+    "CatCo: Lucy Williams e Barry Allen preparam uma série de reportagens sobre os bairros da cidade.",
     "Analistas preveem trimestre forte para o setor aeroespacial.",
     "Ricci Trattoria é eleita a melhor massa de National City. 'É a receita da minha nonna', diz a chef.",
     "Trânsito intenso na Avenida Siegel. Linhas expressas operam com atraso no centro.",
     "Café Grão Nobre é eleito o melhor expresso da cidade pelo terceiro ano.",
-    "Bayside Books registra recorde de movimento depois do apagão.",
+    "Bayside Books registra recorde de movimento no fim de semana.",
     "Pescadores relatam brilho verde no mar em noites de chuva. Lenda urbana?",
     "Noonan's anuncia novo recorde no fliperama 'Meteoro'. Quem vai superar?",
 ]

@@ -12,8 +12,8 @@ import pygame
 
 from . import ui, seasons
 from .config import (SCREEN_W, SCREEN_H, C_TEXT, C_MUTED, C_ACCENT, C_GOLD, C_LILAC, DAYS_PER_QUARTER,
-                     HEART_POINTS, MAX_HEARTS)
-from .characters import NPC_ORDER
+                     HEART_POINTS, MAX_HEARTS, FRIEND_CAP_HEARTS)
+from .characters import NPC_ORDER, ROMANCES
 
 STATE = {"frozen": False}
 WEEK = ["segunda", "terça", "quarta", "quinta", "sexta", "sábado", "domingo"]
@@ -71,7 +71,8 @@ class TimePanel(ui.Modal):
             v["npc"] = (v["npc"] + d * (5 if big else 1)) % len(NPC_ORDER)
         elif row == "Corações":
             k = NPC_ORDER[v["npc"]]
-            v["hearts"][k] = max(0, min(MAX_HEARTS, v["hearts"].get(k, 0) + d * (5 if big else 1)))
+            top = MAX_HEARTS if k in ROMANCES else FRIEND_CAP_HEARTS
+            v["hearts"][k] = max(0, min(top, v["hearts"].get(k, 0) + d * (5 if big else 1)))
 
     def label(self, row):
         v = self.v
@@ -84,7 +85,8 @@ class TimePanel(ui.Modal):
             "Clima": "neve" if season == "winter" and v["weather"] in ("chuva", "tempestade") else v["weather"],
             "Relógio parado": "sim" if v["frozen"] else "não",
             "Personagem": self.g.npcs[NPC_ORDER[v["npc"]]].name,
-            "Corações": f"{v['hearts'].get(NPC_ORDER[v['npc']], 0)} de {MAX_HEARTS}",
+            "Corações": f"{v['hearts'].get(NPC_ORDER[v['npc']], 0)} de "
+                        f"{MAX_HEARTS if NPC_ORDER[v['npc']] in ROMANCES else FRIEND_CAP_HEARTS}",
         }[row]
 
     def draw(self, surf):
@@ -160,7 +162,10 @@ def install(g):
 def setup(g):
     """Abre o jogo salvo (ou um novo) sem nunca gravar e já mostra o painel."""
     loaded = False
-    if g.has_save():
+    from . import jogos_salvos
+    slot = jogos_salvos.continue_slot(g)           # o mesmo jogo que o "Continuar" abriria
+    if slot:
+        g.slot = slot
         try:
             g.load()
             loaded = True

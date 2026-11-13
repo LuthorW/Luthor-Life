@@ -3,6 +3,7 @@ import json
 import math
 import os
 import random
+import time
 
 import pygame
 
@@ -10,14 +11,14 @@ from . import art, ui
 from .config import (SCALE, TITLE, SCREEN_W, SCREEN_H, FPS, TILE, SAVE_DIR, SAVE_PATH, SETTINGS_PATH, SAVE_VERSION,
                      DAY_START, DAY_END, SECONDS_PER_10MIN, DAYS_PER_QUARTER, START_YEAR, WEEKDAYS,
                      WEEKDAYS_FULL, BASE_ENERGY, WORK_ENERGY, FISH_ENERGY, ARCADE_ENERGY, WALK_SPEED, RUN_SPEED,
-                     HEART_POINTS, MAX_HEARTS, ROMANCE_CAP_HEARTS, TALK_POINTS, GIFT_POINTS, START_STATIONS,
+                     HEART_POINTS, MAX_HEARTS, ROMANCE_CAP_HEARTS, FRIEND_CAP_HEARTS, TALK_POINTS, GIFT_POINTS, START_STATIONS,
                      MAX_STATIONS, INVENTORY_SIZE, HOTBAR_SIZE, C_TEXT, C_MUTED, C_LILAC, C_GOLD, C_GREEN, C_RED,
                      C_ACCENT, C_ACCENT_2, C_PINK)
 from .data import (PROJECTS, ITEMS, FISH, JUNK, RECIPES, BOOKS, SHOPS, SELLABLE, FLAG_LABELS, NEWS, TIPS, GOALS,
                    FORAGE)
 from .characters import NPCS, NPC_ORDER, TEAM, ROMANCES
 from .entities import Player, NPC, Car, DIRS, draw_shadow, PLAYER_LOOK, FOOT, DRINK_ICONS, draw_drink
-from .world import build_world, COUNTERS, WATER_TILES, STATION_SLOTS, HOME_BED, HOSPITAL_BED
+from .world import build_world, COUNTERS, WATER_TILES, STATION_SLOTS, HOME_BED, HOSPITAL_BED, OBJECT_DEFS
 from .minigames import Fishing, Arcade, Cooking, Inventory
 from .effects import Ambient
 from . import dialogue
@@ -38,8 +39,23 @@ from . import casal       # vida a dois e ciúmes leves
 from . import clima       # tempestade com raios e arco-íris
 from . import jogos       # sinuca, dardos e xadrez com o Brainy
 from . import poses       # sentada de verdade, comendo, bebendo e lendo
+from . import jogos_salvos  # 3 espaços de jogo salvo na tela de título
+from . import conquistas   # medalhas (tecla K)
+from . import interiores   # interiores caprichados
+from . import natureza     # mar com ondas e reflexos, árvores e grama ao vento
+from . import assentos     # sofás, poltronas e cadeiras virados para a mesa/TV
+from . import escritorio   # escritório da Letícia na sede (móveis novos e mesa de reuniões)
 from . import closet      # closet da Letícia (looks)
 from . import decor       # decorar a cobertura (móveis)
+from . import boutique    # La Boutique: roupas, acessórios e a Celeste
+from . import habilidades  # pesca, ciência, culinária e carisma (níveis e bônus)
+from . import pedidos    # quadro de pedidos do Grão Nobre
+from . import lugares    # estúdio da CatCo TV, arquivo, leitos ocupados, portarias
+from . import noticias   # manchetes da CatCo sobre o que a Letícia faz
+from . import degustacao  # degustação de vinhos com a Vittoria (sede do Gruppo Ricci)
+from . import pediatria  # brinquedoteca e voluntariado no Conti Moretti
+from . import mural      # mural de fotos da cobertura
+from . import celular    # celular da Letícia (tecla T)
 from . import album       # álbum de fotos do Barry
 from . import fundacao    # Fundação Luthor (doações e obras na cidade)
 from . import momentos    # momentos entre personagens pela cidade
@@ -87,7 +103,7 @@ FLAVOR = {
     "table": "Uma mesinha.", "table_it": "Toalha xadrez, vela acesa. Romântico.",
     "dining": "Mesa de jantar para dois. Ou para quatro, se a Sam trouxer a Ruby.",
     "reception": "A recepção da Luthor Corp. Tudo extremamente organizado.",
-    "desk": "A mesa da CFO. Planilhas em três monitores.", "desk_editor": "A sala do editor-chefe. Cheiro de prazo.",
+    "desk": "Uma mesa de trabalho cheia de papéis.", "desk_editor": "A sala do editor-chefe. Cheiro de prazo.",
     "desk_news": "Rascunhos de matérias, post-its e três xícaras de café frias.",
     "cafe_shelf": "Grãos de café de seis países diferentes.", "tree": "Uma árvore.", "tree2": "Uma árvore.",
     "tree3": "Uma árvore frondosa.", "palm": "Um coqueiro. Cuidado com a cabeça.",
@@ -115,6 +131,7 @@ class Game:
         pygame.init()
         pygame.display.set_caption(TITLE)
         self.settings = self.load_settings()
+        self.slot = self.settings.get("slot", 1) if self.settings.get("slot") in range(1, jogos_salvos.SLOTS + 1) else 1
         audio.init(self.settings)
         self.headless = headless
         self.screen = self._make_display(self.settings.get("fullscreen", False))
@@ -276,7 +293,16 @@ class Game:
         momentos.init_state(self)
         casamento.init_state(self)
         historia.init_state(self)
+        conquistas.init_state(self)
         casal.init_state(self)
+        habilidades.init_state(self)
+        pedidos.init_state(self)
+        lugares.init_state(self)
+        noticias.init_state(self)
+        degustacao.init_state(self)
+        pediatria.init_state(self)
+        mural.init_state(self)
+        celular.init_state(self)
         animacoes.init(self)
         if hasattr(self, "crowd"):
             self.crowd.reset_day()
@@ -514,7 +540,7 @@ class Game:
             return "bar"
         if mapn in ("hq", "catco", "ricci"):
             return "work"
-        if mapn in ("home", "cafe", "books", "market", "cinema", "trattoria"):
+        if mapn in ("home", "cafe", "books", "market", "cinema", "trattoria", "boutique"):
             return "night" if late else "indoor"
         if weather == "chuva":
             return "rain"
@@ -614,9 +640,13 @@ class Game:
                 self.push(CityMap(self))
             elif ev.key == pygame.K_r:
                 self.open_relationships()
+            elif ev.key == pygame.K_k:
+                conquistas.open_panel(self)
             elif ev.key == pygame.K_c:
                 audio.sfx("open")
                 self.push(festas.Calendar(self))
+            elif ev.key == pygame.K_t:
+                celular.open_phone(self)
             elif ev.key in HOTBAR_KEYS:
                 self.select(HOTBAR_KEYS[ev.key])
         elif ev.type == pygame.MOUSEWHEEL:
@@ -651,6 +681,8 @@ class Game:
             self.modals[-1].update(dt)
             self.modals = [m for m in self.modals if not m.done]
         self.particles = [p for p in self.particles if p.update(dt)]
+        if self.scene == "play" and not self.photo_mode and not self.modals and not self.fade_dir:
+            conquistas.update(self, dt)             # o aviso de conquista espera conversas, menus e cenas
         self.player.tick(dt)
         self.update_eat_fx(dt)
         self.update_kiss_fx(dt)
@@ -735,6 +767,8 @@ class Game:
             npc.check_schedule(self.minutes)
         self.check_scene_events()
         casal.tick(self)
+        conquistas.check(self)
+        celular.tick(self)                          # mensagens chegando ao longo do dia
         self.crowd.tick(self)
         if self.date and not self.date.get("done") and self.minutes == 19 * 60 and "date_warn" not in self.warned:
             self.warned.add("date_warn")
@@ -757,6 +791,32 @@ class Game:
                 return npc
         return None
 
+    def npc_near(self, reach=1.9, side=0.9):
+        """Personagem mais perto num cone na frente da Letícia (não precisa estar exatamente no tile da frente)."""
+        p = self.player
+        dx, dy = DIRS[p.dir]
+        px, py = p.x / TILE, (p.y - FOOT) / TILE
+        tx, ty = p.tile
+        m = self.current_map
+        best, bd = None, 99.0
+        for npc in self.npcs.values():
+            if npc.map != self.map_name:
+                continue
+            rx, ry = npc.fx + 0.5 - px, npc.fy + 0.5 - py
+            along = rx * dx + ry * dy
+            lateral = abs(rx * dy - ry * dx)
+            if not (0.2 < along < reach and lateral < side):
+                continue
+            if along > 1.15:                  # nada de conversar através de parede
+                mx, my = tx + dx, ty + dy
+                o = m.object_at(mx, my)
+                if m.is_solid(mx, my) and not (o and (o.kind in COUNTERS or not o.solid)):
+                    continue
+            d = along + lateral
+            if d < bd:
+                best, bd = npc, d
+        return best
+
     def resolve_target(self):
         fx, fy = self.player.facing_tile()
         npc = self.npc_at(fx, fy)
@@ -776,6 +836,11 @@ class Game:
             return ("extra", ex)
         m = self.current_map
         obj = m.object_at(fx, fy)
+        # alcance maior para conversar: com um móvel bem na frente, só quem está bem perto
+        solid_obj = obj and OBJECT_DEFS.get(obj.kind, (1, 1, False, "obj"))[3] != "decal"
+        npc = self.npc_near(1.4, 0.6) if solid_obj and obj.kind not in COUNTERS else self.npc_near()
+        if npc:
+            return ("npc", npc)
         if obj and obj.kind in COUNTERS:
             dx, dy = DIRS[self.player.dir]
             npc = self.npc_at(fx + dx, fy + dy)
@@ -824,6 +889,8 @@ class Game:
             return "Sentar"
         lab = (festas.object_label(self, t) or jogos.object_label(self, t) or closet.object_label(self, t)
                or decor.object_label(self, t) or fundacao.object_label(self, t) or historia.object_label(self, t)
+               or pedidos.object_label(self, t) or degustacao.object_label(self, t)
+               or pediatria.object_label(self, t) or lugares.object_label(self, t)
                or activities.object_label(self, t) or hospital.object_label(self, t)
                or marina.target_label(self, t))
         if lab:
@@ -909,21 +976,10 @@ class Game:
     # --- Sentar -----------------------------------------------------------
     # altura do assento em pixels de arte (o corpo desce até ali) — as poses ficam em poses.py
     SEATS = poses.SEAT_LIFT
-    TABLE_WORDS = ("table", "desk", "dining", "island", "counter", "bar", "kitchen")
 
     def seat_dir(self, o, tx, ty):
-        """Para onde ela fica virada: para a mesa ao lado; bancos de parede, para o lado deles; senão, para baixo."""
-        if o.kind == "bench_l":
-            return "left"
-        if o.kind == "bench_r":
-            return "right"
-        m = self.current_map
-        if o.kind in ("chair", "chair_blue", "hchair", "stool"):
-            for d, (dx, dy) in (("up", (0, -1)), ("right", (1, 0)), ("left", (-1, 0)), ("down", (0, 1))):
-                n = m.object_at(tx + dx, ty + dy)
-                if n and n is not o and n.kind not in self.SEATS and any(w in n.kind for w in self.TABLE_WORDS):
-                    return d
-        return "down"
+        """Para onde ela fica virada: para onde o assento olha (mesa, TV, mesinha de centro...; assentos.py)."""
+        return assentos.face(self.current_map, o)
 
     def sit(self, o):
         fx, _ = self.player.facing_tile()
@@ -936,8 +992,8 @@ class Game:
         self.player.place_tile(tx, ty, self.seat_dir(o, tx, ty))
         self.player.moving = False
         # t/off: ela desliza de onde estava até o assento (entities.Player.draw)
-        self.player.seat = dict(lift=self.SEATS[o.kind], sort=o.base_y + 1, back=back, t=0.0,
-                                off=(back[0] - self.player.x, back[1] - self.player.y))
+        self.player.seat = dict(lift=self.SEATS[o.kind], sort=assentos.sitter_sort(o), back=back, t=0.0,
+                                off=(back[0] - self.player.x, back[1] - self.player.y), obj=o)
         self.player.swinging, self.player.swing_t = 0.0, random.uniform(4, 8)
 
     def stand_up(self):
@@ -952,7 +1008,9 @@ class Game:
     def use_object(self, o):
         k = o.kind
         if (festas.use_object(self, o) or jogos.use_object(self, o) or closet.use_object(self, o)
-                or decor.use_object(self, o) or fundacao.use_object(self, o) or historia.use_object(self, o)):
+                or decor.use_object(self, o) or fundacao.use_object(self, o) or historia.use_object(self, o)
+                or pedidos.use_object(self, o) or degustacao.use_object(self, o)
+                or pediatria.use_object(self, o) or lugares.use_object(self, o)):
             return
         if k in self.SEATS:                         # dá para sentar até na casa dos outros
             self.sit(o)
@@ -991,7 +1049,7 @@ class Game:
                 else:
                     self.say("Barraca fechada. 'Volto amanhã às 6h! — Joca'")
             else:
-                self.say("Banca de jornal. Manchete da CatCo: " + random.choice(NEWS))
+                noticias.kiosk(self)                    # manchete sobre o que a Letícia fez (ou uma qualquer)
         elif k == "signboard":
             self.say("Píer de National City. Pesca liberada! Lago do parque: peixes de água doce. "
                      "Mar: peixes maiores. A caixa de coleta vende tudo à noite.")
@@ -1009,7 +1067,9 @@ class Game:
         elif k in ("tv_wall",):
             self.say("Telas com as manchetes da CatCo.")
         else:
-            self.say(FLAVOR.get(k, "Nada de especial aqui."))
+            self.say(FLAVOR.get(k) or escritorio.FLAVOR.get(k) or pedidos.FLAVOR.get(k) or mural.FLAVOR.get(k)
+                     or lugares.FLAVOR.get(k) or pediatria.FLAVOR.get(k)
+                     or boutique.FLAVOR.get(k, "Nada de especial aqui."))
 
     def consume(self):
         item = self.selected_item()
@@ -1026,6 +1086,9 @@ class Game:
             self.toasts.push(f"Leu '{b['name']}': {b['effect']}", C_GOLD, item)
             self.start_eat_fx(item, "read")
             return
+        if it["kind"] == "acessorio":                     # acessório da La Boutique: veste na hora
+            closet.use_item(self, item)
+            return
         if it["kind"] not in ("food", "dish", "crop", "forage") or not it.get("energy"):
             self.toasts.push(f"{it['name']} não é comestível.", C_MUTED)
             return
@@ -1033,7 +1096,8 @@ class Game:
             self.toasts.push("Sua energia já está cheia.", C_MUTED)
             return
         self.remove_item(item)
-        gain = int(it["energy"] * (1.3 if "gastro" in self.buffs else 1) * eventos.food_mult(self, item))
+        gain = int(it["energy"] * (1.3 if "gastro" in self.buffs else 1) * eventos.food_mult(self, item)
+                   * habilidades.food_mult(self))
         self.energy = min(self.max_energy, self.energy + gain)
         self.toasts.push(f"{it['name']}: +{gain} de energia", C_GREEN, item)
         self.start_eat_fx(item, "drink" if it["icon"] in DRINK_ICONS else "eat")
@@ -1273,6 +1337,8 @@ class Game:
         if st["progress"] >= self.project_days(st["project"]):
             if self.add_item(st["project"]):
                 self.stats["launched"] += 1
+                noticias.event(self, "launch", item=st["project"])     # vira manchete amanhã
+                habilidades.gain(self, "ciencia", 25)
                 if st["project"] == "hecate":
                     self.stats["hecate"] += 1
                 self.toasts.push(f"Lançado: {ITEMS[st['project']]['name']}!", C_GREEN, st["project"])
@@ -1287,9 +1353,10 @@ class Game:
         if self.energy < WORK_ENERGY:
             self.toasts.push("Você está exausta demais. Coma algo ou vá dormir.", C_RED)
             return
-        cost = WORK_ENERGY
+        cost = habilidades.work_energy(self, WORK_ENERGY)
         self.energy -= cost // 2 if "neurologia" in self.buffs else cost
         st["worked"] = True
+        habilidades.gain(self, "ciencia", 15)
         left = self.project_days(st["project"]) - st["progress"] - 1
         msg = ("fica pronto amanhã!" if left == 0 else
                "falta 1 dia depois de hoje" if left == 1 else f"faltam {left} dias depois de hoje")
@@ -1336,6 +1403,8 @@ class Game:
             v = int(v * fundacao.fish_mult(self))
         if "endocrino" in self.buffs and ITEMS[item]["kind"] == "dish":
             v = int(v * 1.2)
+        v = int(v * habilidades.sell_mult(self, ITEMS[item]["kind"]))      # nível 5 das habilidades
+        v = int(v * lugares.sell_mult(self, item))                          # anúncio na CatCo
         return v
 
     # --- Pesca ---------------------------------------------------------
@@ -1371,6 +1440,7 @@ class Game:
             bar = 132 if rod == "vara_fibra" else 92
             if "book_fish" in self.flags:
                 bar = int(bar * 1.3)
+            bar = habilidades.fish_bar(self, bar)
             audio.sfx("splash")
             self.reel = dict(tile=f["tile"])           # a vara fica envergada e a carretilha gira no minigame
             self.push(Fishing(fish, bar, lambda res, fish=fish: self.fish_result(fish, res)))
@@ -1421,6 +1491,7 @@ class Game:
                 first = fish not in self.fish_caught
                 self.fish_caught.add(fish)
                 self.stats["fish"] += 1
+                habilidades.gain(self, "pesca", 8 + FISH[fish]["value"] // 20)
                 extra = " (nova espécie!)" if first else ""
                 self.toasts.push(f"Pescou: {ITEMS[fish]['name']}{extra}", C_GREEN, fish)
                 if first:
@@ -1447,23 +1518,38 @@ class Game:
             return
 
         def draw(surf, rect):
+            known = lambda k: k in self.aquarium or k in self.fish_caught
             ui.text(surf, f"Espécies no aquário: {len(self.aquarium)}/{len(FISH)}   ·   já pescadas: "
-                          f"{len(self.fish_caught)}/{len(FISH)}", (rect.x + 30, rect.y + 64), 18, C_MUTED)
-            for i, (k, f) in enumerate(FISH.items()):
-                col, row = i % 2, i // 2
-                x, y = rect.x + 30 + col * 340, rect.y + 100 + row * 50
-                have = k in self.aquarium
-                if have or k in self.fish_caught:
-                    surf.blit(art.item_icon(k, 2), (x, y))
-                else:
-                    pygame.draw.rect(surf, (40, 30, 56), (x, y, 32, 32), border_radius=6)
-                    ui.text(surf, "?", (x + 16, y + 4), 20, C_MUTED, center=True)
-                name = f["name"] if (have or k in self.fish_caught) else "???"
-                where = "mar" if f["where"] == "sea" else "lago"
-                ui.text(surf, name, (x + 42, y), 17, C_GREEN if have else C_TEXT, bold=have)
-                ui.text(surf, f"{where} · " + ("o ano todo" if len(f['quarters']) >= 4 else ', '.join(seasons.NAMES[seasons.of_quarter(q)] for q in f['quarters'])) + (" · chuva" if f.get("weather") else ""),
-                        (x + 42, y + 20), 13, C_MUTED)
-        self.push(ui.InfoPanel("Aquário", draw))
+                          f"{sum(1 for k in FISH if known(k))}/{len(FISH)}", (rect.x + 30, rect.y + 64), 18, C_MUTED)
+            y = rect.y + 96
+            # em grupos (mar, lago, alto-mar), duas colunas, com o horário em que cada um aparece
+            for where, title in (("sea", "Mar (píer e praia)"), ("pond", "Lago do Parque Central"),
+                                 ("deep", "Alto-mar (passeio de pesca da Marina)")):
+                group = [(k, f) for k, f in FISH.items() if f["where"] == where]
+                if not group:
+                    continue
+                ui.text(surf, title, (rect.x + 30, y), 17, C_LILAC, bold=True)
+                y += 28
+                for i, (k, f) in enumerate(group):
+                    x, yy = rect.x + 30 + (i % 2) * 340, y + (i // 2) * 52
+                    have = k in self.aquarium
+                    if known(k):
+                        surf.blit(art.item_icon(k, 2), (x, yy))
+                    else:
+                        ui.slot(surf, pygame.Rect(x, yy, 32, 32))
+                        ui.text(surf, "?", (x + 16, yy + 4), 20, C_MUTED, center=True)
+                    name = f["name"] if known(k) else "???"
+                    if f.get("legendary") and known(k):
+                        name += " (lendário)"
+                    ui.text(surf, name, (x + 42, yy - 2), 17, C_GREEN if have else C_TEXT, bold=have)
+                    when = "o ano todo" if len(f["quarters"]) >= 4 else ", ".join(
+                        seasons.NAMES[seasons.of_quarter(q)] for q in f["quarters"])
+                    a, b = f["hours"]
+                    hrs = "" if (a, b) == (360, 1560) else f" · {a // 60}h-{(b // 60) % 24}h"
+                    ui.text(surf, when + hrs + (" · chuva" if f.get("weather") else ""), (x + 42, yy + 19), 13, C_MUTED)
+                y += ((len(group) + 1) // 2) * 52 + 10
+            return y
+        self.push(ui.InfoPanel("Aquário", draw, scroll=True))
 
     def can_cook(self, rid):
         for ing, n in RECIPES[rid]["needs"].items():
@@ -1483,6 +1569,7 @@ class Game:
         if not self.add_item(rid):
             return False, "Mochila cheia!"
         self.cooked.add(rid)
+        habilidades.gain(self, "culinaria", 20)
         return True, f"Você cozinhou {RECIPES[rid]['name']}!"
 
     def play_arcade(self):
@@ -1528,6 +1615,9 @@ class Game:
         return buy
 
     def open_shop(self, shop_id):
+        if shop_id == "boutique":
+            boutique.open_shop(self)
+            return
         shop = SHOPS[shop_id]
         disc = 0.8 if shop.get("discount_flag") in self.flags else 1.0
         disc *= fundacao.shop_mult(self, shop_id) * eventos.shop_mult(self, shop_id)   # Biblioteca, Bea, Marco
@@ -1677,7 +1767,9 @@ class Game:
         return self.friendship[key] // HEART_POINTS
 
     def heart_cap(self, key):
-        if key in ROMANCES and key != self.dating:
+        if key not in ROMANCES:
+            return FRIEND_CAP_HEARTS                  # amizade vai até 8 corações
+        if key not in (self.dating, self.partner):
             return ROMANCE_CAP_HEARTS
         return MAX_HEARTS
 
@@ -1728,6 +1820,8 @@ class Game:
             self.push(ui.Dialog(npc.name, [f"Ainda preciso de {req['qty']}x {ITEMS[req['item']]['name']}. "
                                            f"Você tem {have}. {self.item_hint(req['item'])}"],
                                 self.portrait_for(npc), subtitle="pedido"))
+            return
+        if pedidos.talk(self, npc):                 # pedido do quadro do Grão Nobre
             return
         if casal.talk(self, npc):                   # pedido do dia a dia (morando junto)
             return
@@ -1963,10 +2057,11 @@ class Game:
     def chat(self, npc):
         key = npc.key
         self.talk_log.add(f"{key}|{self.period}")
-        mult = (1.5 if "psiquiatria" in self.buffs else 1) * fundacao.talk_mult(self)
+        mult = (1.5 if "psiquiatria" in self.buffs else 1) * fundacao.talk_mult(self) * habilidades.talk_mult(self)
         if key not in self.talked:
             self.talked.add(key)
             self.add_friendship(key, int(TALK_POINTS * mult))
+            habilidades.gain(self, "carisma", 6)
         else:
             self.add_friendship(key, int(8 * mult))
         if casal.jealous_chat(self, npc):           # ciúmes leves (só comentários, nunca castigo)
@@ -2019,6 +2114,7 @@ class Game:
                 self.remove_item(item)
                 self.dating = key
                 self.gifted.add(key)
+                self.stats["gifts"] = self.stats.get("gifts", 0) + 1     # conquistas
                 self.talked.add(key)
                 self.add_friendship(key, 200)
                 self.toasts.push(f"Você e {d['short']} estão namorando!", C_PINK)
@@ -2041,6 +2137,7 @@ class Game:
             self.partner = key
             casamento.moved_in(self)
             self.gifted.add(key)
+            self.stats["gifts"] = self.stats.get("gifts", 0) + 1     # conquistas
             self.talked.add(key)
             self.toasts.push(f"{d['short']} vai morar com você na cobertura!", C_PINK)
             self.play_scene(f"mudanca_{key}", move_in_scene(key), on_end=lambda: self.plan_npcs(snap=False))
@@ -2052,12 +2149,16 @@ class Game:
                 taste = t
         self.remove_item(item)
         self.gifted.add(key)
+        self.stats["gifts"] = self.stats.get("gifts", 0) + 1     # conquistas
         self.talked.add(key)
         self.gift_known[key][item] = taste
         pts = GIFT_POINTS[taste] * (2 if key in (self.dating, self.partner) and taste != "dislike" else 1)
         if "ginecologia" in self.buffs and taste != "dislike":
             pts = int(pts * 1.25)
         pts = int(pts * eventos.gift_mult(self, taste))          # embrulho da Addison
+        if taste != "dislike":
+            pts = int(pts * habilidades.gift_mult(self))         # carisma nível 5
+            habilidades.gain(self, "carisma", 12 if taste == "love" else 8)
         mult, bonus_line, bonus_toast = festas.gift_bonus(self, key, item, taste)
         if mult == 1:
             mult, bonus_line, bonus_toast = casal.gift_bonus(self, key, taste)
@@ -2275,11 +2376,11 @@ class Game:
         self.push(ui.Dialog("Jornal de National City", [
             f"Previsão para amanhã: {prev}.",
             f"Mercado: a ação LCORP está cotada a $ {self.stock:.2f}.".replace(".", ",", 1),
-            random.choice(NEWS)]))
+            noticias.tv_line(self)]))
 
     def open_emails(self):
         tip = random.choice(TIPS)
-        news = random.choice(NEWS)
+        news = noticias.email_line(self)
 
         def draw(surf, rect):
             y = rect.y + 70
@@ -2314,7 +2415,7 @@ class Game:
     def open_pause(self, sel=0):
         fs = "Sim" if self.settings.get("fullscreen") else "Não"
         sv = int(round(self.settings.get("sfx", 0.7) * 100))
-        opts = ["Continuar", "Mochila", "Objetivos", "Relacionamentos", "Coleções", "Rever cenas"]
+        opts = ["Continuar", "Mochila", "Objetivos", "Relacionamentos", "Conquistas", "Coleções", "Rever cenas"]
         if self.album["given"]:
             opts.append("Álbum de fotos")
         opts += [f"Tela cheia: {fs}", f"Efeitos sonoros: {sv}%", "Controles", "Salvar e voltar ao título"]
@@ -2337,6 +2438,8 @@ class Game:
                 self.open_goals()
             elif o == "Relacionamentos":
                 self.open_relationships()
+            elif o == "Conquistas":
+                conquistas.open_panel(self)
             elif o == "Coleções":
                 self.push(ui.InfoPanel("Coleções", self.draw_collections))
             elif o == "Rever cenas":
@@ -2463,10 +2566,11 @@ class Game:
                 role += "  ·  romance"
             ui.text(surf, role, (r.x + 96 + ui.font(19, True).size(npc.name)[0] + 10, r.y + 11), 14,
                     C_PINK if key in ROMANCES else C_MUTED)
-            ui.hearts_row(surf, r.x + 96, r.y + 36, self.friendship[key], 2)
             cap = self.heart_cap(key)
-            if cap < MAX_HEARTS:
-                ui.text(surf, f"(máx. {cap} até namorar)", (r.x + 96 + 10 * 24, r.y + 36), 13, C_MUTED)
+            ui.hearts_row(surf, r.x + 96, r.y + 36, self.friendship[key], 2,
+                          MAX_HEARTS if key in ROMANCES else FRIEND_CAP_HEARTS, locked_from=cap)
+            if key in ROMANCES and cap < MAX_HEARTS:
+                ui.text(surf, "9 e 10: só namorando", (r.x + 96 + 10 * 24, r.y + 36), 13, C_MUTED)
             known = self.gift_known[key]
             names = {"love": "ama", "like": "gosta", "neutral": "ok", "dislike": "não gosta"}
             txt = ", ".join(f"{ITEMS[i]['name']} ({names[t]})" for i, t in known.items()) or "nenhum presente ainda"
@@ -2477,7 +2581,7 @@ class Game:
             ui.text(surf, ("Aniversário HOJE!" if bday else f"Aniversário: {festas.birthday_label(key)}"),
                     (r.right - 14, r.y + 36), 13, C_PINK if bday else C_MUTED, right=True)
         self.push(ui.ScrollPanel("Relacionamentos", rows, draw_row, 96,
-                                 "Converse todo dia e dê presentes. Romances: rosas aos 8 corações, pingente aos 10.",
+                                 "Amizades vão até 8 corações. Romances: rosas aos 8 corações; o 9 e o 10 só namorando.",
                                  close_keys=(pygame.K_r,)))
 
     # ------------------------------------------------------------------
@@ -2577,6 +2681,10 @@ class Game:
         album.night(self, notes)                    # o Barry entrega o álbum de fotos
         fundacao.night(self, notes)                 # obras da Fundação ficam prontas
         casamento.night(self, notes)                # aviso na véspera do casamento
+        boutique.night(self, notes)                 # vestido do desfile da Celeste
+        pedidos.night(self, notes)                  # bilhetes novos no quadro do Grão Nobre
+        lugares.night(self, notes)                  # entrevista e anúncio na CatCo
+        celular.night(self, notes)                  # fechamento da LCORP no app Bolsa
         if "drone" in self.flags:
             n = 0
             for st in self.stations:
@@ -2597,6 +2705,7 @@ class Game:
             self.flags.discard("cmh_donation_pending")
             self.stock = round(self.stock + 2.5, 2)
             notes.append(("A doação ao Conti Moretti saiu na CatCo. LCORP +2,50!", C_GOLD))
+        noticias.night(self, notes)                 # manchetes de amanhã (depois de tudo o que mudou na noite)
         self.crowd.reset_day()
         self.plan_npcs()
         self.map_name = "home"
@@ -2606,6 +2715,7 @@ class Game:
             self.player.place_tile(*HOSPITAL_BED, "down")
         self._act_last_map = self.map_name
         self.cars = []
+        conquistas.check(self)                      # vendas da noite, dia novo... (o aviso aparece de manhã)
         self.save()
         return dict(date=ended, table=table, earnings=earnings, notes=notes, stock=(self.stock_prev, self.stock))
 
@@ -2651,6 +2761,7 @@ class Game:
         eventos.morning(self)                       # livro do Theo (sábado) e marmita da Dona Graça (sexta)
         casamento.morning(self)                     # dia do casamento / anel no bolso
         casal.morning(self)                         # café da manhã juntas e o pedido do dia
+        celular.morning(self)                       # mensagens da manhã
 
     # ------------------------------------------------------------------
     # Salvar / carregar
@@ -2669,7 +2780,7 @@ class Game:
                     [self.player.x, self.player.y, self.player.dir]), coffee_today=self.coffee_today,
             fish_caught=list(self.fish_caught), aquarium=list(self.aquarium), cooked=list(self.cooked),
             dating=self.dating, partner=self.partner, proposal=self.proposal, ricci_coffee=self.ricci_coffee, milany_visit=self.milany_visit, date=self.date, scenes_seen=self.scenes_seen,
-            talk_log=list(self.talk_log), lines_seen=self.lines_seen,
+            talk_log=list(self.talk_log), lines_seen=self.lines_seen, saved_at=int(time.time()),
         )
         data.update(activities.save_state(self))
         data.update(marina.save_state(self))
@@ -2685,17 +2796,27 @@ class Game:
         data.update(momentos.save_state(self))
         data.update(casamento.save_state(self))
         data.update(historia.save_state(self))
+        data.update(conquistas.save_state(self))
+        data.update(habilidades.save_state(self))
+        data.update(pedidos.save_state(self))
+        data.update(lugares.save_state(self))
+        data.update(noticias.save_state(self))
+        data.update(degustacao.save_state(self))
+        data.update(pediatria.save_state(self))
+        data.update(mural.save_state(self))
+        data.update(celular.save_state(self))
         data["crowd"] = self.crowd.to_save()
-        tmp = SAVE_PATH + ".tmp"
+        path = jogos_salvos.path(self.slot)
+        tmp = path + ".tmp"
         with open(tmp, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=1)
-        os.replace(tmp, SAVE_PATH)
+        os.replace(tmp, path)
 
     def has_save(self):
-        return os.path.exists(SAVE_PATH)
+        return jogos_salvos.exists(self.slot)
 
     def load(self):
-        with open(SAVE_PATH, encoding="utf-8") as f:
+        with open(jogos_salvos.path(self.slot), encoding="utf-8") as f:
             d = json.load(f)
         self.reset_state()
         for k in ("day", "quarter", "year", "minutes", "money", "energy", "selected", "stock", "stock_prev",
@@ -2708,7 +2829,8 @@ class Game:
             self.stations[i].update(s)
         for k, v in d.get("friendship", {}).items():
             if k in self.friendship:
-                self.friendship[k] = v
+                # amizades acima do limite voltam para ele (8; romance só passa de 8 namorando)
+                self.friendship[k] = min(v, self.heart_cap(k) * HEART_POINTS)
         self.talked, self.gifted = set(d.get("talked", [])), set(d.get("gifted", []))
         for k, v in d.get("gift_known", {}).items():
             if k in self.gift_known:
@@ -2740,6 +2862,15 @@ class Game:
         momentos.load_state(self, d)
         casamento.load_state(self, d)
         historia.load_state(self, d)
+        conquistas.load_state(self, d)
+        habilidades.load_state(self, d)
+        pedidos.load_state(self, d)
+        lugares.load_state(self, d)
+        noticias.load_state(self, d)
+        degustacao.load_state(self, d)
+        pediatria.load_state(self, d)
+        mural.load_state(self, d)
+        celular.load_state(self, d)
         self.fix_quarter_len(d.get("quarter_days", 28))
         self.crowd.reset_day()
         self.crowd.load(d.get("crowd", {}))
@@ -2760,6 +2891,7 @@ class Game:
         self.modals = []
         self.cars = []
         self.toasts.push(f"Bem-vinda de volta! {self.date_label()}", C_LILAC)
+        conquistas.sync(self)                       # save antigo: as conquistas já cumpridas entram sem aviso
         if d.get("version", 1) < SAVE_VERSION:
             self.toasts.push("National City cresceu! Novos lugares e pessoas para conhecer.", C_GOLD)
 
@@ -2807,8 +2939,8 @@ class Game:
     # ------------------------------------------------------------------
     def title_options(self):
         opts = ["Novo jogo"]
-        if self.has_save():
-            opts.insert(0, "Continuar")
+        if jogos_salvos.any_save():
+            opts = ["Continuar", "Carregar jogo", "Novo jogo"]
         fs = "Sim" if self.settings.get("fullscreen") else "Não"
         return opts + [f"Tela cheia: {fs}", "Controles", "Sair"]
 
@@ -2823,19 +2955,23 @@ class Game:
         elif ev.key in ui.CONFIRM:
             choice = opts[self.title_sel % len(opts)]
             if choice == "Continuar":
+                slot = jogos_salvos.continue_slot(self)
+
                 def go():
+                    jogos_salvos.use_slot(self, slot)
                     try:
                         self.load()
                     except Exception as e:
                         self.scene = "title"
                         self.toasts.push(f"Não foi possível carregar o jogo salvo ({e}).", C_RED)
                 self.start_fade(go)
+            elif choice == "Carregar jogo":
+                self.push(jogos_salvos.SlotMenu(self, "load"))
             elif choice == "Novo jogo":
-                if self.has_save():
-                    self.push(ui.Choice("Começar um novo jogo? O jogo salvo atual será substituído na próxima noite.",
-                                        ["Sim, novo jogo", "Cancelar"],
-                                        lambda i: self.start_fade(self.new_game) if i == 0 else None))
+                if jogos_salvos.any_save():
+                    self.push(jogos_salvos.SlotMenu(self, "new"))
                 else:
+                    jogos_salvos.use_slot(self, 1)
                     self.start_fade(self.new_game)
             elif choice.startswith("Tela cheia"):
                 self.toggle_fullscreen()
@@ -2865,11 +3001,21 @@ class Game:
         for i, o in enumerate(opts):
             r = pygame.Rect(SCREEN_W // 2 - 160, y, 320, 44)
             if i == self.title_sel:
-                pygame.draw.rect(surf, C_ACCENT, r, border_radius=22)
-                pygame.draw.rect(surf, C_ACCENT_2, r, 2, border_radius=22)
+                ui.box(surf, r, C_ACCENT, border=C_ACCENT_2, cut=2)
+                bob = int(math.sin(self.t * 7) * 3)
+                ax, ay = r.x - 26 + bob, r.centery
+                pygame.draw.polygon(surf, ui.GEM, [(ax, ay - 9), (ax + 13, ay), (ax, ay + 9)])
+                pygame.draw.polygon(surf, ui.GEM_LINE, [(ax, ay - 9), (ax + 13, ay), (ax, ay + 9)], 2)
             ui.text(surf, o, (r.centerx, r.y + 9), 22, C_TEXT if i == self.title_sel else C_MUTED, bold=True,
                     center=True)
             y += 52
+        if opts[self.title_sel] == "Continuar":           # qual jogo o "Continuar" abre
+            slot = jogos_salvos.continue_slot(self)
+            d = jogos_salvos.info(slot) if slot else None
+            if d and not d.get("broken"):
+                money = f"$ {d['money']:,}".replace(",", ".")
+                ui.text(surf, f"Espaço {slot}  ·  {jogos_salvos.date_text(d)}  ·  {money}",
+                        (SCREEN_W // 2, SCREEN_H - 66), 17, C_LILAC, center=True)
         ui.text(surf, "Setas: escolher   Enter: confirmar   F11: tela cheia", (SCREEN_W // 2, SCREEN_H - 36), 16,
                 C_MUTED, center=True)
 
@@ -2952,7 +3098,11 @@ class Game:
         wf = int(self.t * 3) % 3
         x0, y0 = cam[0] // TILE - 1, cam[1] // TILE - 1
         x1, y1 = x0 + SW // TILE + 3, y0 + SH // TILE + 3
+        has_sea = open_air and natureza.draw_sea(self, surf, m, cam, x0, y0, x1, y1,
+                                                 self.sunset(minutes) if m.outdoor else 0)
         for (x, y, t) in m.anim_tiles:
+            if has_sea and t in natureza.SEA:
+                continue
             if x0 <= x <= x1 and y0 <= y <= y1:
                 name = "water" if t == "fountain" else t
                 surf.blit(art.tile(name, (wf + x + y) % 3), (x * TILE - cam[0], y * TILE - cam[1]))
@@ -2960,18 +3110,23 @@ class Game:
         for (x, y, side) in m.water_edges:
             if x0 <= x <= x1 and y0 <= y <= y1:
                 surf.blit(art.water_edge(side, wf2), (x * TILE - cam[0], y * TILE - cam[1]))
+        if has_sea:
+            natureza.draw_shore(self, surf, m, cam)          # ondas subindo e voltando pela areia
         dark = self.darkness(minutes)
         night = dark > 0.3
         for o in m.wall_decor:
             spr = (hospital.sign_sprite(o.data) if o.kind == "hsign"
                    else album.wall_image(self, o) or art.object_sprite(o.kind, night))
-            surf.blit(spr, (o.x * TILE - cam[0], (o.y + o.h) * TILE - spr.get_height() - cam[1]))
+            surf.blit(spr, (o.x * TILE - cam[0], (o.y + o.h) * TILE - spr.get_height()
+                            - interiores.lift(m, o, spr.get_height()) - cam[1]))
         self.ambient.draw_window_light(surf, m, cam, minutes)
         activities.draw_ground(self, surf, m, cam)
         if m.name == "city":
             self.pigeons.draw(surf, cam, False)
         animacoes.draw_ground(self, surf, m, cam)
-        items = []
+        natureza.draw_ground(self, surf, m, cam)              # tufinhos de grama ao vento
+        interiores.draw_shadows(surf, m, cam, SHADOW_KINDS)     # sombra no pé dos móveis (interiores)
+        items = assentos.world_items(self, m)                     # encosto/braço na frente de quem senta
         for o in m.objects:
             if o.layer == "obj":
                 items.append((o.base_y - (14 if not o.solid else 0), 0, "obj", o))
@@ -2979,16 +3134,16 @@ class Game:
             items.append((b.base_y, 0, "bld", b))
         if actors is not None:
             for a in actors:
-                items.append((a.base_y + getattr(a, "zbias", 0), 1, "actor", a))
+                items.append((getattr(a, "sort_y", a.base_y + getattr(a, "zbias", 0)), 1, "actor", a))
         elif with_player:
             for npc in self.npcs.values():
                 if npc.map == m.name:
-                    items.append((npc.base_y, 1, "npc", npc))
+                    items.append((npc.sort_y, 1, "npc", npc))
             items.append((self.player.seat["sort"] if self.player.seat else self.player.y, 1, "player", self.player))
             items.extend(activities.world_items(self, m))
             items.extend(animacoes.world_items(self, m))
             for e in self.crowd.on_map(m.name):
-                items.append((e.base_y, 1, "extra", e))
+                items.append((e.sort_y, 1, "extra", e))
         if m.name == "city":
             for c in self.cars:
                 items.append((c.base_y, 1, "car", c))
@@ -3017,7 +3172,7 @@ class Game:
                     draw_shadow(surf, x + spr.get_width() // 2, e.base_y - cam[1] - 2, SHADOW_KINDS[e.kind] * SCALE // 3)
                 if e.kind in scenery.TREE_KINDS and behind is not None and self.player.y < e.base_y and behind.colliderect(
                         (x + 4 * SCALE, y, spr.get_width() - 8 * SCALE, spr.get_height() - 14 * SCALE)):
-                    spr = scenery.faded(e.kind)
+                    spr = natureza.faded(self, e)
                 surf.blit(spr, (x, y))
                 if e.kind == "lamp":
                     lamps.append((x + spr.get_width() // 2, y + 7 * SCALE))
@@ -3034,6 +3189,10 @@ class Game:
                         pygame.draw.circle(surf, (255, 255, 255), (bx, by), 20)
                         pygame.draw.circle(surf, C_ACCENT_2, (bx, by), 20, 2)
                         surf.blit(ic, (bx - 16, by - 16))
+            elif kind == "seatfront":
+                spr = assentos.front_image(e)
+                surf.blit(spr, (e.x * TILE + (e.w * TILE - spr.get_width()) // 2 - cam[0],
+                                e.base_y - spr.get_height() - cam[1]))
             elif kind == "bld":
                 drawn = self.draw_building(surf, e, cam, night)
                 if drawn and night:
@@ -3087,6 +3246,8 @@ class Game:
         lighting.apply(self, surf, m, cam, dark, sun, rain, open_air, lamps, windows,
                        self.player if with_player and actors is None else None,
                        self.cars if m.name == "city" else [])
+        if open_air:
+            natureza.draw_glints(self, surf, m, cam, minutes, sun, dark, weather)   # pôr do sol e luar no mar
         for b in neon:
             self.draw_building(surf, b, cam, True, signs_only=True)
         self.ambient.draw_glow(surf, cam)
@@ -3118,7 +3279,8 @@ class Game:
             ui.text(surf, "!", (r.centerx, r.y + 2), 28, C_RED, bold=True, center=True, shadow=False)
 
     def object_image(self, o):
-        img = album.object_image(self, o) or festas.object_image(self, o) or scenery.object_image(self, o)
+        img = (assentos.object_image(self, o) or lugares.object_image(self, o) or album.object_image(self, o) or festas.object_image(self, o)
+               or natureza.object_image(self, o) or scenery.object_image(self, o))
         if img is not None:
             return img
         if o.kind == "plot":
@@ -3235,6 +3397,7 @@ class Game:
                         (SCREEN_W - 24, hy), 15, C_PINK, bold=True, right=True)
                 hy += 20
             for txt, col in (festas.hud_lines(self) + casamento.hud_lines(self) + casal.hud_lines(self)
+                             + pedidos.hud_lines(self) + lugares.hud_lines(self)
                              + fundacao.hud_lines(self) + historia.hud_lines(self)):
                 ui.text(surf, txt, (SCREEN_W - 24, hy), 15, col, bold=True, right=True)
                 hy += 20
@@ -3267,6 +3430,8 @@ class Game:
         self.toasts.draw(surf)
         for mo in self.modals:
             mo.draw(surf)
+        if self.scene == "play" and not self.modals:
+            conquistas.draw_banner(self, surf)
         if self.fade > 0:
             veil = pygame.Surface((SCREEN_W, SCREEN_H))
             veil.fill((0, 0, 0))
@@ -3346,8 +3511,8 @@ def draw_controls(surf, rect):
         ("1-9, 0, -, =", "Escolher item da barra"),
         ("Roda do mouse", "Trocar item da barra"),
         ("I / Tab", "Abrir a mochila (24 espaços)"),
-        ("O / R", "Objetivos / relacionamentos"),
-        ("M / C", "Mapa da cidade / calendário (festas e aniversários)"),
+        ("O / R / K", "Objetivos / relacionamentos / conquistas"),
+        ("M / C / T", "Mapa da cidade / calendário / celular"),
         ("F / botão direito", "Comer, beber ou ler o item escolhido"),
         ("P", "Modo foto (sem interface; Enter tira a foto)"),
         ("Esc", "Menu: objetivos, relacionamentos, coleções, opções"),

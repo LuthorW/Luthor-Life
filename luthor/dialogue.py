@@ -119,7 +119,7 @@ LINES = {
                   "Hoje é dia de matéria longa. Chuva, café e silêncio."],
         "fds": ["Folga! Vou ler no parque, perto do lago. Se você aparecer, finjo que foi coincidência.",
                 "Fim de semana eu vou à praia no fim da tarde. É o único lugar onde meu celular não pega direito."],
-        "t0": ["Você ainda não respondeu minhas perguntas sobre o apagão. Eu sou paciente. Mentira, não sou.",
+        "t0": ["Você ainda não respondeu minhas perguntas sobre a Luthor Corp. Eu sou paciente. Mentira, não sou.",
                "Não confunda simpatia com trégua, Luthor. Eu continuo de olho.",
                "A Nia diz que eu sou dura demais com você. A Nia é gentil demais com todo mundo.",
                "Sabe qual é a pior parte de voltar pra National City? Todo mundo lembra de quem você era."],
@@ -520,3 +520,12 @@ _MORE_NIGHT = {
 }
 for _k, _l in _MORE_NIGHT.items():
     LINES[_k]["noite"].extend(_l)
+
+
+# Mais falas (falas.py): somadas às de cima, sem repetir
+from .falas import MAIS as _MAIS
+for _k, _cats in _MAIS.items():
+    _d = LINES.setdefault(_k, {})
+    for _cat, _lst in _cats.items():
+        _pool = _d.setdefault(_cat, [])
+        _pool.extend(ln for ln in _lst if ln not in _pool)

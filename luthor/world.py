@@ -4,7 +4,7 @@ import random
 
 import pygame
 
-from . import art, scenery, nautical, caprichado
+from . import art, scenery, nautical, caprichado, interiores
 from .config import TILE, SCALE
 
 SOLID_TILES = {"wall", "wall_top", "glass", "water", "sea", "sea_foam", "fountain", "void", "deep"}
@@ -69,6 +69,7 @@ OBJECT_DEFS = {
 }
 OBJECT_DEFS.update(nautical.OBJECT_DEFS)
 OBJECT_DEFS.update(caprichado.OBJECT_DEFS)
+OBJECT_DEFS.update(interiores.OBJECT_DEFS)
 
 # Área que realmente bloqueia a jogadora (x, y, largura, altura em pixels de arte, a partir do canto
 # do objeto). Postes, bancos, árvores e arbustos ocupam só a base: dá para contornar sem enroscar.
@@ -203,6 +204,7 @@ class GameMap:
                     continue
                 v = r.randrange(4) if t in variants else 0
                 surf.blit(art.tile(t, v), (x * TILE, y * TILE))
+        interiores.paint(self, surf)                # interiores: chão com textura e paredes no estilo do lugar
         # bordas suaves: grama avançando sobre caminhos, areia e calçadas
         grassy = ("grass", "flowers")
         skip = grassy + ("wall", "wall_top", "glass", "void", "door") + tuple(ANIMATED)
@@ -229,7 +231,8 @@ class GameMap:
         for o in self.objects:
             if o.layer == "decal":
                 spr = art.object_sprite(o.kind)
-                surf.blit(spr, (o.x * TILE, (o.y + o.h) * TILE - spr.get_height()))
+                surf.blit(spr, (o.x * TILE, (o.y + o.h) * TILE - spr.get_height()
+                                - interiores.lift(self, o, spr.get_height())))
         scenery.decorate_floor(self, surf)
         nautical.decorate_floor(self, surf)
         caprichado.decorate_floor(self, surf)       # meio-fio
@@ -305,11 +308,12 @@ class GameMap:
 # ---------------------------------------------------------------------------
 CITY_DOORS = {"residencial": (6, 15), "hq": (21, 15), "cafe": (35, 15), "catco": (48, 15),
               "books": (55, 31), "market": (64, 31), "trattoria": (81, 31), "bar": (55, 45), "cinema": (65, 45),
-              "hospital": (78, 15), "ricci": (64, 15), "marina": (90, 58), "bayside": (79, 45)}
+              "hospital": (78, 15), "ricci": (64, 15), "marina": (90, 58), "bayside": (78, 45),
+              "boutique": (42, 15)}
 INTERIOR_DOORS = {"home": (16, 15), "hq": (12, 17), "cafe": (7, 10), "catco": (11, 14),
                   "books": (8, 11), "market": (8, 11), "trattoria": (10, 12), "bar": (8, 11), "cinema": (10, 13),
                   "hospital": (13, 16), "ricci": (10, 13), "marina": (11, 11), "bayside": (13, 10),
-                  "residencial": (8, 8)}
+                  "residencial": (8, 8), "boutique": (8, 11)}
 TERRACE_DOOR = (15, 1)      # porta da sala para o terraço (na cobertura)
 STATION_SLOTS = [(x, y) for y in (4, 7) for x in (12, 14, 16, 18, 20, 22)]
 HOME_BED = (3, 4)          # onde a jogadora acorda
@@ -450,7 +454,8 @@ def build_city():
         Building("Residencial Luthor", "home", 2, 8, 9, 8, 2, 6, "residencial"),
         Building("LUTHOR CORP", "tower", 16, 6, 11, 10, 6, 21, "hq"),
         Building("Grão Nobre", "cafe", 31, 10, 7, 6, 1, 35, "cafe"),
-        Building("CatCo Worldwide Media", "catco", 44, 7, 10, 9, 5, 48, "catco"),
+        Building("La Boutique", "boutique", 38, 10, 6, 6, 1, 42, "boutique"),
+        Building("CatCo Worldwide Media", "catco", 44, 7, 9, 9, 5, 48, "catco"),
         Building("Gruppo Ricci", "ricci", 60, 8, 9, 8, 2, 64, "ricci"),
         Building("Conti Moretti Hospitais", "hospital", 74, 7, 9, 9, 3, 78, "hospital"),
         Building("Bayside Books", "books", 48, 25, 8, 7, 1, 55, "books"),
@@ -458,10 +463,9 @@ def build_city():
         Building("Ricci Trattoria", "trattoria", 74, 25, 9, 7, 1, 81, "trattoria"),
         Building("Noonan's", "bar", 48, 39, 8, 7, 1, 55, "bar"),
         Building("Cine National", "cinema", 61, 39, 9, 7, 2, 65, "cinema"),
-        Building("Apartamentos Bayside", "apartments", 75, 39, 8, 7, 2, 79, "bayside"),
+        Building("Apartamentos Bayside", "apartments", 75, 39, 7, 7, 2, 78, "bayside"),
     ]
-    m.fill(39, 11, 41, 13, "flowers")
-    for (tx, ty, k) in [(13, 9, "tree"), (13, 13, "tree2"), (29, 8, "tree3"), (40, 8, "tree"), (42, 13, "tree2"),
+    for (tx, ty, k) in [(13, 9, "tree"), (13, 13, "tree2"), (29, 8, "tree3"), (40, 7, "tree"),
                         (56, 9, "tree"), (56, 13, "tree3"), (71, 9, "tree2"), (71, 13, "tree"), (58, 6, "pine")]:
         m.add(k, tx, ty)
     for (bx, by) in [(28, 14), (57, 15)]:
@@ -470,6 +474,7 @@ def build_city():
         m.add("lamp", x, 16)
     for x in (8, 34, 51, 77, 90, 106):
         m.add("lamp", x, 21)
+    m.add("kiosk", 70, 15, data="news")      # banca de jornais no vão entre o Gruppo Ricci e o hospital
     m.add("busstop", 10, 16)
     m.add("busstop", 68, 20)
     m.add("hydrant", 30, 20)
@@ -485,7 +490,7 @@ def build_city():
     # becos de cima (entre as lojas): banca encostada numa parede, banco e poste na outra
     m.add("petstand", 56, 27)
     m.add("lamp", 60, 27); m.add("bench_l", 60, 29)
-    m.add("kiosk", 69, 27, data="news")
+    m.add("floreira", 69, 27); m.add("bench_r", 69, 29)
     m.add("lamp", 73, 27); m.add("bench_l", 73, 29)
     # becos de baixo: bancos frente a frente, um poste em cada parede
     for (left, right) in ((56, 60), (70, 74)):
@@ -679,7 +684,7 @@ def build_home():
     m.add("bookshelf3", 13, 2)
     m.add("chair_blue", 10, 3)
     # sala
-    m.add("window_big", 10, 1); m.add("window_big", 13, 1); m.add("window_big", 16, 1)
+    m.add("mural_fotos", 9, 1); m.add("window_big", 13, 1); m.add("window_big", 16, 1)   # mural.py
     m.add("rug_big", 10, 8)
     m.add("tv_big", 11, 7)
     m.add("coffee_table", 12, 9)
@@ -708,46 +713,51 @@ def build_home():
 
 
 def build_hq():
+    # escritório da Letícia (x 1..8), laboratório (x 10..24) e sala de reuniões (x 26..32) em cima; saguão embaixo,
+    # com a área de espera (madeira) e a salinha da Sam (x 26..32, y 12..16) atrás do vidro
     rows = [
-        "WWWWWWWWWWWWWWWWWWWWWWWWWW",
-        "WWWWWWWWWWWWWWWWWWWWWWWWWW",
-        "WccccccccWlllllllllllllllW",
-        "WccccccccWlllllllllllllllW",
-        "WccccccccWlllllllllllllllW",
-        "WccccccccWlllllllllllllllW",
-        "WccccccccWlllllllllllllllW",
-        "WccccccccWlllllllllllllllW",
-        "WccccccccWlllllllllllllllW",
-        "WGGGmmGGGWGGGGGGmmmGGGGGGW",
-        "WmmmmmmmmmmmmmmmmmmmmmmmmW",
-        "WmmmmmmmmmmmmmmmmooooooooW",
-        "WmmmmmmmmmmmmmmmmooooooooW",
-        "WmmmmmmmmmmmmmmmmooooooooW",
-        "WmmmmmmmmmmmmmmmmooooooooW",
-        "WmmmmmmmmmmmmmmmmooooooooW",
-        "WmmmmmmmmmmmmmmmmooooooooW",
-        "WWWWWWWWWWWWDWWWWWWWWWWWWW",
+        "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+        "WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW",
+        "WccccccccWlllllllllllllllWOOOOOOOW",
+        "WccccccccWlllllllllllllllWOOOOOOOW",
+        "WccccccccWlllllllllllllllWOOOOOOOW",
+        "WccccccccWlllllllllllllllWOOOOOOOW",
+        "WccccccccWlllllllllllllllWOOOOOOOW",
+        "WccccccccWlllllllllllllllWOOOOOOOW",
+        "WccccccccWlllllllllllllllWOOOOOOOW",
+        "WGGGmmGGGWGGGGGGmmmGGGGGGWGGGmmGGW",
+        "WmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmmW",
+        "WmmmmmmmmmmmmmmmmmmmmmmmmGGGGGGGGW",
+        "WmmmmmmmmmmmmmmmmmmmmmmmmGbbbbbbbW",
+        "WmmmmmmmmmmmmmmmmmmmmmmmmGbbbbbbbW",
+        "WmmmmmmmmmmmmmmmmmmmmmmmmbbbbbbbbW",
+        "WmmmmmmmmmmmmmmmmmmmmmmmmGbbbbbbbW",
+        "WmmmmmmmmmmmmmmmmmmmmmmmmGbbbbbbbW",
+        "WWWWWWWWWWWWDWWWWWWWWWWWWWWWWWWWWW",
     ]
     m = _interior("hq", rows, "Sede da Luthor Corp")
-    m.add("logo_rug", 9, 13)
-    m.add("painting", 4, 1); m.add("window", 2, 1); m.add("window", 7, 1)
+    from . import escritorio                  # escritório da Letícia (mesa de CEO, retrato do pai, reuniões)
+    escritorio.furnish(m)
+    escritorio.furnish_reunioes(m)
+    escritorio.furnish_sam(m)
     m.add("window_big", 12, 1); m.add("window_big", 16, 1); m.add("window_big", 20, 1)
-    m.add("bookshelf", 1, 2)
-    m.add("ceo_desk", 3, 4)
-    m.add("coffee", 7, 2)
-    m.add("plant_big", 8, 8)
-    m.add("plant", 1, 8)
     m.add("terminal", 10, 2)
     m.add("shipbox", 23, 2)
     for i, (sx, sy) in enumerate(STATION_SLOTS):
         m.add("station", sx, sy, data=i)
+    # recepção da Jess e tapete no mesmo eixo da porta (x 12): tapete x 10..14, entre a mesa e a porta
+    m.add("tapete_saguao", 10, 13)
     m.add("reception", 11, 12)
     m.add("sofa_grey", 2, 15)
+    m.add("coffee_table", 2, 14); m.add("luminaria", 1, 15)
+    m.add("vitrine_luthor", 7, 10); m.add("vitrine_luthor", 20, 10)    # produtos lançados (lugares.py)
     m.add("plant_big", 1, 10); m.add("plant", 16, 16)
-    m.add("desk", 20, 12)
-    m.add("bookshelf2", 23, 15)
-    m.add("plant", 24, 10)
+    # área de espera (onde ficava a mesa da Sam)
+    m.add("coffee_table", 20, 13)
+    m.add("armchair", 19, 13); m.add("armchair", 22, 13)
+    m.add("plant", 24, 16)                    # (24,10) fica livre: é a passagem para a sala de reuniões
     m.add("cooler", 16, 10)
+    m.add("plant_big", 32, 10)
     m.finalize()
     return m
 
@@ -764,6 +774,7 @@ def build_cafe():
         m.add("chair", tx - 1, ty)
         m.add("chair", tx + 1, ty)
     m.add("plant", 1, 9); m.add("plant", 14, 9)
+    m.add("quadro_pedidos", 8, 2)                                   # pedidos.py
     m.finalize()
     return m
 
@@ -790,15 +801,21 @@ def build_catco():
     m.add("catco_rug", 8, 11)
     m.add("tv_wall", 5, 1)
     m.add("window_big", 1, 1); m.add("window_big", 11, 1)
-    m.add("window", 18, 1); m.add("window", 21, 1)
     for (dx, dy) in [(3, 4), (6, 4), (10, 4), (3, 8), (6, 8), (10, 8), (13, 8)]:
-        m.add("desk_news", dx, dy)
+        m.add("desk_news", dx, dy)                 # monitor de costas: quem trabalha senta atrás (lugares.py)
+        m.add("chair_blue", dx + 1, dy - 1)
     m.add("printer", 14, 2)
+    m.add("arquivo_catco", 12, 2)                  # matérias antigas (uma por dia)
     m.add("cooler", 1, 10)
     m.add("plant_big", 15, 4); m.add("plant", 22, 12); m.add("plant", 1, 13)
-    m.add("desk_editor", 18, 3)
-    m.add("bookshelf2", 21, 2)
+    # estúdio da CatCo TV (antiga sala de vidro): cenário, duas poltronas, câmera e refletores
+    m.add("painel_catco", 18, 1)
+    m.add("armchair", 18, 2); m.add("coffee_table", 19, 2); m.add("armchair", 21, 2)
+    m.add("refletor", 17, 2); m.add("refletor", 22, 2)
+    m.add("camera_estudio", 19, 4)                 # E na câmera: entrevista ao vivo e anúncio (lugares.py)
+    m.add("plant", 22, 5)
     m.add("sofa_grey", 17, 12)
+    m.add("coffee_table", 17, 11)
     m.add("poster", 15, 1)
     m.finalize()
     return m
@@ -971,6 +988,8 @@ def build_hospital():
     m.add("cooler", 8, 8)
     m.add("plant_big", 1, 8); m.add("plant_big", 26, 15); m.add("plant", 1, 15); m.add("plant", 17, 8)
     m.add("table", 4, 15); m.add("chair", 3, 15); m.add("chair", 5, 15)
+    from . import pediatria                   # brinquedoteca da pediatria no saguão
+    pediatria.furnish(m)
     m.finalize()
     return m
 
@@ -979,45 +998,39 @@ VITTORIA_DESK = (4, 2)      # onde a Vittoria trabalha na sede
 
 
 def build_ricci():
-    """Sede do Gruppo Ricci: sala da Vittoria, cozinha de testes, sala de degustação e recepção."""
+    """Sede do Gruppo Ricci: sala da Vittoria, sala de projetos, sala de degustação e recepção."""
     rows = [
         "WWWWWWWWWWWWWWWWWWWW",
         "WWWWWWWWWWWWWWWWWWWW",
-        "WOOOOOOOGmmmmGkkkkkW",
-        "WOOOOOOOGmmmmGkkkkkW",
-        "WOOOOOOOmmmmmmkkkkkW",
-        "WOOOOOOOGmmmmGkkkkkW",
-        "WOOOOOOOGmmmmGkkkkkW",
+        "WOOOOOOOGmmmmGoooooW",
+        "WOOOOOOOGmmmmGoooooW",
+        "WOOOOOOOmmmmmmoooooW",
+        "WOOOOOOOGmmmmGoooooW",
+        "WOOOOOOOGmmmmGoooooW",
         "WGGGGGGGGmmmmGGGGGGW",
-        "WcccccGmmmmmmmmmmmmW",
-        "WcccccGmmmmmmmmmmmmW",
-        "WcccccmmmmmmmmmmmmmW",
-        "WcccccGmmmmmmmmmmmmW",
-        "WcccccGmmmmmmmmmmmmW",
+        "WrrrrrGmmmmmmmmmmmmW",
+        "WrrrrrGmmmmmmmmmmmmW",
+        "WrrrrrmmmmmmmmmmmmmW",
+        "WrrrrrGmmmmmmmmmmmmW",
+        "WrrrrrGmmmmmmmmmmmmW",
         "WWWWWWWWWWDWWWWWWWWW",
     ]
     m = _interior("ricci", rows, "Gruppo Ricci")
-    # sala da Vittoria
-    m.add("window_big", 2, 1); m.add("window_big", 5, 1)
-    m.add("desk", 3, 3)
-    m.add("plant_big", 1, 2); m.add("bookshelf", 6, 2)
-    m.add("rug_red", 2, 5)
-    m.add("armchair", 1, 6); m.add("armchair", 7, 6)
+    from . import escritorio                  # escritório da Vittoria e sala de projetos (sem cozinha)
+    escritorio.furnish_ricci(m)
     # corredor com o mapa dos restaurantes
     m.add("ricci_map", 10, 1)
     m.add("plant", 9, 2); m.add("plant", 12, 2)
-    # cozinha de testes
-    m.add("window", 16, 1)
-    m.add("kitchen", 14, 2); m.add("stove", 17, 2); m.add("fridge", 18, 2)
-    m.add("island", 15, 4)
-    for x in (15, 16, 17):
-        m.add("stool", x, 5)
     # sala de degustação
-    m.add("wine_shelf", 1, 8)
+    m.add("adega", 1, 8)
+    m.add("barril", 4, 8); m.add("barril", 5, 8)
+    m.add("tapete_ricci", 1, 9)
     m.add("dining", 2, 10); m.add("chair", 1, 10); m.add("chair", 4, 10)
-    m.add("plant", 5, 12)
-    # recepção
-    m.add("desk", 13, 9)
+    m.add("carrinho_bar", 1, 12)
+    m.add("luminaria", 5, 12)
+    # recepção (a recepcionista senta atrás da mesa)
+    m.add("desk_r", 13, 9)
+    m.add("chair_blue", 14, 8)
     m.add("rug_green", 8, 10)
     m.add("sofa_grey", 15, 12)
     m.add("plant_big", 18, 8); m.add("plant_big", 7, 12)
@@ -1058,7 +1071,7 @@ def build_marina():
     m.add("table", 8, 8); m.add("chair", 7, 8); m.add("chair", 9, 8)
     # troféus de regata e mesa do Ian
     m.add("trophy", 12, 2)
-    m.add("desk", 16, 4)
+    m.add("desk_r", 16, 4)
     m.add("plant_big", 20, 2); m.add("plant_big", 1, 10)
     # balcão de passeios (pesca em alto-mar, pôr do sol e regata)
     m.add("charter", 13, 7)
@@ -1085,14 +1098,17 @@ def build_altomar():
 
 
 def build_world():
+    from . import boutique                  # La Boutique (móveis, fachada e enfeites da calçada)
+    from . import mural, pedidos, lugares, pediatria  # noqa: F401  (mural de fotos da cobertura e quadro de pedidos do Grão Nobre)
     w = {"city": build_city(), "home": build_home(), "hq": build_hq(), "cafe": build_cafe(),
          "catco": build_catco(), "books": build_books(), "market": build_market(),
          "trattoria": build_trattoria(), "bar": build_bar(), "terrace": build_terrace(),
          "cinema": build_cinema(), "hospital": build_hospital(), "ricci": build_ricci(),
-         "marina": build_marina(), "altomar": build_altomar(), **build_homes()}
+         "marina": build_marina(), "altomar": build_altomar(), "boutique": boutique.build(), **build_homes()}
     # a porta da cobertura leva ao elevador da portaria do Residencial Luthor
     ex, ey = LOBBY_DOORS["home"]
     w["home"].doors[INTERIOR_DOORS["home"]] = ("residencial", ex, ey + 1, "down")
+    interiores.decorate(w)                  # quadros, relógios e arandelas nas paredes dos lugares públicos
     return w
 
 
@@ -1155,16 +1171,17 @@ def _link_lobby(m):
 def build_bayside():
     m = _interior("bayside", _lobby_rows("bayside", _LOBBY_W, _LOBBY_H, 13), "Apartamentos Bayside")
     _link_lobby(m)
-    m.add("rug_big", 11, 5)
-    m.add("reception", 18, 7)
+    m.add("rug_big", 11, 5)                       # no eixo da porta (x 13)
+    m.add("balcao_portaria", 19, 7)               # o porteiro fica atrás (20, 6)
     m.add("plant_big", 1, 9); m.add("plant_big", 24, 9)
     m.add("plant", 1, 2); m.add("plant", 24, 2)
+    # cantinho de espera: sofá, mesinha e duas poltronas em cima de um tapete
+    m.add("rug", 2, 5)
+    m.add("armchair", 2, 6); m.add("coffee_table", 3, 6); m.add("armchair", 5, 6)
     m.add("sofa", 3, 7)
-    m.add("armchair", 6, 7)
-    m.add("cabinet", 22, 7)                       # caixas de correio
-    m.add("cabinet", 23, 7)
-    for x in (20, 23):                            # quadrinhos (as portas ficam à esquerda, longe do HUD)
-        m.add("painting" if x % 2 else "painting2", x, 1)
+    m.add("luminaria", 6, 7)
+    m.add("caixas_correio", 18, 1)                # caixas de correio na parede (longe do HUD)
+    m.add("painting2", 23, 1)
     m.finalize()
     return m
 
@@ -1173,13 +1190,15 @@ def build_residencial():
     """Portaria do Residencial Luthor: elevador da cobertura e os apartamentos da Sam, do Ian e da Milany."""
     m = _interior("residencial", _lobby_rows("residencial", _RES_W, _RES_H, 8), "Residencial Luthor")
     _link_lobby(m)
-    m.add("rug_big", 6, 3)
-    m.add("reception", 12, 5)
-    m.add("plant_big", 1, 7); m.add("plant_big", 15, 7)
+    m.add("rug_big", 6, 3)                        # no eixo da porta (x 8)
+    m.add("balcao_portaria", 12, 5)               # o porteiro fica atrás (13, 4)
+    m.add("plant_big", 15, 7)
     m.add("plant", 15, 2); m.add("plant", 1, 2)
-    m.add("sofa_grey", 2, 6)
-    m.add("cabinet", 14, 2); m.add("cabinet", 13, 2)   # caixas de correio
-    m.add("painting", 14, 1); m.add("painting2", 3, 1)
+    m.add("rug", 1, 4)
+    m.add("armchair", 1, 5); m.add("coffee_table", 2, 5); m.add("armchair", 4, 5)
+    m.add("luminaria", 5, 6)
+    m.add("caixas_correio", 12, 1)                # caixas de correio na parede
+    m.add("painting2", 3, 1)
     m.finalize()
     return m
 

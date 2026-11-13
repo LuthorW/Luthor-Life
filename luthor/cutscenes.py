@@ -21,6 +21,8 @@ COMANDOS (cada um é uma tupla):
   ("fala", nome, "texto", humor)      fala com retrato 
   ("narra", "texto")                  narração sem retrato
   ("escolha", "pergunta", [("opção", pontos, "resposta da personagem"), ...])
+                                      (4º item opcional: humor; 5º: função chamada com o Game ao escolher)
+  ("chamar", função)                  chama função(game); se ela devolver uma lista de comandos, eles entram aqui
   ("camera", x, y)                    câmera desliza até o tile
   ("camera_ja", x, y)                 câmera pula direto para o tile
   ("seguir", nome)                    câmera acompanha um personagem
@@ -71,6 +73,7 @@ class Actor:
         self.zbias = 0.01 if name == "player" else 0.0   # na mesma linha, a Letícia fica na frente
         self.fx, self.fy = float(x), float(y)
         self.dir = d
+        self.seat = None                # sentada numa cadeira/sofá: dict(lift, sort) (comando "sentar")
         self.path = []
         self.moving = False
         self.anim = 0.0
@@ -84,10 +87,31 @@ class Actor:
         return (self.fy + 1) * TILE - FOOT
 
     @property
+    def sort_y(self):
+        """Ordem de desenho: sentada, fica entre o assento e o encosto (assentos.sitter_sort)."""
+        if self.seat:
+            return self.seat["sort"]
+        return self.base_y + self.zbias
+
+    @property
     def center(self):
         return ((self.fx + 0.5) * TILE, (self.fy + 0.5) * TILE)
 
+    def sit(self, m):
+        """Senta no assento do tile onde está, virada para onde ele olha (mesa, TV...)."""
+        from . import assentos
+        x, y = int(round(self.fx)), int(round(self.fy))
+        o = m.object_at(x, y) if m is not None else None
+        if o is None or o.kind not in poses.NPC_SEATS:
+            return False
+        self.fx, self.fy = float(x), float(y)
+        self.path = []
+        self.dir = assentos.face(m, o)
+        self.seat = dict(lift=poses.NPC_SEATS[o.kind], sort=assentos.sitter_sort(o))
+        return True
+
     def walk_to(self, x, y):
+        self.seat = None
         self.path = []
         if x != round(self.fx):
             self.path.append((float(x), self.fy))
@@ -157,19 +181,23 @@ class Actor:
 
     def draw(self, surf, cam):
         pose = self.pose_now()
-        if pose is None:
+        lift = self.seat["lift"] if self.seat else None
+        if pose is None and lift is None:
             img, bob = idle_frame(self.frames, self.dir, self.moving, self.anim, self.phase)
         else:
+            pose = pose or {}
             t = time.monotonic() + self.phase
             blink = pose.get("blink", t % 3.7 < 0.13)
             bob = pose.get("bob", 1 if (t % 1.6) < 0.8 else 0)
-            img = poses.frame(self.look, self.dir, None, pose.get("arms"), pose.get("face"), blink, 0, self.look_key,
+            img = poses.frame(self.look, self.dir, lift, pose.get("arms"), pose.get("face"), blink, 0, self.look_key,
                               pose.get("walk", 0), pose.get("lean", 0), pose.get("tiptoe", False))
         cx = (self.fx + 0.5) * TILE - cam[0]
         cy = self.base_y - cam[1]
         jump = -int(math.sin(self.hop / 0.45 * math.pi) * 6 * SCALE) if self.hop > 0 else 0
-        draw_shadow(surf, int(cx), int(cy) + SCALE, 10 * SCALE if not jump else 8 * SCALE)
-        x, y = int(cx - img.get_width() // 2), int(cy - img.get_height() + FOOT + bob + jump)
+        if lift is None:
+            draw_shadow(surf, int(cx), int(cy) + SCALE, 10 * SCALE if not jump else 8 * SCALE)
+        sit = poses.seat_offset(lift) if lift is not None else 0
+        x, y = int(cx - img.get_width() // 2), int(cy - img.get_height() + FOOT + bob + jump + sit)
         surf.blit(img, (x, y))
         if pose and pose.get("held"):
             hd = pose["held"]
@@ -338,6 +366,14 @@ class Cutscene(ui.Modal):
             a = self.actors.get(args[0])
             if a:
                 a.dir = args[1]
+        elif cmd == "sentar":                       # ("sentar", nome): senta no assento onde está
+            a = self.actors.get(args[0])
+            if a:
+                a.sit(self.map)
+        elif cmd == "levantar":                     # ("levantar", nome)
+            a = self.actors.get(args[0])
+            if a:
+                a.seat = None
         elif cmd == "pulo":
             a = self.actors.get(args[0])
             if a:
@@ -354,6 +390,13 @@ class Cutscene(ui.Modal):
             if portrait is None:
                 portrait = self.g.portrait_for(self.g.npcs[name], mood)
             self.sub = ui.Dialog(spk, [txt], portrait, subtitle=sub)
+        elif cmd == "comenta_look":                 # ("comenta_look", nome): comenta a roupa da Letícia
+            from . import boutique
+            name = args[0]
+            spk, portrait, sub = self.speaker(name, "happy")
+            if portrait is None:
+                portrait = self.g.portrait_for(self.g.npcs[name], "happy")
+            self.sub = ui.Dialog(spk, [boutique.runway_comment(self.g, name)], portrait, subtitle=sub)
         elif cmd == "narra":
             self.sub = ui.Dialog("", [args[0]])
         elif cmd == "escolha":
@@ -361,6 +404,8 @@ class Cutscene(ui.Modal):
 
             def pick(i, options=options):
                 txt, pts, reply = options[i][:3]
+                if len(options[i]) > 4 and callable(options[i][4]):
+                    options[i][4](self.g)
                 if self.npc and pts:
                     self.g.add_friendship(self.npc, pts)
                 if reply and self.npc:
@@ -372,6 +417,10 @@ class Cutscene(ui.Modal):
                         mood = "love" if pts >= 50 else ("happy" if pts > 0 else ("mad" if pts < 0 else None))
                     self.steps.insert(self.i, ("fala", self.npc, reply, mood))
             self.sub = ui.Choice(question, [o[0] for o in options], pick)
+        elif cmd == "chamar":                       # ("chamar", função): lógica do jogo no meio da cena
+            extra = args[0](self.g)
+            if extra:
+                self.steps[self.i:self.i] = list(extra)
         elif cmd == "camera":
             self.cam_target = self.tile_cam(args[0], args[1])
             self.follow = None
@@ -776,16 +825,16 @@ SCENES = {
         ("fade_out",),
     ]),
     "lucy_2": dict(map="bar", time=20 * 60 + 15, npc="lucy", steps=[
-        ("ator", "lucy", 10, 6, "down"),
-        ("ator", "player", 10, 8, "up"),
+        ("ator", "lucy", 9, 8, "right"),
+        ("sentar", "lucy"),
+        ("ator", "player", 8, 10, "up"),
         ("segurar", "lucy", "cerveja"),
-        ("camera_ja", 19, 35),
+        ("camera_ja", 10, 8),
         ("fade_in",),
         ("legenda", "Noonan's, à noite", 1.8),
-        ("andar", "player", 11, 6),
-        ("andar", "player", 11, 6),
-        ("virar", "player", "up"),
-        ("virar", "lucy", "down"),
+        ("andar", "player", 11, 10),
+        ("andar", "player", 11, 8),
+        ("sentar", "player"),
         ("segurar", "player", "caipirinha"),
         ("emote", "lucy", "exclamacao"),
         ("fala", "lucy", "Você veio mesmo. Comecei a achar que a CEO da Luthor Corp tinha sido engolida por uma agenda impossível.", "happy"),
@@ -812,8 +861,6 @@ SCENES = {
         ("fala", "player", "Eu vou contar. Não quero que você fique sem entender o que aconteceu."),
         ("fala", "lucy", "Está bem. Por enquanto, podemos só tomar alguma coisa? Uma noite normal, sem passado e sem manchete?", "happy"),
         ("fala", "player", "Acho que consigo negociar isso."),
-        ("virar", "player", "left"),
-        ("virar", "lucy", "right"),
         ("brinde", "lucy", "player"),
         ("beber", "player"),
         ("emote", "lucy", "coracao"),
@@ -827,8 +874,8 @@ SCENES = {
         ("camera_ja", 6, 7),
         ("fade_in",),
         ("legenda", "Bayside Books, fim de tarde", 1.8),
-        ("andar", "player", 8, 8),
-        ("andar", "player", 5, 8),
+        ("andar", "player", 8, 7),
+        ("andar", "player", 5, 7),
         ("virar", "player", "left"),
         ("emote", "lucy", "surpresa"),
         ("esperar", 0.8),
@@ -862,7 +909,7 @@ SCENES = {
         ("fala", "lucy", "Engraçadinha. É que... eu não quero que todas as nossas conversas sejam sobre o que aconteceu."),
         ("fala", "lucy", "Sei que ainda temos coisas para conversar. E eu não esqueci o que você prometeu me contar."),
         ("fala", "lucy", "Mas também gostaria de conhecer a pessoa que você é hoje. Não apenas tentar entender aquela que foi embora."),
-        ("virar", "player", "right"),
+        ("emote", "player", "feliz"),
         ("fala", "player", "Eu também gostaria disso."),
         ("fala", "lucy", "Então talvez possamos começar por um livro, alguns cafés e discussões desnecessariamente sérias sobre finais ruins."),
         ("fala", "player", "Você está propondo uma atividade literária ou tentando me desafiar?"),
@@ -1071,7 +1118,7 @@ SCENES = {
         ("legenda", "Calçadão Bayside, ao anoitecer", 2.0),
         ("narra", "O movimento na praia diminuiu. As luzes da cidade começam a aparecer ao longe, refletindo sobre a água. Letícia convidou Lucy para uma caminhada, mas há algo mais que deseja conversar com ela naquela noite."),
         ("andar", "player", 25, 53),
-        ("andar", "player", 25, 55),
+        ("andar", "player", 25, 56),
         ("virar", "player", "right"),
         ("virar", "lucy", "left"),
         ("fala", "lucy", "Você está muito quieta hoje, Luthor."),
@@ -1262,6 +1309,7 @@ SCENES = {
         ("esperar", 1.2),
         ("ator", "player", 8, 8, "left"),
         ("ator", "vittoria", 6, 8, "right"),
+        ("sentar", "player"), ("sentar", "vittoria"),
         ("ator", "graca", 4, 3, "up"),
         ("camera_ja", 7, 7),
         ("fade_in",),
@@ -1309,14 +1357,14 @@ SCENES = {
         ("fade_out",),
     ]),
     "vittoria_2": dict(map="ricci", time=10 * 60 + 30, npc="vittoria", steps=[
-        ("ator", "vittoria", 4, 4, "right"),
-        ("ator", "player", 6, 4, "left"),
-        ("camera_ja", 5, 4),
+        ("ator", "vittoria", 4, 2, "down"), ("sentar", "vittoria"),
+        ("ator", "player", 7, 5, "left"),
+        ("camera_ja", 4, 4),
         ("fade_in",),
         ("legenda", "Sala da Vittoria — Grupo Ricci", 2.0),
         ("narra", "O escritório do Grupo Ricci é elegante e acolhedor. Grandes janelas iluminam o ambiente, enquanto uma estante ocupa parte da parede. Sobre a mesa, há documentos e relatórios cuidadosamente organizados. Vittoria está concentrada, analisando alguns papéis."),
-        ("andar", "player", 5, 4),
-        ("virar", "player", "left"),
+        ("andar", "player", 4, 4),
+        ("virar", "player", "up"),
         ("emote", "vittoria", "exclamacao"),
         ("fala", "vittoria", "Letícia! Ciao, tesoro! Chegou bem na hora.", "happy"),
         ("fala", "player", "Espero não estar interrompendo uma reunião importante."),
@@ -1325,6 +1373,7 @@ SCENES = {
         ("emote", "vittoria", "estrela"),
         ("fala", "vittoria", "Então seja bem-vinda ao Grupo Ricci! Aqui é onde a mágica administrativa acontece. Ou, pelo menos, onde tento impedir que tudo vire uma bagunça."),
         ("narra", "Vittoria se levanta e pega uma pasta com alguns relatórios que estavam sobre a mesa."),
+        ("levantar", "vittoria"), ("andar", "vittoria", 5, 2), ("virar", "vittoria", "down"),
         ("fala", "vittoria", "A Ricci Trattoria é uma das nossas casas, mas o grupo tem uma operação bem maior. Eu acompanho as unidades, os resultados, os fornecedores, as equipes e os planos de crescimento."),
         ("fala", "player", "Então você não fica o dia inteiro na cozinha?"),
         ("emote", "vittoria", "raiva"),
@@ -1357,6 +1406,7 @@ SCENES = {
              "Não me entregue! Eu estava tentando parecer uma pessoa tranquila e descansada."),
         ]),
         ("narra", "Vittoria ri e fecha a pasta antes de voltar a se sentar. Pela primeira vez desde que Letícia chegou, parece estar realmente disposta a deixar o trabalho de lado por alguns minutos."),
+        ("andar", "vittoria", 4, 2), ("sentar", "vittoria"),
         ("fala", "vittoria", "Sabe, muita gente conhece a Vittoria da Trattoria. A garota que aparece na cozinha, conversa com os clientes e discute sobre o ponto da massa."),
         ("fala", "vittoria", "Mas nem todo mundo conhece esta parte da minha vida."),
         ("fala", "player", "A empresária por trás dos restaurantes?"),
@@ -1402,8 +1452,9 @@ SCENES = {
         ("fala", "vittoria", "Esse não. Muito maduro. Esse também não... Ah, questo! Perfeito!"),
         ("esperar", 0.8),
         ("andar", "player", 8, 7),
-        ("andar", "player", 4, 7),
+        ("andar", "player", 5, 7),
         ("virar", "player", "left"),
+        ("virar", "vittoria", "right"),
         ("emote", "vittoria", "exclamacao"),
         ("esperar", 1.3),
         ("fala", "vittoria", "Letícia! Você por aqui tão cedo?"),
@@ -1417,7 +1468,8 @@ SCENES = {
         ("esperar", 1.3),
         ("fala", "vittoria", "Não estrague a minha tentativa de aproveitar a manhã!"),
         ("fala", "bea", "Vittoria! Você vai levar os tomates ou pretende conversar com cada um deles antes?"),
-        ("virar", "bea", "right"),
+        ("andar", "bea", 4, 6),
+        ("virar", "bea", "down"),
         ("fala", "vittoria", "Bea, estou fazendo uma avaliação muito importante."),
         ("fala", "bea", "Está escolhendo tomates, Vittoria."),
         ("fala", "vittoria", "Uma avaliação muito importante de tomates."),
@@ -1935,22 +1987,21 @@ SCENES = {
     ]),
     
     "sam_0": dict(map="hq", time=9 * 60 + 30, npc="sam", steps=[
-        ("ator", "sam", 21, 11, "down"),
-        ("ator", "player", 18, 16, "up"),
-        ("camera_ja", 20, 13),
+        ("ator", "sam", 29, 12, "down"), ("sentar", "sam"),
+        ("ator", "player", 22, 15, "right"),
+        ("camera_ja", 27, 14),
         ("fade_in",),
         ("legenda", "Luthor Corp, início da manhã", 1.8),
         ("narra", "O escritório está movimentado. Funcionários passam pelos corredores carregando documentos, enquanto algumas pessoas conversam perto das salas de reunião. Sam está analisando alguns relatórios quando percebe Letícia se aproximando."),
-        ("andar", "player", 18, 13),
-        ("andar", "player", 21, 13),
+        ("andar", "player", 22, 14), ("andar", "player", 26, 14), ("andar", "player", 26, 15),
+        ("andar", "player", 29, 15), ("andar", "player", 29, 14),
         ("virar", "player", "up"),
         ("emote", "sam", "exclamacao"),
         ("esperar", 1.3),
         ("fala", "sam", "Letícia! Finalmente!"),
-        ("andar", "sam", 19, 11),
-        ("andar", "sam", 19, 13),
-        ("virar", "sam", "right"),
-        ("virar", "player", "left"),
+        ("levantar", "sam"), ("andar", "sam", 31, 12), ("andar", "sam", 31, 15), ("andar", "sam", 30, 15),
+        ("virar", "sam", "left"),
+        ("andar", "player", 29, 15), ("virar", "player", "right"),
         ("fala", "sam", "Eu estava esperando você aparecer. Já estava pensando em mandar alguém procurar a CEO desaparecida."),
         ("fala", "player", "Bom dia para você também, Sammy."),
         ("fala", "sam", "Bom dia! E, antes que pergunte, sim, já tomei café. Mais de uma vez."),
@@ -2029,13 +2080,13 @@ SCENES = {
         ("fade_out",),
     ]),
     "sam_2": dict(map="hq", time=12 * 60 + 40, npc="sam", steps=[
-        ("ator", "sam", 21, 11, "down"),
-        ("ator", "player", 18, 16, "up"),
-        ("camera_ja", 20, 13),
+        ("ator", "sam", 29, 12, "down"), ("sentar", "sam"),
+        ("ator", "player", 22, 15, "right"),
+        ("camera_ja", 27, 14),
         ("fade_in",),
         ("legenda", "Luthor Corp, horário de almoço", 1.8),
-        ("andar", "player", 18, 13),
-        ("andar", "player", 21, 13),
+        ("andar", "player", 22, 14), ("andar", "player", 26, 14), ("andar", "player", 26, 15),
+        ("andar", "player", 29, 15), ("andar", "player", 29, 14),
         ("virar", "player", "up"),
         ("emote", "sam", "exclamacao"),
         ("esperar", 1.3),
@@ -2351,14 +2402,14 @@ SCENES = {
         ("fade_out",),
     ]),
     "sam_8": dict(map="hq", time=17 * 60 + 30, npc="sam", steps=[
-        ("ator", "sam", 21, 11, "down"),
-        ("ator", "player", 18, 16, "up"),
-        ("camera_ja", 20, 13),
+        ("ator", "sam", 29, 12, "down"), ("sentar", "sam"),
+        ("ator", "player", 22, 15, "right"),
+        ("camera_ja", 27, 14),
         ("fade_in",),
         ("legenda", "Luthor Corp, fim do expediente", 1.8),
         ("narra", "O expediente está chegando ao fim. Sam está na sala principal da administração, organizando alguns documentos e conferindo os resultados financeiros do período. Ao perceber Letícia chegando, abre um sorriso."),
-        ("andar", "player", 18, 13),
-        ("andar", "player", 21, 13),
+        ("andar", "player", 22, 14), ("andar", "player", 26, 14), ("andar", "player", 26, 15),
+        ("andar", "player", 29, 15), ("andar", "player", 29, 14),
         ("virar", "player", "up"),
         ("emote", "sam", "exclamacao"),
         ("esperar", 1.3),
@@ -2441,7 +2492,7 @@ SCENES = {
     
     "milany_0": dict(map="hospital", time=18 * 60, npc="milany", steps=[
         ("ator", "milany", 13, 9, "down"),
-        ("ator", "player", 11, 19, "up"),
+        ("ator", "player", 13, 15, "up"),
         ("camera_ja", 7, 10),
         ("fade_in",),
         ("legenda", "Hospital, fim do expediente", 1.8),
@@ -2942,7 +2993,7 @@ SCENES = {
         ("esperar", 1.8),
         ("fade_out",),
     ]),
-    
+
     "ian_0": dict(map="marina", time=10 * 60, npc="ian", steps=[
         ("ator", "ian", 17, 3, "down"),
         ("ator", "player", 11, 10, "up"),
@@ -3430,7 +3481,7 @@ SCENES = {
     ("fade_in",),
     ("legenda", "Luthor Corp, começo da manhã", 1.8),
     ("narra", "O escritório ainda está quase vazio. Jess está de pé ao lado da mesa, segurando um tablet contra o peito como se fosse um troféu."),
-    ("andar", "player", 12, 12),
+    ("andar", "player", 12, 13),
     ("virar", "player", "up"),
     ("emote", "jess", "exclamacao"),
     ("fala", "jess", "Srta. Luthor! Bom dia! A senhora chegou dois minutos antes do previsto. Isso é ótimo, porque eu tenho uma surpresa."),

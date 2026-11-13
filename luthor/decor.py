@@ -144,6 +144,8 @@ def _recompute(m, floor=False):
                 if m.in_bounds(xx, yy) and m.tiles[yy][xx] not in world.SOLID_TILES:
                     m.hitboxes[(xx, yy)] = r
     m.wall_decor = [o for o in m.objects if o.layer == "wall"]
+    from . import assentos
+    assentos.invalidate(m)                       # móveis mudaram: sofás e poltronas olham de novo para a TV
     if floor:
         m.water_edges = []
         m._build_floor()

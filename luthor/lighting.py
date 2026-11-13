@@ -44,6 +44,7 @@ EMITTERS = {
     "bottle_shelf": ((170, 110, 60), 2.0), "wine_shelf": ((150, 90, 60), 1.6), "monitor": ((70, 150, 140), 1.4),
     "terminal": ((90, 110, 210), 2.0), "ceo_desk": ((120, 120, 170), 1.6), "popcorn": ((200, 150, 60), 1.8),
     "menuboard": ((150, 110, 70), 1.6), "string_lights": ((220, 170, 90), 2.6), "fireplace": ((220, 110, 40), 3.0),
+    "arandela": ((210, 160, 90), 1.5),
 }
 NEON_STYLES = ("tower", "bar", "cinema", "marina", "ricci", "catco", "hospital")   # letreiros que brilham à noite
 

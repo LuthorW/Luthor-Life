@@ -40,15 +40,21 @@ luthor/
   characters.py  NPCS (aparência, rotina, falas base, presentes, reações, eventos), NPC_ORDER, TEAM, ROMANCES;
                  no fim, as 5 médicas (DOCTORS, DOCTOR_KEYS) e a rotina diária delas (`doctor_schedule`)
   dialogue.py    LINES por período/clima/lugar/amizade, REACTIVE (falas condicionais), BUSY
+  falas.py       MAIS: falas extras de todas as personagens (mesmas categorias de LINES), somadas no fim de
+                 dialogue.py (a Celeste, no boutique.py, que monta as falas dela depois). Fala nova: pode entrar aqui
   hospital.py    Conti Moretti: especialidades, consultas, bônus do dia, farmácia, doação
   crowd.py       figurantes (moradores sem conversa) que circulam pela cidade
   activities.py  horta do terraço, coletáveis, bichinho, karaokê, cinema, céu do terraço
   cutscenes.py   motor de cutscenes (comandos em tuplas) e TODAS as cenas (as do Ian, Barry e Dona Graça no fim);
                  comando ("beijo", a, b) para beijo animado; `dating_scene` devolve a cena <chave>_pedido;
-                 bebidas nas cenas: ("segurar", nome, item|None), ("beber", nome[, item]), ("brinde", a, b), ("acenar", nome)
+                 bebidas nas cenas: ("segurar", nome, item|None), ("beber", nome[, item]), ("brinde", a, b), ("acenar", nome);
+                 ("chamar", fn): roda fn(g) no meio da cena e, se ela devolver passos, eles entram ali; nas escolhas, um
+                 5º elemento chamável na opção é chamado quando ela é escolhida (a degustação conta acertos assim)
   poses.py       poses dos bonequinhos: sentada (SEAT_LIFT), braços "hold"/"mouth"/"wave"/"up"/"toast"/"umbrella"/"reach"/
                  "work", rostos happy/read/open/kiss/shut/love, `walk`/`lean`/`tiptoe` e `kiss_pose` (cache). Quadros
                  com margem `PAD`=6 px de arte de cada lado (braços erguidos em Y): `anchor()` já soma o PAD
+  assentos.py    para onde cada assento olha (`face`: mesa ao lado, TV/mesinha de centro/tapete, cinema = tela) e os
+                 desenhos virados (de costas e de lado) em 2 camadas: "base" e "front" (encosto/braço por cima de quem senta)
   animacoes.py   regar (regador), bancada (mãos e faíscas), vara de pesca (arremesso, boia, carretilha no minigame,
                  peixe erguido), deitar na cama (`Sleeper`), bichinho no colo no sofá, aceno dos amigos, gaivotas na
                  praia, gatinho de rua no Parque Central, modo foto (P) e as bebidas novas (cerveja, caipirinha, taça)
@@ -60,15 +66,62 @@ luthor/
   casamento.py   Anel de Noivado (Mercado, 14 dias morando junto), pedido no terraço, noivado e o casamento no Jardim do
                  Mirante (cena montada com os convidados), falas de casadas (`chat_line`)
   historia.py    história da Luthor Corp: os tios Conrad e Edmund, 5 capítulos (CHAPTERS) com cena + objetivo, atores extras
-                 só das cenas (EXTRAS) e a mesa do conselho no saguão da sede
+                 só das cenas (EXTRAS); a mesa da sala de reuniões mostra os capítulos
+  escritorio.py  móveis dos escritórios: o da Letícia na sede (x 1..8, y 2..8, `furnish`: mesa de CEO, cadeira executiva,
+                 retrato do pai Alexander, aparador, globo, carrinho de bar, cantinho de estar), a sala de reuniões da
+                 sede (x 26..32, y 2..8, `furnish_reunioes`: mesa 5x2, telão, cavalete), a salinha da Sam (x 26..32,
+                 y 12..16, `furnish_sam`) e o Gruppo Ricci (`furnish_ricci`: escritório da Vittoria e sala de projetos,
+                 sem cozinha)
   fundacao.py    Fundação Luthor: 6 obras (PROJECTS) com doação de itens/dinheiro na mesa da sede, objetos novos na cidade
                  (PROPS), benefícios permanentes e a inauguração da praça
   momentos.py    MOMENTS: 12 cenas curtas entre dois NPCs, no máx. 1 por dia, ao passar perto do lugar no horário
   eventos.py     cenas e bônus novos dos eventos de coração de quem não tinha (Theo, Bea, Marco, Nia, Harry, Joca,
                  médicas, Barry, Dona Graça, Brainy, Jess); entram por `setdefault` em `NPCS[k]["events"]`
-  closet.py      closet da Letícia no guarda-roupa da cobertura (LOOKS: compra na hora, 3 de presente, comentários)
+  closet.py      closet da Letícia no guarda-roupa da cobertura e no provador da boutique (LOOKS; 2 abas: roupas e
+                 acessórios; comprar é só na Boutique; presentes de looks em GIFTS; comentários)
+  boutique.py    La Boutique (entre o Grão Nobre e a CatCo, porta 42,15): Celeste Waite, 12 acessórios
+                 (ACCESSORIES, item kind "acessorio", um por espaço SLOTS), 6 looks novos, loja com provador virtual
+                 (`BoutiqueShop`), móveis, fachada, falas/aniversário/eventos da Celeste e a cena celeste_4
   decor.py       decorar a cobertura pelo computador de casa (CATALOG; só móveis comprados mexem), piano
   album.py       álbum de fotos do Barry (2 corações): cada cena especial vira foto em saves/album/<cena>.png
+                 (cada espaço de jogo tem o seu: album, album2, album3)
+  jogos_salvos.py  3 espaços de jogo salvo (save.json, save2.json, save3.json) e a tela de escolha (`SlotMenu`)
+  celular.py     celular da Letícia (tecla T): apps Mensagens (amigas com 2+ corações mandam mensagens, `MSGS`;
+                 cada mensagem tem 3 respostas próprias com a volta de quem mandou, `REPLIES_FOR`; responder dá
+                 amizade e a conversa mostra a resposta e a volta), Agenda (linhas do HUD + próximos 7 dias), Tempo, Bolsa (fechamentos em
+                 `g.phone["stocks"]`; E negocia se leu o livro), Fotos (escolhe as fotos do mural), Pedidos,
+                 Habilidades e Mapa. Estado em `g.phone`
+  pedidos.py     quadro de pedidos de pé no Grão Nobre (8,2): bilhetes novos à noite, entrega conversando com quem
+                 pediu até o prazo (3 dias); paga dinheiro + amizade, sem castigo. `g.pedidos`. Espaços do quadro
+                 liberados pelos pedidos entregues (`UNLOCK` = 0, 3, 7: começa com 1, vai a 3; `slots`/`max_active`)
+  lugares.py     CatCo: estúdio da CatCo TV na sala de vidro (câmera `camera_estudio`: entrevista ao vivo 1x por semana
+                 em dia útil 9h-18h, 3 assuntos; anúncio de $400 = produtos +15% por 3 noites, `sell_mult`), arquivo de
+                 matérias antigas (`ARTICLES`, 1 por dia); mesas com o monitor de costas (`desk_r`, `desk_news`: quem
+                 trabalha senta atrás); adega e barris do Ricci; leitos ocupados no hospital (`bed_patient`, o leito
+                 da Letícia fica livre); balcão de portaria, caixas de correio, vitrine da sede; textos por lugar
+                 (`PLACE_LOOK`). Estado em `g.catco`. Matérias antigas lidas: o arquivo mostra as manchetes da Letícia
+  noticias.py    manchetes da CatCo sobre o que a Letícia faz: toda noite compara o estado com a noite anterior
+                 (`snapshot`/`_diff`: namoro, mudança, casamento, peixe lendário, obras da Fundação, LCORP, vendas,
+                 bichinho, entrevista) e soma os acontecimentos do dia (`event`: lançamento, sommelier, pediatria);
+                 as 3 maiores vão para o feed (`g.noticias`). Aparecem no resumo da noite, na banca, na TV, nos e-mails,
+                 no arquivo da CatCo e em falas reativas (Nia, Harry, Barry, Lucy, Sam, Vittoria, Izzie). Save antigo:
+                 a 1ª noite só tira a foto, sem manchete
+  degustacao.py  degustação de vinhos com a Vittoria na adega do Ricci (1x por semana, 2+ corações, ela na sede):
+                 cena com 3 taças, ela descreve cor/aroma/boca/região e a Letícia escolhe entre 3 nomes (`WINES`);
+                 acerto +30, erro +10 (nunca tira), culinária, 2+ acertos = Vinho Tinto, 3 = flag `sommelier`. `g.degust`
+  pediatria.py   brinquedoteca no saguão do Conti Moretti (tapete 20..24,12..14, baú 24,12; `furnish`) e voluntariado
+                 (9h-19h, 1x por dia): contar história (-10 de energia) ou levar doce/pelúcia (`GIFTS`) = amizade com as
+                 5 médicas, carisma; na 1ª visita e na `DRAWING_AT` vira manchete (e ganha um desenho). `g.pediatria`.
+                 As crianças são trabalhadores do crowd.py com `height=-6`
+  habilidades.py pesca, ciência, culinária e carisma (níveis 0-5, `LEVELS`); `gain` é chamado na pesca, bancada,
+                 lançamento, fogão, conversa e presente; bônus pequenos por nível e um extra no nível 5. `g.skills`
+  mural.py       mural de fotos na parede da cobertura (9,1, em cima da escrivaninha, no lugar de uma janela):
+                 até 4 fotos do álbum do Barry ou do modo foto (saves/fotos), escolhidas no app Fotos (`g.mural`)
+  conquistas.py  39 medalhas em 4 categorias (tecla K e menu de pausa), aviso que desliza no canto de baixo
+  interiores.py  interiores caprichados: chão com textura, paredes de 2 tiles com papel de parede/lambri (`STYLES`),
+                 sombra dos móveis e enfeites de parede automáticos (`THEMES`)
+  natureza.py    mar com profundidade, ondulação e ondas subindo na areia; reflexos do pôr do sol e luar; árvores,
+                 arbustos e tufinhos de grama balançando ao vento
   jogos.py       sinuca e dardos no Noonan's, xadrez com o Brainy (opção na conversa, 1x por dia)
   clima.py       tempestade (raios e trovões; o clima continua "chuva") e arco-íris na manhã depois da chuva
   timetest.py    modo de teste de dia/horário: `python main.py --teste` (F6 abre o painel; não salva nada)
@@ -85,7 +138,7 @@ luthor/
   citymap.py     mapa da cidade (tecla M) com a posição de cada personagem
   seasons.py     estações (Q1 primavera, Q2 verão, Q3 outono, Q4 inverno): grama, árvores, neve, coletáveis
   audio.py       som: efeitos gerados por código (músicas existem no código, mas DESLIGADAS: MUSIC_ENABLED)
-  ui.py          fonte, painéis, Dialog, Choice, Shop, InfoPanel, NumberPrompt, Toasts, HUD
+  ui.py          fonte, painéis com moldura em pixel art, Dialog, Choice, Shop, InfoPanel, NumberPrompt, Toasts, HUD
   data.py        PROJECTS, ITEMS, FISH, RECIPES, BOOKS, SHOPS, CROPS, FORAGE, FLAG_LABELS, GOALS, TIPS
 ```
 
@@ -110,10 +163,16 @@ luthor/
   e de quem estiver a pé na faixa (Letícia, NPCs, figurantes: `Game.update_cars` passa os `walkers`); a lataria
   (`Car.rect`) bloqueia a jogadora. Na faixa de pedestres eles esperam a pessoa passar.
 - **Prédio caprichado novo:** função `_estilo(W, H, night)` em `caprichado.BUILDERS` (porta alinhada ao tile da
-  porta de `world.Building`), letreiro em `caprichado.draw_label`. Vidro aceso SEMPRE com `caprichado.LIT`
+  porta de `world.Building`; para a porta ficar no meio, o prédio precisa de largura ímpar em tiles: a CatCo tem 9),
+  letreiro em `caprichado.draw_label` (`_sign` centraliza as letras na faixa do letreiro, como na Luthor Corp, na CatCo, no Noonan's, no Cine National
+  e nos Apartamentos Bayside). Vidro aceso SEMPRE com `caprichado.LIT`
   (252, 222, 136): é por essa cor que `lighting.py` faz as janelas brilharem. Use as peças `window`, `awning`,
   `bricks`, `cornice`, `door`, `shopfront`, `vaso`, `lantern`, `_arched`. Todos os 13 prédios da cidade já estão
   no estilo novo (os desenhos antigos em art.py, scenery.py e nautical.py ficaram, mas não são mais usados).
+  O Noonan's é o único com a porta de lado (pedido da dona); o Cine National (9 tiles) e os Apartamentos Bayside
+  (7 tiles, porta em 78,45) têm a porta no meio. A banca de jornais fica no vão entre o Gruppo Ricci e o hospital
+  (`kiosk` news em 70,15). No saguão da sede, a recepção da Jess (11..13,12) e o `tapete_saguao` (10..14, 13..16)
+  ficam no eixo da porta (x 12).
 - **Iluminação:** não use véu semitransparente por cima do mundo; mexa em `lighting.py` (cores NIGHT_* e manchas
   de luz). Luz nova = desenhar uma mancha na camada com BLEND_RGB_ADD.
 - **Ruas:** NPCs evitam o asfalto (`GameMap.road`) e atravessam só pelas faixas; entram e saem pelas calçadas.
@@ -131,19 +190,39 @@ luthor/
 - **Hooks no Game:** `activities.*` e `hospital.*` são chamados em `reset_state`, `update`, `resolve_target`,
   `target_label`, `use_object`, `object_image`, `draw_world`, `process_night`, `save`/`load`.
 - **Classe CSS `.split`** já existe no site (grade de 2 colunas): não reutilize esse nome.
+- **Interface em pixel art:** use `ui.panel` (moldura chanfrada com pedrinhas douradas nos cantos dos painéis
+  grandes), `ui.box` (cartões e linhas escolhidas), `ui.slot` (espaço de item afundado; escolhido = moldura clara e
+  cantinhos dourados), `ui.highlight` (faixa da opção) e `ui.cut_rect` (cantos em escadinha). Tudo em passos de
+  `ui.U` = 2 px (1 px de arte). Nada de `border_radius` em interface nova.
+- **Paredes dos interiores (interiores.py):** a fileira de parede de cima vira parede de 2 tiles (`_is_upper`):
+  sanca, papel de parede, roda-meio, lambri e rodapé. Divisórias finas continuam com 1 tile e topo escuro. Enfeites
+  de parede ("wall" e decalques na face) sobem até 8 px de arte (`interiores.lift`, em `draw_world` e em
+  `_build_floor`) para ficar no meio da parede. Estilo novo de lugar = entrada em `STYLES` (e `THEMES` se quiser
+  enfeites automáticos; a cobertura, o terraço e os apartamentos não ganham).
 
 ## Sistemas e regras de design (pedidos da dona)
 
 - **Visual:** personagens no estilo Stardew (sprites.py), mas magrinhas (16x32), a Letícia tem **olhos verdes**,
   **nada de cabelo preso** (sem coque: só soltos, curtos ou black power), sem nuvens no céu,
   cabelo sem cobrir o rosto (franja aberta no meio, mechas por fora das bochechas), e corpos diferentes como no
-  Stardew: `look["height"]` (-2..+2 px, cresce para cima; entre elas, só Letícia, Sam e Addison são mais altas) e `look["broad"]` (ombros largos), em `characters.BODY`,
+  Stardew: `look["height"]` (-2..+2 px, cresce para cima; -3..-6 só para crianças, `sprites.SHORT_ROWS`; entre elas, só Letícia, Sam e Addison são mais altas) e `look["broad"]` (ombros largos), em `characters.BODY`,
   câmera afastada. Gráficos "bonitinhos".
 - **Conversas:** muitas falas e nada de repetição (`lines_seen` guarda as já ditas). Cada personagem conversa
   **uma vez por período** (manhã 6–12h, tarde 12–18h, noite 18–2h); depois disso aparece a fala BUSY e
   um balão "...". Presentes, loja e convites continuam liberados.
 - **Figurantes (crowd.py):** não conversam (E mostra o que estão fazendo). Chegam pela rua, entram num lugar,
   ficam um tempo e **sempre saem**. Nunca repetem um dos últimos lugares visitados, nem de um dia para o outro.
+  **Trabalhadores** (`WORKERS`): figurantes com posto e horário fixos (4 redatores da CatCo, recepcionista do Ricci e do
+  hospital, porteiros do Bayside e do Residencial, pacientes na sala de espera com `chance` por dia). Os postos ficam em
+  `crowd.reserved` (outros figurantes não usam). Chegam pela rua e vão embora no fim do turno (`tick_workers`).
+- **Alcance da conversa:** `Game.npc_near` acha a personagem num cone na frente da Letícia (até 1,9 tile, 0,9 de lado;
+  com um móvel sólido bem na frente, só até 1,4), sem atravessar parede. O tile exato da frente continua tendo prioridade.
+- **Sede da Luthor Corp e Gruppo Ricci (escritorio.py):** a sede tem 34 tiles de largura: escritório da Letícia
+  (x 1..8), laboratório (x 10..24) e sala de reuniões (x 26..32, entrada pelo corredor da fileira 10, em 29-30,9;
+  o tile (24,10) tem que ficar livre). Embaixo dela, atrás do vidro, a salinha da Sam (porta em 25,14, pela área de
+  espera de madeira): a Sam trabalha sentada na cadeira azul (29,12), e as cenas sam_0/2/8 acontecem ali. No Gruppo Ricci a
+  Vittoria trabalha sentada na cadeira de veludo (4,2), atrás da mesa de mármore; a sala da direita é a sala de projetos
+  das casas novas (não existe mais cozinha: a Vittoria não é chef).
 - **Médicas (fim de characters.py):** Cristina, Meredith, Milany, Izzie e Addison (a Lexie saiu do jogo).
   Duas roupas: `look` no hospital (jaleco/pijama) e `look_off` fora dele (`OFF_DUTY`, `characters.look_for`;
   `NPC.current_frames` e os atores das cenas escolhem pela sala). conversáveis e presenteáveis. Plantão alternando postos sem repetir em sequência,
@@ -154,13 +233,30 @@ luthor/
   e algumas odeiam (cada uma tem uma fala própria para coletável odiado e outra para item novo de que não gosta).
 - **Conti Moretti Hospitais** segue o site do projeto `CMHospitais` (pasta irmã): 12 especialidades,
   lideranças clínicas, cores verde #123f35, cobre #b77b65, papel #fbfaf8. Consulta: energia cheia + bônus do dia.
+- **La Boutique (boutique.py):** a Celeste Waite (estilista **francesa, de Lyon**: nada de raízes brasileiras; estudou em Milão; rosto da
+  **Sofia Boutella**, com o cabelo pintado cor de vinho como no bonequinho; `NPCS["celeste"]`, ainda sem retrato: a caixa de
+  fala usa o bonequinho; PNGs `celeste.png` + `_feliz`/`_ruim`/`_timido` podem entrar depois) fica no balcão (12,4)
+  das 9h40 às 19h. A loja tem 2 abas: roupas (o look vai direto para o closet) e acessórios (vão para a mochila).
+  Acessório: F na mochila ou o closet/provador veste (sai da mochila e fica guardado em `g.closet["acc"]`; em uso em
+  `g.closet["worn"]` = espaço -> chave); dá para presentear (gostos em `boutique.TASTES`). Os acessórios são chaves
+  do look (`sunglasses`, `earrings`, `necklace`/`pendant`, `bag`, `beret`, `tiara`) desenhadas em
+  `sprites._accessories` (aparecem andando, sentada e nas cenas). Roupas `dress`/`dress_floral` (vestido até o
+  joelho, pernas à mostra; poses sentadas em `poses._sit_front`/`_sit_side`). Eventos: 2 lenço de seda, 4 cena
+  celeste_4 (VIP: 20% de desconto, flag `celeste_vip`), 6 vestido "assinatura" no closet, 8 cena celeste_8 (desfile no
+  píer ao pôr do sol, com plateia na areia; o comando de cena ("comenta_look", nome) faz a personagem comentar a roupa
+  que a Letícia está usando; no fim, flag `celeste_desfile` e o vestido "passarela" chega à noite, `boutique.night`). Compras contam em
+  `g.stats["boutique"]`.
 - **Romance:** Lucy Williams (repórter da CatCo, Brie Larson) e Vittoria Ricci (Adria Arjona), dona do Gruppo Ricci,
   rede de restaurantes com sede em National City (o prédio que antes era o banco). Ela **não é chef**: quem cozinha
   e cuida da loja da Ricci Trattoria é a Dona Graça, chef brasileira veterana.
 - **Harry** (antes Rafa) é o barista do Grão Nobre. **Barry Allen**: fotógrafo da CatCo, amigo da Nia e da Lucy.
   **Ian**: diretor da Marina Luthor, a divisão náutica da Luthor Corp. É **funcionário da Letícia** (como a Sam e o
   Brainy), não sócio, e amigo de infância das férias no interior.
-  Rosas aos 8 corações → namoro; pingente aos 10 → morar junto. Cutscenes nos eventos de coração.
+  Rosas aos 8 corações → namoro; pingente aos 10 → morar junto. **Só a Lucy e a Vittoria passam de 8 corações:**
+  todas as outras param em 8 (`config.FRIEND_CAP_HEARTS`, `Game.heart_cap`; saves antigos acima disso voltam para 8 no
+  `load`; o painel de relacionamentos mostra 8 corações para elas). Evento de coração novo de amiga: no máximo 8. Cutscenes nos eventos de coração.
+  **9 e 10 corações só namorando:** antes das rosas a Lucy e a Vittoria também param em 8 (`heart_cap`); o painel mostra
+  os corações 9 e 10 apagados com cadeado (`ui.hearts_row(..., locked_from=)`).
 - **Eventos de coração com cena** não tocam na hora: ficam pendentes (aviso + linha rosa no HUD) até a jogadora
   estar no mapa da cena (barco do alto-mar começa na marina) entre 3h antes e 3h depois do horário da cena; na
   cidade, também perto do ponto da cena (`Game.check_scene_events`, `scene_place`). Eventos sem cena aparecem na hora. Eventos de **0 corações** são surpresa:
@@ -201,6 +297,12 @@ luthor/
   O nome antigo `namoro_<chave>` é a mesma cena: `cutscenes.same_scene` junta os dois nomes (lista do `--cenas`,
   "Rever cenas", saves antigos e álbum), para o pedido não aparecer duplicado.
   Porta de apartamento abre sozinha quando há evento com cena marcado ali naquele horário (`Game.door_open`).
+- **Posições nas cenas:** conversa a dois = na mesma linha, frente a frente, a 1 ou 2 tiles (nunca na diagonal
+  colada nem uma atrás da outra olhando para o mesmo lado). Grupo = triângulo: as duas personagens frente a frente a
+  2 tiles e a Letícia chega no meio, 1 tile abaixo, olhando para cima, e elas viram para baixo (padrão dos momentos).
+  Mesa = cada uma senta numa cadeira (`"sentar"`). Ninguém começa ou para dentro de parede/móvel, no asfalto, nem anda
+  por cima de outra atriz (`walk_to` anda primeiro na horizontal, depois na vertical: quebre em dois "andar" se precisar).
+  A Letícia entra pela porta do lugar.
 - **Caixa de escolhas (`ui.Choice`):** no pé da tela como no Stardew, pergunta em cima, setinha na opção,
   no máximo 6 visíveis com rolagem (rodinha do mouse também).
 - **Sentar:** cadeiras, banquetas, bancos, sofás e poltronas (`poses.SEAT_LIFT` = `Game.SEATS`, altura do assento em
@@ -210,6 +312,19 @@ luthor/
   lado coxa para a frente; de costas sem pernas e mãos na mesa. De vez em quando ela balança os pés (`swinging`).
   **NPCs e figurantes também sentam** quando param em cima de um assento (`NPC._check_seat`, `poses.NPC_SEATS`, que
   inclui as poltronas do cinema); sentados, olham para a mesa e às vezes para a frente. Cutscenes não mudaram.
+- **Assentos virados (assentos.py):** cada cadeira, banqueta, poltrona, sofá e poltrona de cinema tem uma direção
+  (`o.face`, calculada por `_compute` e refeita sozinha quando a lista de objetos muda; a decoração chama `invalidate`):
+  mesa encostada > TV/mesinha de centro (sem parede no meio) > tapete > de frente para a parede de baixo vira "up" >
+  "down". Sofás 3x1 só viram para cima/baixo e só para o que está bem na frente deles. Cinema sempre "up".
+  Desenhos "up" (de costas) e "right" (de lado; "left" é espelhado) em `BUILDERS`, cada um com camada "base" (no lugar
+  do objeto, por `Game.object_image`) e "front" (encosto visto de trás, braço da poltrona de lado), que entra na lista
+  de desenho em `sort_key + FRONT_BIAS` (`assentos.world_items`). Quem senta fica em `sitter_sort` (entre as duas):
+  `Player.seat["sort"]` e `NPC.sort_y`. A Letícia (`seat_dir`) e os NPCs (`seat_face`) sentam virados para `face`.
+  Assento novo = entrada em `KINDS` (e `BUILDERS` se precisar de desenho virado). No sofá de costas o bichinho deita
+  no encosto, do lado dela (`animacoes.LapPet`, `BACKREST_TOP`). Sofá/poltrona sem TV, mesinha ou tapete e com a frente
+  apertada (até 2 tiles livres até a parede/móvel, `_run`) vira de costas para o lado aberto da sala.
+  **Cenas:** ("sentar", nome) senta o ator no assento do tile onde ele está (virado para `face`, desenho e ordem iguais
+  aos dos NPCs, `Actor.sort_y`); ("levantar", nome) ou andar levanta.
 - **Bônus das cenas:** Sam 4 (`sam_bonus`, Mesa de Contratos +10%) e 8 (`sam_bonus2`, +25%; 35% no total, em
   `sell_value`); Vittoria 2 (`vittoria_coffee`: cappuccino grátis 1x por dia na loja da Trattoria, `ricci_coffee`).
   Ian 4 (`ian_deepfish`: peixes de alto-mar +15%), Milany 6 (`milany_care`: +20 de energia ao entrar no hospital,
@@ -263,14 +378,17 @@ luthor/
   flag `casadas`, +$2000 e amizade com todos. Estado em `g.casamento`; o painel de relacionamentos mostra o status.
 - **História da Luthor Corp (historia.py):** a partir do 3º dia. Cada capítulo tem cena (linha no HUD, lugar e
   horário) e, depois, um objetivo que libera o próximo (lançar 5 produtos, faturar $6000, ação a $110, 4 corações com
-  Sam/Brainy/Jess/Ian). No fim (`luthor_livre`): produtos +10%, $3000 e amizade com a equipe. Personagens só de cena
+  Sam/Brainy/Jess/Ian). No fim (`luthor_livre`): produtos +10%, $3000 e amizade com a equipe. A reunião do conselho é na
+  sala de reuniões da sede (`mesa_reuniao`, que também abre o painel dos capítulos; a Letícia senta na cabeceira). Personagens só de cena
   (tios, Andrea Rojas, Hamilton, o espião) ficam em `EXTRAS`, com look próprio, e os retratos saem do bonequinho.
+  **Andrea Rojas é amiga da Letícia** e mora em outra cidade: conselheira do lado dela, nunca vilã nem rival.
 - **Fundação Luthor (fundacao.py):** mesa na sede (`HQ_DESK`). Doar itens da mochila ou dinheiro; a obra completa
   aparece na cidade na noite seguinte (`night`: ready → built; `apply` põe os objetos de `PROPS` e recalcula `m.solid`).
   Benefícios: coreto (conversas +10%), peixaria (peixes +10%), horta (cesta às segundas), lanternas (+coletáveis),
   biblioteca (livros e mercado mais baratos). A praça só abre com as outras 5 prontas; a inauguração dá amizade com todos.
   Objeto novo na cidade não pode tapar porta nem caminho: teste com `m.find_path`.
-- **Momentos (momentos.py):** cenas entre dois NPCs (`MOMENTS`: lugar, horário, dias, sol, corações mínimos). Tocam no
+- **Momentos (momentos.py):** cenas entre dois NPCs (`MOMENTS`: lugar, horário, dias, sol, corações mínimos **com as
+  duas**: `min(hearts(a), hearts(b)) >= hearts`). Tocam no
   máx. 1 por dia, nunca em dia de festa, quando a Letícia passa perto; +20 de amizade com as duas e vão para a galeria.
 - **Eventos novos (eventos.py):** bônus em `shop_mult` (Bea: mercado -20%, Marco: bar -25%), `food_mult` (Izzie: doces
   x1,5), `gift_mult` (Addison +15%), `new_fish` (Barry: +$50 por espécie nova), `marco_tab` (jogos de graça) e presentes
@@ -284,7 +402,24 @@ luthor/
 - **Clima especial (clima.py):** tempestade é sorteada na véspera (`STORM_CHANCE` por estação) e continua sendo
   "chuva" para rotinas, peixes e figurantes; relâmpago clareia a tela (`draw_flash`), trovões são efeitos gerados por
   código. Arco-íris de 6h às 11h num dia de sol depois de chuva (70%). No inverno, nenhum dos dois.
-- **Atalhos:** I/Tab mochila, O objetivos, R relacionamentos, M mapa, C calendário (a mesma tecla fecha), P modo foto. Painéis longos usam
+- **Vários jogos salvos (jogos_salvos.py):** 3 espaços. O 1 é o saves/save.json de sempre (saves antigos abrem
+  nele); `Game.slot` diz onde salvar e carregar, e `settings["slot"]` guarda o último usado (é o que "Continuar"
+  abre; vazio = o mais recente). Tela de título: Continuar, Carregar jogo e Novo jogo (escolhe o espaço; X apaga).
+  Cartão do espaço lido do arquivo (`info`): data, dinheiro, lugar, namoro/casamento e medalhas.
+  **Testes:** salvem num espaço que não existia (ou troquem `jogos_salvos.SAVE_DIR`/`SAVE_PATH`) e apaguem depois
+  saves/save2.json, save3.json e as pastas album2/album3 que criarem.
+- **Conquistas (conquistas.py):** `ACHIEVEMENTS` (chave, categoria, nome, descrição) conferidas em `check` (a cada
+  10 min do jogo e na noite); ao carregar, `sync` dá de uma vez as que já foram cumpridas, com um aviso só. Estado em `g.conquistas`
+  (got, when). Aviso desliza no canto de baixo à esquerda quando não há janela aberta. Presentes dados contam em
+  `g.stats["gifts"]`.
+- **Mar e natureza (natureza.py):** o mar troca os tiles "sea"/"sea_foam" (`draw_sea`: mais escuro longe da areia,
+  cristas andando para a praia, brilhinhos; no pôr do sol reflete pêssego e lilás). Ondas sobem e voltam pela areia
+  (`draw_shore`, o píer fica de fora). Depois da iluminação, `draw_glints` põe o caminho do sol (pôr do sol) e o
+  luar (noite) no mar; chovendo, nada. Árvores e arbustos (`SWAY`) entortam a copa 1–2 px com rajadas que atravessam
+  a cidade (mais na chuva/tempestade); `natureza.faded` é a copa translúcida no mesmo quadro. Tufinhos de grama
+  (`draw_ground`) só ao ar livre e fora do inverno. Sem nuvens.
+- **Atalhos:** I/Tab mochila, O objetivos, R relacionamentos, K conquistas, M mapa, C calendário (a mesma tecla fecha), P modo foto,
+  T celular. Painéis longos usam
   `ui.InfoPanel(..., scroll=True)` (draw_fn devolve o y final) em vez de crescer.
 - **Desmaio às 2h:** acorda no leito do hospital (`HOSPITAL_BED`) com conta.
 - **Site:** roxo (#8a00e6 / #b84cff) como principal e verde (#6ee78c) como destaque. As capturas de conversa,
@@ -295,7 +430,7 @@ luthor/
 
 - **Letícia e Lucy:** as duas tiveram algo no passado, em Gotham. Durante a doença do pai da Letícia, **Alexander**,
   os **tios** dela ameaçaram a Lucy, e a Letícia foi embora sem explicar nada para protegê-la. Alexander morreu meses
-  depois. Nada de apagão nessa história. Eventos de coração:
+  depois. Nada de apagão no jogo (a dona pediu para tirar tudo sobre isso). Eventos de coração:
   2 entrevista fria · 4 Lucy acha a data da morte do Alexander no arquivo da CatCo · 6 no píer, a Letícia fala do
   pai · 8 a verdade sobre os tios (a Lucy fica magoada porque a Letícia decidiu por ela) · 10 pacto na fonte:
   "ninguém decide pela outra, nada de segredos".
@@ -548,3 +683,31 @@ substitua `pygame.key.get_pressed`. Antes de entregar uma mudança, rode alguns 
     bichinho no colo, gaivotas, gatinho de rua e modo foto. Sobretudo da Vittoria do tamanho do blazer.
 33. Braços erguidos em Y com o peixe flutuando acima da cabeça, beijo refeito (de mãos dadas, narizes se tocando,
     bochechas coradas depois) e bebidas em copinhos pequenos que não tapam mais o rosto.
+34. Três espaços de jogo salvo, 36 conquistas (K), interiores caprichados (paredes de 2 tiles com papel de parede e
+    lambri, chão com textura, sombra dos móveis, quadros e arandelas), mar com ondas na areia e reflexos do pôr do
+    sol e do luar, árvores e grama ao vento, e menus/HUD com moldura em pixel art.
+35. Sofás, poltronas e cadeiras virados para o lugar certo (TV, mesa, mesinha de centro, tela do cinema), com
+    desenhos de costas e de lado; encosto e braço por cima de quem senta; bichinho no encosto do sofá.
+36. Escritório da Letícia caprichado (escritorio.py) e a mesa do conselho saiu do saguão; a sede ficou mais larga
+    (34 tiles) com uma sala de reuniões própria, onde acontece a reunião do conselho (historia_5) com todos sentados
+    (comando "sentar"). Gruppo Ricci remodelado: escritório novo da Vittoria e sala de projetos no lugar da cozinha de
+    testes. Salinha da Sam embaixo da sala de reuniões. Sofás encostados na parede de baixo viram de costas para a sala.
+37. La Boutique com a Celeste Waite (personagem nova com rotina, falas, presentes e eventos): roupas novas,
+    acessórios que a Letícia usa (óculos, chapéus, brincos, colares, lenço, bolsas) e que podem ser presenteados,
+    provador virtual na loja e provador de verdade dentro dela. Barra de energia voltou ao desenho simples.
+    Amizades travadas em 8 corações (só Lucy e Vittoria chegam a 10), letreiros da Luthor Corp e da CatCo
+    centralizados e a CatCo com 9 tiles para a porta ficar no meio.
+38. Celular da Letícia (T) com mensagens, agenda, tempo, bolsa, fotos, pedidos e habilidades; desfile da Celeste no píer
+    (8 corações); quadro de pedidos no Grão Nobre; habilidades com níveis (pesca, ciência, culinária, carisma) e mural
+    de fotos na cobertura.
+39. Fachadas novas do Noonan's (pub verde com letreiro dourado), do Cine National e dos Apartamentos Bayside (com nome),
+    letreiros e portas centralizados; banca de jornais entre o Gruppo Ricci e o hospital; tapete no eixo da porta e da
+    recepção da sede; mais de 300 falas novas (falas.py); respostas do celular que combinam com cada mensagem; o
+    apagão saiu do jogo.
+40. 10 peixes novos (8 no mar/lago e 2 no alto-mar) e aquário em grupos com rolagem; 9 e 10 corações só namorando;
+    momentos pedem corações com as duas; quadro de pedidos começa com 1 espaço; CatCo com estúdio de TV (entrevistas e
+    anúncio), arquivo e redatores trabalhando; monitores de costas nas mesas; sala de vinhos do Ricci; pacientes no
+    Conti Moretti; portarias e saguão da sede mobiliados, com porteiros; alcance maior para conversar.
+41. Notícias da CatCo que reagem ao que a Letícia faz (banca, TV, e-mails, arquivo, falas), degustação de vinhos com a
+    Vittoria na adega do Ricci, voluntariado na brinquedoteca da pediatria (crianças menores), 3 medalhas novas e a
+    Andrea Rojas como amiga da Letícia.

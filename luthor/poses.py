@@ -198,6 +198,7 @@ def _sit_front(g, lift, outfit, swing):
     sb = 22 + min(lift, 8)                     # última linha do sapato (o pé no chão)
     gown = outfit == "gown"
     tights = outfit == "skirt_suit"
+    bare = outfit in ("dress", "dress_floral")      # vestido curto: canelas de fora
     for (x, y), k in list(g.px.items()):
         if y >= 26 or (y == 25 and k in PANTS + FEET):
             del g.px[(x, y)]
@@ -215,7 +216,7 @@ def _sit_front(g, lift, outfit, swing):
         g.set(7, 25, "p"); g.set(8, 25, "p")   # sombra entre os joelhos
     for x in range(5, 11):                     # sombrinha embaixo dos joelhos
         if (x, 25) not in g.px:
-            g.set(x, 25, "C" if gown else "p")
+            g.set(x, 25, "C" if gown else "c" if bare else "p")
     if gown:                                   # vestido longo: cai até os tornozelos
         for y in range(26, sb - 1):
             g.row(y, 4, 11, "C")
@@ -223,7 +224,7 @@ def _sit_front(g, lift, outfit, swing):
         for x0 in (5, 9):
             g.row(sb - 1, x0, x0 + 1, "O"); g.row(sb, x0, x0 + 1, "U")
         return
-    col, sh = ("p", "p") if tights else ("P", "p")
+    col, sh = ("p", "p") if tights else ("S", "s") if bare else ("P", "p")
     for leg, x0 in enumerate((5, 9)):
         up_ = 1 if swing == leg + 1 else 0     # balançando os pés: um sobe um pouquinho
         for y in range(26, sb - 1 - up_):
@@ -251,6 +252,21 @@ def _sit_side(g, lift, outfit, swing):
             g.row(y, 9, 12, "C"); g.set(12, y, "c")
         g.row(sb - 2, 9, 13, "C"); g.set(13, sb - 2, "c")
         g.row(sb - 1, 11, 13, "O"); g.set(13, sb - 1, "o"); g.row(sb, 11, 13, "U")
+        return
+    if outfit in ("dress", "dress_floral"):    # vestido curto: a saia cobre a coxa e as canelas ficam de fora
+        for (x, y) in list(g.px):
+            if y >= 25:
+                del g.px[(x, y)]
+        for x in range(4, 12):
+            g.set(x, 23, "Q"); g.set(x, 24, "C")
+        g.set(11, 24, "c"); g.set(4, 24, "c")
+        kick = 1 if swing else 0
+        for y in range(25, sb - 1):
+            dx = kick if y >= sb - 2 else 0
+            g.set(10 + dx, y, "s"); g.set(11 + dx, y, "S")
+        fx = 10 + kick
+        g.row(sb - 1, fx, fx + 3, "O"); g.set(fx + 3, sb - 1, "o")
+        g.row(sb, fx, fx + 3, "U")
         return
     for x in range(5, 12):                     # coxa (2 linhas) do quadril até o joelho
         top, low = ("P", "P") if tights and x <= 9 else ("p", "p") if tights else ("G", "P")

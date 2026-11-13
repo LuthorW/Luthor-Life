@@ -188,6 +188,15 @@ def _palette(look):
         "X": look.get("glasses_color", (34, 28, 34)),
         "V": look.get("hat", (110, 90, 64)), "v": shade(look.get("hat", (110, 90, 64)), 0.68),
         "F": look.get("scarf", (180, 40, 60)), "f": shade(look.get("scarf", (180, 40, 60)), 0.72),
+        # acessórios da La Boutique (boutique.py): óculos de sol, brincos, colar, bolsa, boina e tiara
+        "sf": look.get("sunglasses") or (30, 26, 34), "sg": (24, 20, 34), "sgh": (112, 104, 150),
+        "er": look.get("earrings") or (232, 196, 90), "erd": shade(look.get("earrings") or (232, 196, 90), 0.72),
+        "nk": look.get("necklace") or (232, 196, 90), "pd": look.get("pendant") or look.get("necklace") or (232, 196, 90),
+        "bg": look.get("bag") or (120, 70, 40), "bgd": shade(look.get("bag") or (120, 70, 40), 0.66),
+        "bgl": mix(look.get("bag") or (120, 70, 40), (255, 255, 255), 0.25),
+        "tr": look.get("beret") or look.get("tiara") or (150, 30, 50),
+        "trd": shade(look.get("beret") or look.get("tiara") or (150, 30, 50), 0.7),
+        "trj": look.get("tiara_jewel") or (150, 70, 220),
     }
 
 
@@ -334,6 +343,73 @@ def _extras(g, look, view):
             g.row(0, 4, 11, "V"); g.row(1, 3, 12, "V"); g.row(2, 3, 12, "v"); g.row(3, 3, 12, "V")
             g.row(4, 0, 15, "V"); g.row(5, 1, 14, "v")
             g.set(5, 0, "v"); g.set(10, 0, "v")
+    _accessories(g, look, view)
+
+
+def _accessories(g, look, view):
+    """Acessórios da La Boutique (boutique.py), desenhados por cima de tudo, como os óculos e o chapéu."""
+    if look.get("sunglasses") and view != "back":
+        if view == "front":
+            for x0 in (3, 9):
+                g.row(9, x0, x0 + 3, "sf")
+                g.row(10, x0, x0 + 3, "sg"); g.row(11, x0, x0 + 3, "sg")
+                g.set(x0 + 1, 12, "sg"); g.set(x0 + 2, 12, "sg")
+                g.set(x0 + 1, 10, "sgh")                          # brilho na lente
+            g.set(7, 10, "sf"); g.set(8, 10, "sf")
+        else:
+            g.row(9, 10, 13, "sf")
+            g.row(10, 11, 13, "sg"); g.row(11, 11, 13, "sg"); g.set(12, 12, "sg")
+            g.set(12, 10, "sgh")
+            g.row(10, 8, 10, "sf")                                # haste até a orelha
+    if look.get("earrings"):
+        if view == "side":
+            g.set(8, 12, "er"); g.set(8, 13, "erd")
+        else:
+            for x in (2, 13):
+                g.set(x, 13, "er"); g.set(x, 14, "erd")
+    if look.get("necklace"):
+        if view == "front":
+            for (x, y) in ((5, 17), (6, 18), (9, 18), (10, 17)):
+                g.set(x, y, "nk")
+            g.set(7, 19, "nk"); g.set(8, 19, "nk")
+            g.set(7, 20, "pd"); g.set(8, 20, "pd")
+        elif view == "side":
+            g.set(9, 17, "nk"); g.set(10, 18, "nk"); g.set(10, 19, "pd")
+        else:
+            g.set(7, 16, "nk"); g.set(8, 16, "nk")                 # fecho na nuca
+    if look.get("bag"):
+        if view == "side":
+            for (x, y) in ((8, 17), (7, 18), (6, 19), (5, 20)):
+                g.set(x, y, "bgd")
+            for y in range(21, 25):
+                g.row(y, 3, 5, "bg")
+            g.row(21, 3, 5, "bgd"); g.set(3, 22, "bgl")
+        else:
+            back = view == "back"
+            strap = [(5, 17), (6, 18), (7, 19), (8, 20), (9, 21), (10, 22)]
+            for (x, y) in strap:
+                g.set(15 - x if back else x, y, "bgd")
+            bx = 2 if back else 11
+            for y in range(22, 26):
+                g.row(y, bx, bx + 2, "bg")
+            g.row(22, bx, bx + 2, "bgd")
+            g.set(bx, 23, "bgl")
+            g.set(bx + 1, 23, "J")                                # fecho dourado
+    if look.get("beret"):
+        if view == "side":
+            g.row(1, 4, 11, "tr"); g.row(2, 3, 12, "tr"); g.row(3, 3, 12, "trd")
+            g.set(7, 0, "trd"); g.set(12, 1, "tr")
+        else:
+            g.row(1, 4, 12, "tr"); g.row(2, 3, 13, "tr"); g.row(3, 3, 13, "trd")
+            g.set(13, 1, "tr"); g.set(8, 0, "trd")                # inclinada para o lado
+    if look.get("tiara"):
+        if view == "side":
+            g.row(4, 5, 10, "tr"); g.set(8, 3, "tr"); g.set(8, 3, "trj")
+        else:
+            g.row(4, 4, 11, "tr")
+            g.set(7, 3, "tr"); g.set(8, 3, "tr")
+            if view == "front":
+                g.set(7, 3, "trj"); g.set(5, 3, "tr"); g.set(10, 3, "tr")
 
 
 def _hair(style, view):
@@ -594,7 +670,7 @@ def _body_side(g, outfit, frame):
 # roupas especiais desenhadas por cima do corpo básico (base -> roupa usada para o tronco e os braços)
 OUTFIT_BASE = {"trench": "plain", "peacoat": "plain", "skirt_suit": "blazer", "patterned": "blazer",
                "breton": "plain", "bartender": "vest", "tech": "plain", "labcoat": "coat",
-               "leather": "plain", "captain": "blazer", "gown": "plain"}
+               "leather": "plain", "captain": "blazer", "gown": "plain", "dress": "blouse", "dress_floral": "blouse"}
 
 
 def _outfit_overlay(g, outfit, view, frame):
@@ -761,6 +837,37 @@ def _outfit_overlay(g, outfit, view, frame):
             g.set(9, 26, "c")
         if view == "front":
             g.set(6, 18, "J"); g.set(9, 18, "J"); g.set(7, 19, "J"); g.set(8, 19, "J")
+    elif outfit in ("dress", "dress_floral"):
+        # vestido rodado até o joelho (La Boutique): saia na cor da roupa e as pernas de fora
+        for (x, y), k in list(g.px.items()):
+            if 23 <= y <= 25 and k in ("P", "R", "p"):
+                del g.px[(x, y)]
+            elif y >= 26 and k in ("P", "R"):
+                g.px[(x, y)] = "S"
+            elif y >= 26 and k == "p":
+                g.px[(x, y)] = "s"
+        if side:
+            sway = 1 if frame == 1 else 0
+            rows = [(23, 5, 9), (24, 4, 10), (25, 4 + sway, 10 + sway)]
+        else:
+            sway = {1: 1, 2: -1}.get(frame, 0)
+            rows = [(23, 5, 10), (24, 4, 11), (25, 4 + sway, 11 + sway)]
+        for (y, a, b) in rows:
+            g.row(y, a, b, "C")
+            g.set(b, y, "c")
+        y, a, b = rows[-1]
+        g.row(y, a, b, "c")                                  # barra do vestido
+        if not side:
+            g.row(22, 5, 10, "A")                            # faixa na cintura
+            g.set(7 if view == "front" else 8, 24, "c")
+        else:
+            g.row(22, 5, 9, "A")
+        if outfit == "dress_floral":
+            dots = [(5, 18), (9, 20), (6, 21), (6, 24), (9, 24), (10, 23)] if not side else \
+                   [(6, 18), (8, 20), (6, 24), (8, 23)]
+            for (x, y) in dots:
+                if g.px.get((x, y)) in ("C", "Q", "c"):
+                    g.set(x, y, "K")
     elif outfit == "patterned":
         # blazer preto estampado com flores vermelhas e colar dourado (Dona Graça)
         if side:
@@ -806,7 +913,7 @@ def _broaden(g):
 
 
 TALL_ROWS = [25, 19, 26]         # linhas repetidas para quem é mais alta (meio da perna, meio do tronco)
-SHORT_ROWS = [25, 19]            # linhas tiradas de quem é mais baixa
+SHORT_ROWS = [25, 19, 23, 17, 27, 21]  # linhas tiradas de quem é mais baixa (de -3 a -6: crianças)
 
 
 def _resize(g, dh):

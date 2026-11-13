@@ -22,7 +22,7 @@ NPCS = {
         portrait="sam.png",
         gifts=dict(love=["vinho", "bolo"], like=["flores", "livro", "relatorio", "risoto"], dislike=["rosquinha", "lata"]),
         schedule=dict(
-            default=[(360, None, 0, 0, "down"), (510, "hq", 21, 11, "down"), (1020, "city", 16, 30, "up"),
+            default=[(360, None, 0, 0, "down"), (510, "hq", 29, 12, "down"), (1020, "city", 16, 30, "up"),
                      (1140, "cafe", 11, 7, "left"), (1320, None, 0, 0, "down")],
             weekend=[(360, None, 0, 0, "down"), (600, "city", 34, 56, "down"), (780, "trattoria", 4, 10, "left"),
                      (900, "city", 16, 30, "up"), (1140, "cafe", 11, 7, "left"), (1320, None, 0, 0, "down")],
@@ -33,7 +33,7 @@ NPCS = {
                  "Relatórios de mercado são baratos e rápidos. Ótimos para manter o caixa respirando.",
                  "A Ruby pediu pra eu te mandar um 'oi'. Ela acha que você é uma super-heroína corporativa.",
                  "Você não vai acreditar, mas o Brainy me pediu pra comprar rosquinhas. Ele disse que é 'cientificamente necessário'.",
-                 "Estou coordenando a auditoria depois do apagão. A CatCo não larga do nosso pé."],
+                 "Estou coordenando a auditoria do trimestre. A CatCo adora uma planilha nossa."],
             mid=["Sabe, trabalhar com você está me dando flashbacks. Não conta pro conselho.",
                  "Sinto muita falta do nosso tempo de universidade. Das vezes que bebiamos demais.",
                  "Acho que a gente se entende melhor do que qualquer planilha. E olha que eu amo planilhas.",
@@ -80,7 +80,7 @@ NPCS = {
                  "Os projetos precisam de atenção diária. Nenhum algoritmo substitui comprometimento. Ainda.",
                  "Calculei 1.402 maneiras de otimizar o laboratório. 1.401 exigem mais bancadas.",
                  "Rosquinhas são um dos ápices da culinária deste século. Isso é uma observação. Talvez um pedido.",
-                 "O apagão de domingo não foi culpa dos nossos sistemas. 94% de certeza. Estou investigando os 6%."],
+                 "A pane da bancada 3 não foi culpa dos meus cálculos. 94% de certeza. Estou investigando os 6%."],
             mid=["Estou começando a entender o conceito de 'amizade'. Os dados são promissores.",
                  "Você trabalha com eficiência acima da média humana. É um elogio. Acho.",
                  "Algumas propostas só existem em certos trimestres. O mercado é sazonal. Eu também."],
@@ -183,7 +183,7 @@ NPCS = {
         ),
         lines=dict(
             low=["Letícia Luthor. Veio dar uma declaração oficial ou só me vigiar?",
-                 "Estou investigando o apagão. Se a LuthorCorp não tem nada a esconder, não tem por que se preocupar.",
+                 "Estou investigando os contratos da prefeitura. Se a LuthorCorp não tem nada a esconder, não tem por que se preocupar.",
                  "Não precisa fazer essa cara. Eu não mordo. Só publico.",
                  "Gotham University parece outra vida, né? Você ainda prende o cabelo quando fica nervosa.",
                  "Uma falha técnica nunca é só uma falha técnica. É sempre uma história sobre pessoas."],
@@ -217,15 +217,15 @@ NPCS = {
             4: dict(scene="lucy_4", mood="happy", gift="policial", lines=["Achei isso na Bayside e lembrei de você. Um mistério sem solução óbvia.",
                                                           "Tipo a gente, né?",
                                                           "Não faz essa cara. Aceita o livro e pronto."]),
-            6: dict(scene="lucy_6", mood="smile", lines=["Eu escrevi a matéria do apagão. Quer saber o final?",
-                                         "Não foi a LuthorCorp. Foi uma falha na rede pública que vocês ajudaram a segurar.",
-                                         "Eu precisava saber que você era diferente da sua família. Agora eu sei.",
+            6: dict(scene="lucy_6", mood="smile", lines=["Passei a noite pensando no que você me contou no píer.",
+                                         "Não muda o que eu senti naqueles anos. Mas explica muita coisa.",
+                                         "Eu precisava saber que você era diferente dos seus tios. Agora eu sei.",
                                          "E isso me assusta mais do que qualquer pauta."]),
             8: dict(scene="lucy_8", mood="love", lines=["Letícia... eu não sei mais onde termina a repórter e começa eu.",
                                         "Se um dia você me der rosas vermelhas, eu vou aceitar. Só pra você saber.",
                                         "(Rosas vermelhas estão à venda no Mercado Central.)"]),
             10: dict(scene="lucy_10", mood="love", lines=["Às vezes eu acordo e penso: como a gente chegou aqui?",
-                                         "Anos de silêncio, um apagão, mil cafés... e você.",
+                                         "Anos de silêncio, uma conversa no píer, mil cafés... e você.",
                                          "Se quiser ir mais longe... você sabe onde me encontrar."]),
         },
         date_places=[("bar", 7, 8, "left", "um drinque no Noonan's"), ("city", 24, 56, "down", "pôr do sol na praia"),
@@ -353,12 +353,12 @@ NPCS = {
         gifts=dict(love=["cappuccino", "rosquinha", "pipoca"], like=["sanduiche", "croissant", "livro", "estrela_mar"],
                    dislike=["lata", "relatorio"]),
         schedule=dict(
-            default=[(360, None, 0, 0, "down"), (510, "catco", 14, 10, "up"), (750, "cafe", 12, 7, "up"),
-                     (840, "catco", 14, 10, "up"), (1080, "city", 30, 57, "down"), (1200, "bar", 9, 9, "up"),
+            default=[(360, None, 0, 0, "down"), (510, "catco", 14, 7, "down"), (750, "cafe", 12, 7, "up"),
+                     (840, "catco", 14, 7, "down"), (1080, "city", 30, 57, "down"), (1200, "bar", 9, 9, "up"),
                      (1350, None, 0, 0, "down")],
             weekend=[(360, None, 0, 0, "down"), (540, "city", 99, 38, "up"), (780, "cafe", 12, 7, "up"),
                      (960, "city", 96, 26, "up"), (1140, "bar", 9, 9, "up"), (1350, None, 0, 0, "down")],
-            rain=[(360, None, 0, 0, "down"), (510, "catco", 14, 10, "up"), (1200, "bar", 9, 9, "up"),
+            rain=[(360, None, 0, 0, "down"), (510, "catco", 14, 7, "down"), (1200, "bar", 9, 9, "up"),
                   (1350, None, 0, 0, "down")],
         ),
         lines=dict(
@@ -389,7 +389,7 @@ NPCS = {
         lines=dict(
             low=["Bem-vinda à Bayside Books. Livros com bônus permanentes. Eu juro que não é golpe.",
                  "O Manual do Pescador é o mais vendido. O Joca deu um exemplar pra cada cliente da barraca dele.",
-                 "Depois do apagão, as pessoas lembraram que livro não precisa de bateria."],
+                 "Em dia de chuva as pessoas lembram que livro não precisa de bateria."],
             mid=["A Lucy Williams senta naquela poltrona todo fim de tarde. Já reservei pra ela, na verdade."],
             high=["Você virou cliente da casa. Isso aqui é quase um clube secreto."],
             evening=["Fechamos às nove. Mas pra você, talvez nove e cinco."],
@@ -518,12 +518,49 @@ NPCS = {
                 6: dict(scene="ian_6", gift="luvas_vela", lines=["Toma, as minhas luvas de vela. Quero que fiquem com você."]),
                 8: dict(scene="ian_8", lines=["Acho que consigo reservar um tempo pra isso."])},
     ),
+    # Celeste Waite (Sofia Boutella, cabelo pintado cor de vinho): estilista francesa (de Lyon), estudou em Milão
+    # e abriu a La Boutique (loja em boutique.py)
+    "celeste": dict(
+        name="Celeste Waite", short="Celeste", role="Estilista da La Boutique",
+        look=dict(look((118, 44, 56), (206, 152, 116), (34, 116, 112), (232, 196, 90), (40, 36, 46), (34, 26, 30),
+                       "wavy"), outfit="dress", earrings=(232, 196, 90), necklace=(232, 196, 90)),
+        portrait="celeste.png", shop="boutique", shop_map="boutique",
+        gifts=dict(love=["perfume", "aquarela"], like=["flores", "chocolate_belga", "cappuccino"], dislike=["lata"]),
+        schedule=dict(
+            default=[(360, None, 0, 0, "down"), (510, "cafe", 9, 4, "right"), (580, "boutique", 12, 4, "down"),
+                     (1150, None, 0, 0, "down")],
+            weekend=[(360, None, 0, 0, "down"), (600, "cafe", 9, 4, "right"), (660, "boutique", 12, 4, "down"),
+                     (1020, "city", 40, 56, "down"), (1140, "bar", 1, 8, "right"), (1290, None, 0, 0, "down")],
+            rain=[(360, None, 0, 0, "down"), (560, "boutique", 12, 4, "down"), (1150, None, 0, 0, "down")],
+        ),
+        lines=dict(
+            low=["Bem-vinda à La Boutique! Fica à vontade. Se precisar de outro tamanho, é só gritar. Com elegância.",
+                 "Eu sou a Celeste. Francesa, de Lyon, estudei em Milão e vim parar em National City por causa de um casaco. "
+                 "Longa história.",
+                 "A senhora é a CEO da Luthor Corp, né? Eu reconheci pelo blazer. Ninguém mais na cidade passa o "
+                 "vinco desse jeito.",
+                 "O provador fica ali no canto. Lá dentro a luz é boa e o espelho não mente. Muito."],
+            mid=["Acessório é o jeito mais barato de mudar de vida. Um brinco certo e a reunião já começa ganha.",
+                 "Aquele vestido roxo do manequim? Eu desenhei pensando em alguém com cara de quem manda. Não é indireta.",
+                 "Cada peça que eu vendo tem uma história. A dessa bolsa envolve um voo perdido em Lisboa."],
+            high=["Você virou minha cliente favorita. E olha que eu atendo a Addison Montgomery.",
+                  "Um dia eu faço um desfile na orla, com o mar de fundo. E você vai sentar na primeira fila."],
+            evening=["Quase fechando! Mas cliente que chega no fim do dia sempre leva a melhor peça. É estatística."],
+            rain=["Chuva é dia de vender guarda-chuva e capa. E de tomar chá no balcão com quem aparecer."],
+            weekend=["Sábado de manhã eu vou ao café, depois abro a loja, e no fim da tarde vejo o pôr do sol na praia. "
+                     "Rotina de estilista: parece glamour, mas é só mania."],
+        ),
+        reactions=dict(love="Ai, que coisa linda! Você tem bom gosto até pra presentear. Obrigada!",
+                       like="Que gentileza! Adorei, de verdade.", neutral="Obrigada, querida!",
+                       dislike="Uma lata... Vou transformar em vaso. Sou criativa."),
+        events={},
+    ),
 }
 
 EYES = {"sam": (110, 70, 40), "brainy": (60, 40, 34), "jess": (90, 60, 36), "rafa": (70, 130, 190),
         "lucy": (80, 150, 200), "vittoria": (96, 56, 30), "nia": (60, 36, 26), "theo": (70, 48, 30),
         "bea": (90, 150, 90), "marco": (50, 36, 30), "joca": (90, 120, 150), "graca": (80, 52, 34),
-        "barry": (90, 130, 170), "ian": (110, 160, 200)}
+        "barry": (90, 130, 170), "ian": (110, 160, 200), "celeste": (150, 104, 52)}
 for _k, _e in EYES.items():
     NPCS[_k]["look"]["eyes"] = _e
 NPCS["vittoria"]["look"]["style"] = "wavy"
@@ -798,7 +835,7 @@ DOCTORS["milany"]["look"].update(hair=(112, 68, 42), style="wavy", skin=(236, 20
 
 NPCS.update(DOCTORS)
 NPC_ORDER = ["sam", "brainy", "jess", "rafa", "lucy", "vittoria", "nia", "barry", "theo", "bea", "graca", "marco",
-             "joca", "ian"] + DOCTOR_KEYS
+             "joca", "ian", "celeste"] + DOCTOR_KEYS
 TEAM = ["sam", "brainy", "jess", "rafa", "ian"]      # equipe da Luthor Corp (meta de 3 corações e pedidos do laboratório)
 ROMANCES = ["lucy", "vittoria"]
 
@@ -946,6 +983,10 @@ WARDROBE = {
     "joca": dict(
         summer=dict(**SHORT),
         winter=_w("peacoat", (232, 190, 44), (34, 42, 72), scarf=(34, 42, 72))),
+    "celeste": dict(
+        summer=_w("dress_floral", (248, 236, 214), (34, 116, 112), **SHORT),
+        autumn=_w("trench", (196, 150, 64), (34, 30, 38)),
+        winter=_w("peacoat", (34, 30, 38), (232, 196, 90), scarf=(150, 40, 70))),
     "ian": dict(
         summer=_w("shirt", (244, 244, 248), (26, 34, 70), **SHORT),
         winter=_w("peacoat", (28, 36, 72), (236, 234, 228), scarf=(200, 44, 52))),

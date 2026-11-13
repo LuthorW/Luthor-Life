@@ -5,3 +5,6 @@ saves/audio/
 /build/
 # fotos tiradas no modo foto (tecla P)
 saves/fotos/
+# arquivos compilados do Python (o jogo recria sozinho)
+__pycache__/
+*.pyc

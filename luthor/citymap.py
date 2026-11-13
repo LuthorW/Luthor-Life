@@ -17,10 +17,11 @@ TILE_COLORS = {
 ROAD = (72, 72, 84)
 BUILDING_COLORS = {"home": (92, 70, 150), "residencial": (92, 70, 150), "hq": (122, 40, 196), "cafe": (150, 96, 60), "catco": (52, 58, 78),
                    "ricci": (58, 108, 72), "hospital": (18, 63, 53), "books": (110, 70, 50), "market": (176, 90, 60),
-                   "trattoria": (160, 50, 50), "bar": (70, 40, 60), "cinema": (60, 40, 110), "marina": (40, 70, 130)}
+                   "trattoria": (160, 50, 50), "bar": (70, 40, 60), "cinema": (60, 40, 110), "marina": (40, 70, 130),
+                   "boutique": (200, 120, 140)}
 SHORT = {"home": "Cobertura", "residencial": "Residencial Luthor", "hq": "Luthor Corp", "cafe": "Grão Nobre", "catco": "CatCo", "ricci": "Gruppo Ricci",
          "hospital": "Conti Moretti", "books": "Bayside Books", "market": "Mercado", "trattoria": "Trattoria",
-         "bar": "Noonan's", "cinema": "Cine National", "marina": "Marina"}
+         "bar": "Noonan's", "cinema": "Cine National", "marina": "Marina", "boutique": "Boutique"}
 INSIDE_DOOR = {"terrace": "residencial", "altomar": "marina"}      # mapas que não têm porta própria na cidade
 from .world import APT_PARENT as _APT_PARENT, SUB_PARENT as _SUB_PARENT
 INSIDE_DOOR.update(_SUB_PARENT)                              # apartamentos e cobertura: porta da portaria
@@ -95,7 +96,7 @@ class CityMap(ui.Modal):
               "books": "na Bayside Books", "market": "no Mercado Central", "trattoria": "na Ricci Trattoria",
               "bar": "no Noonan's", "cinema": "no Cine National", "marina": "na Marina Luthor",
               "altomar": "em alto-mar", "bayside": "na portaria dos Apartamentos Bayside",
-              "residencial": "na portaria do Residencial Luthor"}
+              "residencial": "na portaria do Residencial Luthor", "boutique": "na La Boutique"}
 
     def where(self, mapn):
         """(porta no mapa em tiles ou None, texto do lugar) de quem está em mapn."""
