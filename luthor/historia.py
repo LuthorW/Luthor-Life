@@ -28,8 +28,9 @@ EXTRAS = {
                        look=dict(look((120, 116, 120), SKIN_L, (70, 40, 46), (236, 226, 210), (46, 40, 44), (30, 24, 24),
                                       "short"), outfit="blazer", beard="full", beard_color=(170, 166, 170))),
     "rojas": dict(name="Andrea Rojas", role="Amiga da Letícia · conselheira, mora em Metrópolis", portrait="andrea",
-                  look=dict(look((40, 30, 34), SKIN_T, (170, 40, 56), (240, 230, 232), (40, 34, 44), (30, 24, 30), "long"),
-                            outfit="blazer")),
+                  # igual ao retrato: castanho ondulado com franja, olhos azul-acinzentados, blusa preta
+                  look=dict(look((118, 76, 48), SKIN_L, (34, 30, 38), (226, 214, 200), (58, 66, 96), (36, 28, 30), "wavy"),
+                            outfit="blouse", sleeves="short", eyes=(96, 132, 150))),
     "hamilton": dict(name="Sr. Hamilton", role="Conselheiro",
                      look=dict(look((236, 236, 240), SKIN_M, (60, 70, 96), (236, 236, 240), (50, 54, 70), (30, 30, 34),
                                     "short"), outfit="blazer", glasses=True)),

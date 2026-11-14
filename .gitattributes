@@ -1,0 +1,5 @@
+# O que NÃO vai no .zip "Baixar o jogo" (o GitHub monta o .zip sem estes arquivos).
+# O site e a wiki continuam no ar pelo GitHub Pages, que lê a pasta docs/ do repositório.
+docs/ export-ignore
+gerar_wiki.py export-ignore
+.gitattributes export-ignore

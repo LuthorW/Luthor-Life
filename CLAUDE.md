@@ -96,6 +96,8 @@ luthor/
                  amizade e a conversa mostra a resposta e a volta), Agenda (linhas do HUD + próximos 7 dias), Tempo, Bolsa (fechamentos em
                  `g.phone["stocks"]`; E negocia se leu o livro), Fotos (escolhe as fotos do mural), Pedidos,
                  Habilidades e Mapa. Estado em `g.phone`
+  mensagens.py   MAIS mensagens do celular (6 por personagem no total) e BOM_DIA da namorada, no formato de
+                 celular.MSGS; somadas no fim de celular.py. Mensagem nova de amiga: pode entrar aqui
   pedidos.py     quadro de pedidos de pé no Grão Nobre (8,2): bilhetes novos à noite, entrega conversando com quem
                  pediu até o prazo (3 dias); paga dinheiro + amizade, sem castigo. `g.pedidos`. Espaços do quadro
                  liberados pelos pedidos entregues (`UNLOCK` = 0, 3, 7: começa com 1, vai a 3; `slots`/`max_active`)
@@ -126,7 +128,8 @@ luthor/
   surpresa.py    aniversário da Letícia (`BDAY` = outono, dia 6): festa surpresa no terraço das 19h às 23h, a Jess de
                  anfitriã, convidados = namorada + amigas com 2+ corações (`guests`), um presente de cada (`GIFTS`);
                  perdeu a festa = bolo da Jess de manhã. `g.surpresa`. O casamento nunca cai nesse dia
-  andrea.py      Andrea Rojas (mora em Metrópolis; look de `historia.EXTRAS["rojas"]`, retrato `andrea.png` + humores):
+  andrea.py      Andrea Rojas (mora em Metrópolis; look de `historia.EXTRAS["rojas"]` igual ao retrato: castanho ondulado
+                 com franja, olhos azul-acinzentados, blusa preta; retrato `andrea.png` + humores):
                  mensagens no celular
                  (`celular.EXTRA_SENDERS`) e uma visita por estação (`VISITS`: café, praia, Trattoria, terraço) com cena,
                  aviso na véspera, $400 de parceria, energia, carisma e presente. `g.andrea`
@@ -751,4 +754,5 @@ substitua `pygame.key.get_pressed`. Antes de entregar uma mudança, rode alguns 
     clube do livro do Theo, corrida com a Sam, melhorias do laboratório, 7 medalhas novas (46) e site atualizado.
 43. Wiki do jogo em docs/wiki (gerar_wiki.py): uma página por personagem e por item, peixes, receitas, calendário,
     festas, lojas, lugares, laboratório, Fundação, hospital, habilidades e conquistas, com busca e tema claro/escuro.
-    Retratos da Celeste e da Andrea Rojas (cenas, celular, site e wiki).
+    Retratos da Celeste e da Andrea Rojas (cenas, celular, site e wiki), bonequinha nova da Andrea e o dobro de
+    mensagens no celular (mensagens.py), que também aparecem na wiki.

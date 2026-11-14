@@ -29,7 +29,7 @@ import pygame  # noqa: E402
 from luthor.game import Game  # noqa: E402
 from luthor import (art, data, characters, festas, conquistas, hospital, habilidades, fundacao,  # noqa: E402
                     laboratorio, marina, activities, historia, citymap, seasons, config, world, boutique,
-                    closet, andrea, clube, degustacao, surpresa, encontros, pediatria, pedidos, casamento)
+                    closet, andrea, clube, celular, degustacao, surpresa, encontros, pediatria, pedidos, casamento)
 
 g = Game()
 g.save = lambda *a, **k: None
@@ -575,6 +575,7 @@ def char_page(k):
             quotes.append(f'<blockquote><p>“{esc(ls[0])}”</p><cite>{lab}</cite></blockquote>')
     if quotes:
         body.append("<h2>Falas</h2>" + "".join(quotes))
+    body.append(messages_html(celular.MSGS.get(k, []), celular.MORNING.get(k, []), k in MALE))
     ps = PORTRAITS.get(k) or []
     if len(ps) > 1:
         figs = "".join(f'<figure><img src="img/retratos/{f}" alt="{esc(lab)}" loading="lazy"><figcaption>{lab}</figcaption></figure>'
@@ -585,6 +586,26 @@ def char_page(k):
     body.append(navbox())
     write(f"{k}.html", d["name"], "\n".join(body), [("personagens.html", "Personagens")],
           desc=f'{d["name"]}: {d["role"]}. Rotina, presentes e eventos.', cat="Personagem", icon=f"cabecas/{k}.png")
+
+
+def messages_html(msgs, morning, male, title=True):
+    """Mensagens do celular: o texto e as 3 respostas (com a volta), escondidas num <details>."""
+    if not msgs and not morning:
+        return ""
+    def one(t, rs):
+        lis = "".join(f'<li><b>{esc(a)}</b> <span>→ {esc(b)}</span></li>' for a, b in rs)
+        return f'<div class="msg"><p class="balao">{esc(t)}</p><ul>{lis}</ul></div>'
+    who = "ele" if male else "ela"
+    out = ['<h2>Mensagens no celular</h2>' if title else "",
+           f'<p>Com 2 corações, {who} manda mensagens de vez em quando (app Mensagens, tecla <kbd>T</kbd>). '
+           'Responder dá amizade e carisma.</p>' if title else "",
+           f'<details class="spoiler"><summary>Ver as {len(msgs) + len(morning)} mensagens e as respostas</summary>']
+    out += [one(t, rs) for t, rs in msgs]
+    if morning:
+        out.append("<h4>Bom dia (namorando)</h4>")
+        out += [one(t, rs) for t, rs in morning]
+    out.append("</details>")
+    return "".join(out)
 
 
 def navbox():
@@ -668,7 +689,8 @@ def andrea_page():
             "<h2>Mensagens</h2>",
             f"<p>A partir do {andrea.FIRST_DAY}º dia ela manda mensagens de vez em quando, como as amigas da cidade. Cada "
             "mensagem tem três respostas e ela sempre responde de volta.</p>",
-            shot("andrea", "Visita da Andrea no terraço", "A visita de inverno, no terraço"),
+            messages_html(andrea.MSGS, [], False, title=False),
+            shot("andrea","Visita da Andrea no terraço", "A visita de inverno, no terraço"),
             shot("celular", "Mensagem da Andrea no celular")]
     ps = PORTRAITS.get(k) or []
     if len(ps) > 1:

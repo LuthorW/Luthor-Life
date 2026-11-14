@@ -1002,3 +1002,13 @@ class Phone(ui.Modal):
 def open_phone(g):
     audio.sfx("open")
     g.push(Phone(g))
+
+
+# Mais mensagens (mensagens.py): somadas às de cima, cada uma com as suas 3 respostas
+from .mensagens import MAIS as _MAIS, BOM_DIA as _BOM_DIA  # noqa: E402
+
+for _k, _lst in _MAIS.items():
+    MSGS.setdefault(_k, []).extend(_lst)
+for _k, _lst in _BOM_DIA.items():
+    MORNING.setdefault(_k, []).extend(_lst)
+REPLIES_FOR.update({_t: _r for _t, _r in _all_entries()})

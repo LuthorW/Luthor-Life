@@ -53,6 +53,22 @@ MSGS = [
      [("O Harry desenhou um gato na espuma do meu café.", "Um gato! Pronto, meu dia melhorou trinta por cento."),
       ("O pôr do sol no píer. Sempre.", "Me guarda um. Na próxima visita, a gente vê juntas."),
       ("Eu. Eu sou a coisa boa de National City.", "Não posso discordar. Mas posso revirar os olhos daqui.")]),
+    ("Achei uma foto nossa da formatura. Você de beca e com cara de quem já ia dominar o mundo. Acertou.",
+     [("E você de beca e chorando.", "Chorando de orgulho! E de calor. Aquela beca era de lã."),
+      ("Me manda essa foto!", "Mandei. Coloca no mural, do lado das fotos do Barry."),
+      ("A gente era muito nova.", "Nova e corajosa. Ainda somos uma das duas coisas.")]),
+    ("Experimentei o café do aeroporto de Metropolis. Péssimo. Agora só confio no Grão Nobre.",
+     [("O Harry vai ficar orgulhoso.", "Diz para ele guardar um cappuccino para a minha próxima visita."),
+      ("Vem tomar um aqui, então.", "Não me tenta. Eu já estou olhando passagem de novo."),
+      ("Café de aeroporto é crime.", "Deveria ser. Vou propor uma lei.")]),
+    ("Meu conselho perguntou como você conseguiu dobrar a ação da Luthor Corp. Eu disse: teimosia e café.",
+     [("Faltou dizer: boas amigas.", "Deixei de fora para eles não ficarem com inveja."),
+      ("Teimosia é o principal.", "Eu sei. Eu estava lá na faculdade. Eu lembro."),
+      ("E o que eles disseram?", "Pediram o seu contato. Eu disse que você é exclusiva minha.")]),
+    ("Comprei um vestido que eu nunca vou usar porque ele parece com a sua cara. Isso é normal?",
+     [("Totalmente normal.", "Ótimo. Vou comprar mais dois, então."),
+      ("Manda foto!", "Mandei. Seja sincera. Não, seja gentil. Seja as duas."),
+      ("Usa na sua próxima visita.", "Combinado. A gente tira foto no píer.")]),
 ]
 for _t, _r in MSGS:
     celular.REPLIES_FOR[_t] = _r

@@ -326,3 +326,10 @@ details.spoiler summary { cursor: pointer; font-weight: 800; color: var(--roxo-e
   .ev.semana { display: none; }
 }
 @media (min-width: 901px) { .lateral { background: transparent; } }
+
+/* ---- mensagens do celular ---- */
+.msg { margin: 10px 0 14px; }
+.msg .balao { display: inline-block; margin: 0 0 4px; padding: 6px 12px; background: var(--roxo-claro); border-radius: 12px 12px 12px 2px; }
+.msg ul { margin: 0; padding-left: 18px; font-size: 14px; }
+.msg li b { color: var(--verde); font-weight: 700; }
+.msg li span { color: var(--suave); }
