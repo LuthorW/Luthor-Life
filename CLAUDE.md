@@ -22,6 +22,11 @@ assets/cmh.png       logo do Conti Moretti Hospitais
 assets/lexcorp.png   logo da Luthor Corp
 saves/               save.json e settings (fora do git)
 docs/                site (index.html, style.css, script.js, img/, fonts/)
+docs/wiki/           wiki do jogo (estilo wiki do Stardew), GERADA por gerar_wiki.py: não edite os .html à mão
+gerar_wiki.py        `py gerar_wiki.py` monta docs/wiki/ a partir dos dados do jogo (páginas de personagens, itens,
+                     peixes, receitas, calendário, festas, lojas...), a busca (busca.js) e as imagens (ícones, cabeças,
+                     medalhas, mapa, retratos em WebP menores só para a wiki). wiki.css e wiki.js são escritos à mão.
+                     Rode de novo depois de mudar falas, presentes, itens, rotinas, eventos etc. Não mexe no save
 luthor/
   config.py      SCALE=2, TS=16, TILE=32, tela 1280x720, tempo (7s reais = 10 min), estação de 14 dias, cores C_*
   game.py        classe Game: estado, loop, interação, HUD, desenho, fim do dia, save/load
@@ -121,7 +126,8 @@ luthor/
   surpresa.py    aniversário da Letícia (`BDAY` = outono, dia 6): festa surpresa no terraço das 19h às 23h, a Jess de
                  anfitriã, convidados = namorada + amigas com 2+ corações (`guests`), um presente de cada (`GIFTS`);
                  perdeu a festa = bolo da Jess de manhã. `g.surpresa`. O casamento nunca cai nesse dia
-  andrea.py      Andrea Rojas (mora em Metrópolis; look de `historia.EXTRAS["rojas"]`): mensagens no celular
+  andrea.py      Andrea Rojas (mora em Metrópolis; look de `historia.EXTRAS["rojas"]`, retrato `andrea.png` + humores):
+                 mensagens no celular
                  (`celular.EXTRA_SENDERS`) e uma visita por estação (`VISITS`: café, praia, Trattoria, terraço) com cena,
                  aviso na véspera, $400 de parceria, energia, carisma e presente. `g.andrea`
   colecao.py     primeira coleção da Celeste (depois do desfile, flag `celeste_desfile`): investir $2500 conversando com
@@ -254,8 +260,7 @@ luthor/
 - **Conti Moretti Hospitais** segue o site do projeto `CMHospitais` (pasta irmã): 12 especialidades,
   lideranças clínicas, cores verde #123f35, cobre #b77b65, papel #fbfaf8. Consulta: energia cheia + bônus do dia.
 - **La Boutique (boutique.py):** a Celeste Waite (estilista **francesa, de Lyon**: nada de raízes brasileiras; estudou em Milão; rosto da
-  **Sofia Boutella**, com o cabelo pintado cor de vinho como no bonequinho; `NPCS["celeste"]`, ainda sem retrato: a caixa de
-  fala usa o bonequinho; PNGs `celeste.png` + `_feliz`/`_ruim`/`_timido` podem entrar depois) fica no balcão (12,4)
+  **Sofia Boutella**, com o cabelo pintado cor de vinho como no bonequinho; `NPCS["celeste"]`, retratos `celeste.png` + `_feliz`/`_ruim`/`_timido`) fica no balcão (12,4)
   das 9h40 às 19h. A loja tem 2 abas: roupas (o look vai direto para o closet) e acessórios (vão para a mochila).
   Acessório: F na mochila ou o closet/provador veste (sai da mochila e fica guardado em `g.closet["acc"]`; em uso em
   `g.closet["worn"]` = espaço -> chave); dá para presentear (gostos em `boutique.TASTES`). Os acessórios são chaves
@@ -400,7 +405,8 @@ luthor/
   horário) e, depois, um objetivo que libera o próximo (lançar 5 produtos, faturar $6000, ação a $110, 4 corações com
   Sam/Brainy/Jess/Ian). No fim (`luthor_livre`): produtos +10%, $3000 e amizade com a equipe. A reunião do conselho é na
   sala de reuniões da sede (`mesa_reuniao`, que também abre o painel dos capítulos; a Letícia senta na cabeceira). Personagens só de cena
-  (tios, Andrea Rojas, Hamilton, o espião) ficam em `EXTRAS`, com look próprio, e os retratos saem do bonequinho.
+  (tios, Andrea Rojas, Hamilton, o espião) ficam em `EXTRAS`, com look próprio; o retrato sai do bonequinho, a não ser
+  que o extra tenha `portrait` (a Andrea tem: `andrea.png`, também no celular via `EXTRA_SENDERS[...]["portrait"]`).
   **Andrea Rojas é amiga da Letícia** e mora em Metrópolis: conselheira do lado dela, nunca vilã nem rival (andrea.py).
 - **Fundação Luthor (fundacao.py):** mesa na sede (`HQ_DESK`). Doar itens da mochila ou dinheiro; a obra completa
   aparece na cidade na noite seguinte (`night`: ready → built; `apply` põe os objetos de `PROPS` e recalcula `m.solid`).
@@ -743,3 +749,6 @@ substitua `pygame.key.get_pressed`. Antes de entregar uma mudança, rode alguns 
 42. Aniversário surpresa da Letícia no terraço, visitas e mensagens da Andrea Rojas, primeira coleção da Celeste,
     eventos da Lucy e da Vittoria que faltavam na lore, encontros especiais (piquenique, veleiro, cinema e jantar),
     clube do livro do Theo, corrida com a Sam, melhorias do laboratório, 7 medalhas novas (46) e site atualizado.
+43. Wiki do jogo em docs/wiki (gerar_wiki.py): uma página por personagem e por item, peixes, receitas, calendário,
+    festas, lojas, lugares, laboratório, Fundação, hospital, habilidades e conquistas, com busca e tema claro/escuro.
+    Retratos da Celeste e da Andrea Rojas (cenas, celular, site e wiki).

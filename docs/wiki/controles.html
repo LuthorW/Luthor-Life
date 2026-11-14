@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Controles · Wiki Luthor Life</title>
+<meta name="description" content="Teclas do jogo.">
+<link rel="icon" href="../img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800&amp;display=swap" rel="stylesheet">
+<link rel="stylesheet" href="wiki.css">
+<script>try{var t=localStorage.getItem("wiki-tema");if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
+</head>
+<body>
+<header class="topo">
+  <button class="menu" aria-label="Abrir o menu">☰</button>
+  <a class="marca" href="index.html"><img src="img/cabecas/leticia.png" alt="" width="32" height="32"><span>Luthor Life</span><em>Wiki</em></a>
+  <div class="busca">
+    <input type="search" placeholder="Buscar na wiki..." aria-label="Buscar na wiki" autocomplete="off">
+    <ul class="resultados" hidden></ul>
+  </div>
+  <button class="tema" aria-label="Trocar tema claro/escuro">◐</button>
+</header>
+<div class="corpo">
+  <nav class="lateral"><h3>Início</h3><ul><li><a href="index.html">Página principal</a></li><li><a href="guia.html">Primeiros passos</a></li><li><a href="controles.html" class="atual">Controles</a></li></ul><h3>Gente</h3><ul><li><a href="personagens.html">Personagens</a></li><li><a href="leticia.html">Letícia Luthor</a></li><li><a href="presentes.html">Presentes</a></li><li><a href="romance.html">Romance</a></li></ul><h3>National City</h3><ul><li><a href="lugares.html">Lugares</a></li><li><a href="calendario.html">Calendário</a></li><li><a href="festas.html">Festas</a></li><li><a href="estacoes.html">Estações e clima</a></li></ul><h3>Coisas</h3><ul><li><a href="itens.html">Itens</a></li><li><a href="peixes.html">Peixes</a></li><li><a href="receitas.html">Receitas</a></li><li><a href="horta.html">Horta e coletáveis</a></li><li><a href="lojas.html">Lojas</a></li></ul><h3>Luthor Corp</h3><ul><li><a href="laboratorio.html">Laboratório</a></li><li><a href="fundacao.html">Fundação Luthor</a></li><li><a href="historia.html">História</a></li></ul><h3>Vida na cidade</h3><ul><li><a href="atividades.html">Atividades</a></li><li><a href="hospital.html">Conti Moretti</a></li><li><a href="habilidades.html">Habilidades</a></li><li><a href="conquistas.html">Conquistas</a></li></ul><h3>Ferramentas</h3><ul><li><a href="#" id="aleatoria">Página aleatória</a></li><li><a href="../index.html">Site do jogo</a></li><li><a href="https://github.com/LuthorW/Luthor-Life">Código no GitHub</a></li></ul></nav>
+  <main class="artigo">
+    <nav class="trilha"><a href="index.html">Wiki</a></nav>
+    <h1>Controles</h1>
+<div class="tabela"><table class="wikitable"><thead><tr><th>Tecla</th><th>O que faz</th></tr></thead><tbody><tr><td><kbd>W</kbd> <kbd>A</kbd> <kbd>S</kbd> <kbd>D</kbd> <kbd>setas</kbd></td><td>Andar (com Shift, devagar)</td></tr><tr><td><kbd>E</kbd> <kbd>Espaço</kbd></td><td>Interagir, conversar, trabalhar, pescar</td></tr><tr><td><kbd>1</kbd> <kbd>…</kbd> <kbd>0,</kbd> <kbd>-,</kbd> <kbd>=</kbd></td><td>Escolher item da barra (ou rodinha do mouse)</td></tr><tr><td><kbd>F</kbd></td><td>Comer, beber, ler ou vestir o item escolhido</td></tr><tr><td><kbd>I</kbd> <kbd>Tab</kbd></td><td>Mochila (24 espaços)</td></tr><tr><td><kbd>O</kbd></td><td>Objetivos</td></tr><tr><td><kbd>R</kbd></td><td>Relacionamentos</td></tr><tr><td><kbd>M</kbd></td><td>Mapa da cidade</td></tr><tr><td><kbd>C</kbd></td><td>Calendário</td></tr><tr><td><kbd>T</kbd></td><td>Celular</td></tr><tr><td><kbd>K</kbd></td><td>Conquistas</td></tr><tr><td><kbd>P</kbd></td><td>Modo foto (Enter salva; 1 acena, 2 sorri, 3 coração)</td></tr><tr><td><kbd>Esc</kbd></td><td>Menu de pausa: objetivos, relacionamentos, coleções, cenas e volume</td></tr><tr><td><kbd>F11</kbd></td><td>Tela cheia</td></tr><tr><td><kbd>Setas</kbd> <kbd>D</kbd> <kbd>F</kbd> <kbd>J</kbd> <kbd>K</kbd></td><td>Karaokê</td></tr></tbody></table></div>
+<p>Rodar o jogo: <code>python main.py</code> (ou <code>Jogar.bat</code> no Windows). Precisa só do <code>pygame-ce</code>.</p>
+  </main>
+</div>
+<footer class="rodape">Wiki feita a partir dos dados do jogo <b>Luthor Life</b> (gerar_wiki.py). Fã-jogo sem fins lucrativos.</footer>
+<script src="busca.js"></script>
+<script src="wiki.js"></script>
+</body>
+</html>

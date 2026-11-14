@@ -17,7 +17,7 @@ KEY = "rojas"
 FIRST_DAY = 4                       # mensagens começam no 4º dia de jogo
 PARTNERSHIP = 400
 
-celular.EXTRA_SENDERS[KEY] = dict(name="Andrea Rojas", short="Andrea", look=EXTRAS[KEY]["look"],
+celular.EXTRA_SENDERS[KEY] = dict(name="Andrea Rojas", short="Andrea", look=EXTRAS[KEY]["look"], portrait="andrea",
                                   on_reply=lambda g: _befriend(g, 15))
 
 MSGS = [

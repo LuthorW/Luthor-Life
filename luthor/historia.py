@@ -27,7 +27,7 @@ EXTRAS = {
     "tio_edmund": dict(name="Edmund Luthor", role="Tio da Letícia · acionista",
                        look=dict(look((120, 116, 120), SKIN_L, (70, 40, 46), (236, 226, 210), (46, 40, 44), (30, 24, 24),
                                       "short"), outfit="blazer", beard="full", beard_color=(170, 166, 170))),
-    "rojas": dict(name="Andrea Rojas", role="Amiga da Letícia · conselheira, mora em outra cidade",
+    "rojas": dict(name="Andrea Rojas", role="Amiga da Letícia · conselheira, mora em Metrópolis", portrait="andrea",
                   look=dict(look((40, 30, 34), SKIN_T, (170, 40, 56), (240, 230, 232), (40, 34, 44), (30, 24, 30), "long"),
                             outfit="blazer")),
     "hamilton": dict(name="Sr. Hamilton", role="Conselheiro",
@@ -54,7 +54,9 @@ _orig_speaker = Cutscene.speaker
 def _speaker(self, name, mood=None):
     if name in EXTRAS:
         e = EXTRAS[name]
-        return e["name"], art.portrait(None, e["look"], art.PORTRAIT_SIZE), e["role"]
+        from .game import MOOD_ALIASES               # retrato desenhado (assets/portraits/<portrait>*.png), se houver
+        fname = art.portrait_file(e.get("portrait"), MOOD_ALIASES.get(mood, mood))
+        return e["name"], art.portrait(fname, e["look"], art.PORTRAIT_SIZE), e["role"]
     return _orig_speaker(self, name, mood)
 
 

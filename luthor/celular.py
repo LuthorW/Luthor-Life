@@ -408,7 +408,8 @@ def sender_portrait(g, key, size):
     if key in g.npcs:
         return g.portrait_for(g.npcs[key], size=size)
     from . import art
-    return art.portrait(None, EXTRA_SENDERS[key]["look"], size)
+    e = EXTRA_SENDERS[key]
+    return art.portrait(art.portrait_file(e.get("portrait")), e["look"], size)
 
 
 def _known(key):
