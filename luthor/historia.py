@@ -27,7 +27,7 @@ EXTRAS = {
     "tio_edmund": dict(name="Edmund Luthor", role="Tio da Letícia · acionista",
                        look=dict(look((120, 116, 120), SKIN_L, (70, 40, 46), (236, 226, 210), (46, 40, 44), (30, 24, 24),
                                       "short"), outfit="blazer", beard="full", beard_color=(170, 166, 170))),
-    "rojas": dict(name="Andrea Rojas", role="Amiga da Letícia · conselheira, mora em Metrópolis", portrait="andrea",
+    "rojas": dict(name="Andrea Rojas", role="Amiga da Letícia · mora em Metrópolis", portrait="andrea",
                   # igual ao retrato: castanho ondulado com franja, olhos azul-acinzentados, blusa preta
                   look=dict(look((118, 76, 48), SKIN_L, (34, 30, 38), (226, 214, 200), (58, 66, 96), (36, 28, 30), "wavy"),
                             outfit="blouse", sleeves="short", eyes=(96, 132, 150))),
@@ -314,11 +314,11 @@ SCENES["historia_4"] = dict(map="catco", time=15 * 60, npc="lucy", steps=[
 ])
 
 SCENES["historia_5"] = dict(map="hq", time=11 * 60, npc="sam", steps=[
-    ("ator", "jess", 28, 4, "down"), ("ator", "brainy", 29, 4, "down"), ("ator", "rojas", 30, 4, "down"),
+    ("ator", "jess", 28, 4, "down"), ("ator", "brainy", 29, 4, "down"),
     ("ator", "sam", 31, 4, "down"),
     ("ator", "ian", 28, 7, "up"), ("ator", "hamilton", 29, 7, "up"), ("ator", "tio_edmund", 30, 7, "up"),
     ("ator", "tio_conrad", 31, 7, "up"),
-    ("sentar", "jess"), ("sentar", "brainy"), ("sentar", "rojas"), ("sentar", "sam"),
+    ("sentar", "jess"), ("sentar", "brainy"), ("sentar", "sam"),
     ("sentar", "ian"), ("sentar", "hamilton"), ("sentar", "tio_edmund"), ("sentar", "tio_conrad"),
     ("ator", "player", 29, 10, "up"),
     ("camera_ja", 29, 6), ("fade_in",),
@@ -327,7 +327,7 @@ SCENES["historia_5"] = dict(map="hq", time=11 * 60, npc="sam", steps=[
     ("fala", "tio_conrad", "Vamos ser breves. A Luthor Corp precisa de uma liderança madura."),
     ("fala", "tio_conrad", "Propomos a saída da senhora Letícia Luthor da presidência."),
     ("fala", "tio_edmund", "Com todo o respeito à memória do nosso irmão, claro.", "smile"),
-    ("fala", "rojas", "Eu peguei o primeiro voo quando soube desta reunião. Antes de votar, quero ouvir a minha amiga.", "smile"),
+    ("fala", "hamilton", "Antes de votar, eu quero ouvir a presidente. Foi o Alexander que me ensinou isso.", "smile"),
     ("fala", "sam", "Mostra para eles, Luthor.", "smile"),
     ("escolha", "O que você apresenta?", [
         ("As pessoas: a equipe, a cidade e a Fundação.", 60, "Empresa é gente. E a cidade inteira está do nosso lado."),
@@ -338,7 +338,7 @@ SCENES["historia_5"] = dict(map="hq", time=11 * 60, npc="sam", steps=[
     ("fala", "brainy", "E a matéria da CatCo de sexta. A Lucy e a Nia confirmaram tudo com o escritório de Gotham."),
     ("emote", "tio_conrad", "raiva"), ("emote", "tio_edmund", "gota"),
     ("fala", "ian", "A Marina Luthor fechou o trimestre no azul. Eu voto com a Letícia. Desde as férias no interior.", "happy"),
-    ("fala", "rojas", "Eu também. E proponho outra coisa: quem contratou espionagem contra a própria empresa vende as ações.", "happy"),
+    ("fala", "sam", "Eu também. E proponho outra coisa: quem contratou espionagem contra a própria empresa vende as ações.", "happy"),
     ("fala", "hamilton", "Apoiado. Por unanimidade, menos dois."),
     ("narra", "A votação termina rápido. As mãos levantadas não deixam dúvida."),
     ("fala", "tio_conrad", "Isso não termina aqui."),

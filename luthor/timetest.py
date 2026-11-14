@@ -63,7 +63,7 @@ class TimePanel(ui.Modal):
         elif row == "Ano":
             v["year"] = max(2034, v["year"] + d)
         elif row == "Clima":
-            opts = ["sol", "chuva", "tempestade", "arco-íris"]
+            opts = ["sol", "chuva", "tempestade"]
             v["weather"] = opts[(opts.index(v["weather"]) + d) % len(opts)]
         elif row == "Relógio parado":
             v["frozen"] = not v["frozen"]

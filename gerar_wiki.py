@@ -29,7 +29,7 @@ import pygame  # noqa: E402
 from luthor.game import Game  # noqa: E402
 from luthor import (art, data, characters, festas, conquistas, hospital, habilidades, fundacao,  # noqa: E402
                     laboratorio, marina, activities, historia, citymap, seasons, config, world, boutique,
-                    closet, andrea, clube, celular, degustacao, surpresa, encontros, pediatria, pedidos, casamento)
+                    closet, andrea, clube, celular, horarios, degustacao, surpresa, encontros, pediatria, pedidos, casamento)
 
 g = Game()
 g.save = lambda *a, **k: None
@@ -680,11 +680,11 @@ def andrea_page():
     body = [infobox("Andrea Rojas", img, rows, "pessoa"),
             '<p class="lead">Andrea Rojas é amiga da Letícia desde a faculdade, em Gotham, e hoje comanda os próprios '
             'negócios em Metrópolis. Não mora em National City, então não entra no painel de relacionamentos: a amizade '
-            'cresce pelas mensagens e pelas visitas. No conselho da Luthor Corp, ela fica do lado da Letícia.</p>',
+            'cresce pelas mensagens e pelas visitas. Ela não tem nada a ver com a Luthor Corp: é só amiga.</p>',
             "<h2>Visitas</h2>",
             "<p>Uma vez por estação ela vem à cidade. Na véspera chega um aviso, de manhã o convite pelo celular, e a cena "
-            "toca quando a Letícia chega ao lugar no horário. Cada visita dá energia, carisma, um presente e uma parceria "
-            f"de negócios de {money(andrea.PARTNERSHIP)} para a Luthor Corp.</p>",
+            "toca quando a Letícia chega ao lugar no horário. Cada visita dá um presente, energia (+30), "
+            "carisma e <b>bom astral</b>: as conversas rendem 25% mais amizade até o fim do dia.</p>",
             table(["Estação", "Dia", "Onde", "Horário", "Presente"], vis),
             "<h2>Mensagens</h2>",
             f"<p>A partir do {andrea.FIRST_DAY}º dia ela manda mensagens de vez em quando, como as amigas da cidade. Cada "
@@ -843,10 +843,7 @@ def estacoes_page():
             "<li>Chovendo, todo mundo na rua anda de guarda-chuva e algumas pessoas mudam a rotina (veja a rotina de chuva "
             "de cada personagem).</li>"
             "<li><b>Tempestade:</b> raios clareiam a tela e trovões ressoam. Para peixes, rotinas e figurantes continua "
-            "sendo chuva.</li>"
-            f"<li><b>Arco-íris:</b> {int(clima.RAINBOW_CHANCE * 100)}% de chance, das 6h às 11h, num dia de sol depois de "
-            "chuva. Não aparece no inverno.</li></ul>",
-            shot("arco_iris", "Arco-íris sobre a praia")]
+            "sendo chuva.</li></ul>"]
     write("estacoes.html", "Estações e clima", "\n".join(body), desc="O que muda em cada estação, chuva e tempestade.")
 
 
@@ -1065,10 +1062,22 @@ def lugares_page():
     for n, t, im in OUTDOOR:
         body.append(f'<div class="lugar">{shot(im, n)}<div><h3>{n}</h3><p>{t}</p></div></div>')
     body.append("<h2>Prédios</h2>")
+    body.append('<p>As lojas, os restaurantes e os escritórios têm <b>horário de funcionamento</b>: fora dele a porta fica '
+                'trancada. Quem comanda o lugar deixa a Letícia entrar a qualquer hora com <b>2 corações</b> (lojas, cafés '
+                'e restaurantes) ou <b>4 corações</b> (CatCo e Gruppo Ricci). Encontros, eventos e visitas marcados ali '
+                'também abrem a porta. A Luthor Corp, a Marina, o hospital e as casas não fecham.</p>')
+    hrows = []
+    for m, (a, b, owners, h) in horarios.OPEN_HOURS.items():
+        quem = " ".join(npc(k) for k in owners) if owners else "—"
+        hrows.append([f'<a href="#{m}">{esc(PLACE_TXT[m][0] if m in PLACE_TXT else m)}</a>', esc(horarios.hours_text(m)),
+                      quem, f"{h} corações" if owners else "ninguém"])
+    body.append(table(["Lugar", "Horário", "Quem libera", "Fora do horário"], hrows))
     for m, (n, t, im) in PLACE_TXT.items():
         who = regular.get(m, [])
         w = f'<p class="quem">Quem aparece: {" ".join(npc(k) for k in who)}</p>' if who else ""
-        body.append(f'<div class="lugar" id="{m}">{shot(im, n) if im else ""}<div><h3>{esc(n)}</h3><p>{t}</p>{w}</div></div>')
+        hr = (f'<p class="quem">Horário: {esc(horarios.hours_text(m))}</p>' if m in horarios.OPEN_HOURS
+              else '<p class="quem">Horário: sempre aberto</p>' if m in ("hq", "marina", "hospital") else "")
+        body.append(f'<div class="lugar" id="{m}">{shot(im, n) if im else ""}<div><h3>{esc(n)}</h3><p>{t}</p>{hr}{w}</div></div>')
     write("lugares.html", "Lugares", "\n".join(body), desc="Lugares de National City.")
 
 
@@ -1129,8 +1138,7 @@ def historia_page():
             'libera o próximo.</p>',
             '<details class="spoiler"><summary>Mostrar os capítulos (spoiler)</summary>'
             + table(["#", "Capítulo", "Onde e quando", "Objetivo depois"], rows)
-            + "<p>A mesa da sala de reuniões da sede mostra os capítulos já vistos. A Andrea Rojas, amiga da Letícia que mora "
-              "em Metrópolis, é conselheira do lado dela.</p></details>",
+            + "<p>A mesa da sala de reuniões da sede mostra os capítulos já vistos.</p></details>",
             "<h2>Eventos de coração</h2><p>Além da história da empresa, cada personagem tem seus eventos de coração, com cenas "
             "que tocam no lugar e horário certos (veja a página de cada personagem). Eles também podem ser revistos no menu de "
             "pausa.</p>",
@@ -1212,7 +1220,7 @@ def atividades_page():
                                "Agenda, Tempo, Bolsa, Fotos, Pedidos, Habilidades e Mapa.</p>", "celular"),
         ("andrea", "Andrea Rojas", "<p><a href=\"andrea.html\">Andrea Rojas</a> é amiga da Letícia e mora em Metrópolis. Manda mensagens e visita a cidade uma vez por "
                                    "estação (aviso na véspera): café, praia, Trattoria ou terraço. A visita rende $400 de "
-                                   "parceria, energia, carisma e um presente.</p>", "andrea"),
+                                   "bom astral, energia, carisma e um presente.</p>", "andrea"),
         ("catco", "CatCo TV e notícias", "<p>Entrevista ao vivo uma vez por semana no estúdio da CatCo, anúncio de $400 (produtos "
                                          "+15% por 3 noites) e o arquivo de matérias antigas. As manchetes da CatCo reagem ao "
                                          "que a Letícia faz: aparecem na banca, na TV e nas conversas.</p>", "arquivo"),
@@ -1259,7 +1267,8 @@ def controles_page():
             ("1 … 0, -, =", "Escolher item da barra (ou rodinha do mouse)"), ("F", "Comer, beber, ler ou vestir o item escolhido"),
             ("I / Tab", "Mochila (24 espaços)"), ("O", "Objetivos"), ("R", "Relacionamentos"), ("M", "Mapa da cidade"),
             ("C", "Calendário"), ("T", "Celular"), ("K", "Conquistas"), ("P", "Modo foto (Enter salva; 1 acena, 2 sorri, 3 coração)"),
-            ("Esc", "Menu de pausa: objetivos, relacionamentos, coleções, cenas e volume"), ("F11", "Tela cheia"),
+            ("Ctrl+rodinha / Ctrl+- / Ctrl+=", "Zoom: afastar ou aproximar a câmera (75% a 175%; 100% é o padrão)"),
+            ("Esc", "Menu de pausa: objetivos, relacionamentos, coleções, cenas, zoom e volume"), ("F11", "Tela cheia"),
             ("Setas / D F J K", "Karaokê")]
     rows = [[" ".join(f"<kbd>{esc(x)}</kbd>" for x in k.split(" ") if x not in ("/",)), esc(v)] for k, v in keys]
     body = [table(["Tecla", "O que faz"], rows),

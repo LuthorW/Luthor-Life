@@ -47,6 +47,8 @@ luthor/
   dialogue.py    LINES por período/clima/lugar/amizade, REACTIVE (falas condicionais), BUSY
   falas.py       MAIS: falas extras de todas as personagens (mesmas categorias de LINES), somadas no fim de
                  dialogue.py (a Celeste, no boutique.py, que monta as falas dela depois). Fala nova: pode entrar aqui
+  horarios.py    horário de funcionamento dos prédios (`OPEN_HOURS`: abre, fecha, quem comanda, corações) e a porta
+                 trancada fora dele (`can_enter`, chamado por `Game.door_open`); exceções em `invited` + `INVITES`
   hospital.py    Conti Moretti: especialidades, consultas, bônus do dia, farmácia, doação
   crowd.py       figurantes (moradores sem conversa) que circulam pela cidade
   activities.py  horta do terraço, coletáveis, bichinho, karaokê, cinema, céu do terraço
@@ -132,7 +134,8 @@ luthor/
                  com franja, olhos azul-acinzentados, blusa preta; retrato `andrea.png` + humores):
                  mensagens no celular
                  (`celular.EXTRA_SENDERS`) e uma visita por estação (`VISITS`: café, praia, Trattoria, terraço) com cena,
-                 aviso na véspera, $400 de parceria, energia, carisma e presente. `g.andrea`
+                 aviso na véspera, presente, energia, carisma e "bom astral" (`andrea.BUFF` em `g.buffs`: conversas +25% até a
+                 noite). `g.andrea`
   colecao.py     primeira coleção da Celeste (depois do desfile, flag `celeste_desfile`): investir $2500 conversando com
                  ela; em 3 noites lança 4 looks na Boutique, manchete na CatCo e $150 de royalties por semana. `g.colecao`
   coracoes.py    eventos de coração que faltavam na lore: lucy_5 (arquivo da CatCo), vittoria_5 (inauguração às 6h) e
@@ -152,7 +155,7 @@ luthor/
   natureza.py    mar com profundidade, ondulação e ondas subindo na areia; reflexos do pôr do sol e luar; árvores,
                  arbustos e tufinhos de grama balançando ao vento
   jogos.py       sinuca e dardos no Noonan's, xadrez com o Brainy (opção na conversa, 1x por dia)
-  clima.py       tempestade (raios e trovões; o clima continua "chuva") e arco-íris na manhã depois da chuva
+  clima.py       tempestade (raios e trovões; o clima continua "chuva"); o arco-íris está DESLIGADO (`RAINBOW_ENABLED`)
   timetest.py    modo de teste de dia/horário: `python main.py --teste` (F6 abre o painel; não salva nada)
   scenetest.py   modo de teste de cenas: `python main.py --cenas` / `--cena chave` (não salva nada)
   minigames.py   pesca, fliperama Meteoro, fogão, mochila
@@ -370,7 +373,8 @@ luthor/
   atores a 1 tile). Gole inclina no máx. 35 graus; de costas, o copo não aparece.
 - **Animações do dia a dia (animacoes.py, `g.act`):** regar, bancada, "pegou" (braços abertos em Y, "viva!", e o peixe flutuando acima da cabeça como no Stardew; braços colados na cabeça pareciam antenas ou orelhas, a dona achou estranho) e dormir travam
   o andar enquanto duram. A cama não encerra o dia na hora: ela deita (`player.hidden`, a cabeça no travesseiro e o
-  cobertor da própria cama por cima), "zzz" e só então `end_day`. Na pesca, `g.reel` fica ligado durante o minigame.
+  cobertor da própria cama por cima), "zzz" e só então `end_day`; ela continua deitada durante o escurecimento
+  e só sai da cama no `go()` do `end_day` (com a tela já preta). Na pesca, `g.reel` fica ligado durante o minigame.
 - **Guarda-chuva:** chovendo (fora do inverno) todo mundo na rua anda de guarda-chuva (`entities.UMBRELLA["on"]`,
   ligado por `animacoes.update_fx`); a Letícia usa um roxo. Quem está de guarda-chuva sorri em vez de acenar.
 - **NPCs comendo/bebendo:** sentados em café, Trattoria, Noonan's, Gruppo Ricci, hospital e marina pegam algo de
@@ -410,7 +414,8 @@ luthor/
   sala de reuniões da sede (`mesa_reuniao`, que também abre o painel dos capítulos; a Letícia senta na cabeceira). Personagens só de cena
   (tios, Andrea Rojas, Hamilton, o espião) ficam em `EXTRAS`, com look próprio; o retrato sai do bonequinho, a não ser
   que o extra tenha `portrait` (a Andrea tem: `andrea.png`, também no celular via `EXTRA_SENDERS[...]["portrait"]`).
-  **Andrea Rojas é amiga da Letícia** e mora em Metrópolis: conselheira do lado dela, nunca vilã nem rival (andrea.py).
+  **Andrea Rojas é amiga da Letícia** e mora em Metrópolis: do lado dela, nunca vilã nem rival, e sem ligação com a
+  Luthor Corp (andrea.py). Ela só usa `EXTRAS` para o bonequinho/retrato; não aparece nos capítulos.
 - **Fundação Luthor (fundacao.py):** mesa na sede (`HQ_DESK`). Doar itens da mochila ou dinheiro; a obra completa
   aparece na cidade na noite seguinte (`night`: ready → built; `apply` põe os objetos de `PROPS` e recalcula `m.solid`).
   Benefícios: coreto (conversas +10%), peixaria (peixes +10%), horta (cesta às segundas), lanternas (+coletáveis),
@@ -430,7 +435,8 @@ luthor/
   completas e o Brainy joga mais sério conforme a Letícia ganha.
 - **Clima especial (clima.py):** tempestade é sorteada na véspera (`STORM_CHANCE` por estação) e continua sendo
   "chuva" para rotinas, peixes e figurantes; relâmpago clareia a tela (`draw_flash`), trovões são efeitos gerados por
-  código. Arco-íris de 6h às 11h num dia de sol depois de chuva (70%). No inverno, nenhum dos dois.
+  código. No inverno, nada de tempestade. **Arco-íris desligado** (`clima.RAINBOW_ENABLED = False`): a dona achou
+  estranho; não ligar de novo sem ela pedir.
 - **Vários jogos salvos (jogos_salvos.py):** 3 espaços. O 1 é o saves/save.json de sempre (saves antigos abrem
   nele); `Game.slot` diz onde salvar e carregar, e `settings["slot"]` guarda o último usado (é o que "Continuar"
   abre; vazio = o mais recente). Tela de título: Continuar, Carregar jogo e Novo jogo (escolhe o espaço; X apaga).
@@ -454,6 +460,20 @@ luthor/
   luar (noite) no mar; chovendo, nada. Árvores e arbustos (`SWAY`) entortam a copa 1–2 px com rajadas que atravessam
   a cidade (mais na chuva/tempestade); `natureza.faded` é a copa translúcida no mesmo quadro. Tufinhos de grama
   (`draw_ground`) só ao ar livre e fora do inverno. Sem nuvens.
+- **Horário dos prédios (horarios.py):** Grão Nobre 6h-22h (Harry), Mercado 7h-20h (Bea), Bayside Books 8h-21h (Theo),
+  La Boutique 9h-19h (Celeste), Ricci Trattoria 9h-23h (Dona Graça ou Vittoria), Noonan's 16h-2h (Marco), Cine National
+  12h-2h (ninguém), CatCo 8h-20h (Lucy, Nia ou Barry) e Gruppo Ricci 9h-19h (Vittoria). Fora do horário a porta tranca;
+  quem comanda libera a qualquer hora com 2 corações (lojas/cafés/restaurantes) ou 4 (escritórios). A Luthor Corp (sede e
+  Marina), o hospital e as casas nunca fecham. Cena/evento pendente, pedido de namoro, encontro, visita da Andrea e
+  aniversário de namoro marcados ali abrem a porta (`invited`). Quem já está dentro pode ficar depois que fecha.
+  Lugar novo com horário: entrada em `OPEN_HOURS`; atividade nova marcada fora do horário: gancho em `INVITES`.
+- **Andrea Rojas e a Luthor Corp:** a Andrea NÃO tem nada a ver com a Luthor Corp (nem conselho, nem parceria, nem
+  encomenda, nem "ajuda": a Luthor Corp não precisa de ajuda). É só amiga; os bônus dela são de amiga (presente, energia,
+  carisma, bom astral). Ela não está na reunião do conselho (historia_5): as falas dela foram para o Hamilton e a Sam.
+- **Zoom da câmera:** `settings["zoom"]` (um de `config.ZOOM_LEVELS`, 75% a 175%; 1.0 = padrão) multiplica o zoom
+  base de `Game.zoom_for` (cidade 1x, interiores 1,5x). Muda no menu de pausa ("Zoom", `open_zoom`) ou com Ctrl + rodinha
+  / Ctrl + - / Ctrl + = (`ZOOM_KEYS`, `step_zoom`). As cutscenes usam sempre o zoom padrão. Com zoom afastado o quadro do
+  mundo é maior que a tela: em código de mundo use `g.view_size(m)` / `surf.get_size()`, nunca SCREEN_W/SCREEN_H.
 - **Atalhos:** I/Tab mochila, O objetivos, R relacionamentos, K conquistas, M mapa, C calendário (a mesma tecla fecha), P modo foto,
   T celular. Painéis longos usam
   `ui.InfoPanel(..., scroll=True)` (draw_fn devolve o y final) em vez de crescer.
@@ -756,3 +776,8 @@ substitua `pygame.key.get_pressed`. Antes de entregar uma mudança, rode alguns 
     festas, lojas, lugares, laboratório, Fundação, hospital, habilidades e conquistas, com busca e tema claro/escuro.
     Retratos da Celeste e da Andrea Rojas (cenas, celular, site e wiki), bonequinha nova da Andrea e o dobro de
     mensagens no celular (mensagens.py), que também aparecem na wiki.
+44. O .zip "Baixar o jogo" sai sem o site e a wiki (`.gitattributes` com export-ignore). Zoom da câmera como no Stardew
+    (75% a 175%, no menu de pausa e com Ctrl + rodinha) e objetos fora da câmera pulados antes de desenhar. Arco-íris
+    desligado, a Letícia só sai da cama com a tela já escura, a Andrea sem nenhuma ligação com a Luthor Corp (bônus de
+    amiga no lugar da parceria; fora da reunião do conselho) e
+    horário de funcionamento nos prédios (horarios.py).

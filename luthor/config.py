@@ -8,6 +8,9 @@ FPS = 60
 TS = 16          # tamanho do tile em pixels de arte
 SCALE = 2        # fator de ampliação (pixel art)  — 2 = câmera mais afastada
 TILE = TS * SCALE
+# zoom da câmera escolhido pela jogadora (menu de pausa, Ctrl + rodinha, Ctrl + / -): 1.0 = o padrão
+# (cidade 1x, interiores 1,5x); as cenas usam sempre o padrão
+ZOOM_LEVELS = (0.75, 0.85, 1.0, 1.15, 1.3, 1.5, 1.75)
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ASSETS = os.path.join(BASE_DIR, "assets")

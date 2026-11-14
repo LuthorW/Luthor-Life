@@ -1192,7 +1192,7 @@ def lights(g, m, cam, lamps):
             continue
         x = o.x * TILE + o.w * TILE // 2 - cam[0]
         y = o.base_y - h * SCALE - cam[1]
-        if -200 < x < SCREEN_W + 200 and -200 < y < SCREEN_H + 200:
+        if -200 < x < SCREEN_W * 1.5 + 200 and -200 < y < SCREEN_H * 1.5 + 200:   # 1,5: zoom afastado
             lamps.append((int(x), int(y)))
 
 

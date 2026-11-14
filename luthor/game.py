@@ -8,6 +8,7 @@ import time
 import pygame
 
 from . import art, ui
+from .config import ZOOM_LEVELS
 from .config import (SCALE, TITLE, SCREEN_W, SCREEN_H, FPS, TILE, SAVE_DIR, SAVE_PATH, SETTINGS_PATH, SAVE_VERSION,
                      DAY_START, DAY_END, SECONDS_PER_10MIN, DAYS_PER_QUARTER, START_YEAR, WEEKDAYS,
                      WEEKDAYS_FULL, BASE_ENERGY, WORK_ENERGY, FISH_ENERGY, ARCADE_ENERGY, WALK_SPEED, RUN_SPEED,
@@ -29,6 +30,7 @@ from . import audio
 from . import seasons
 from . import gifts  # presentes extras e falas de "não gostei"
 from . import hospital
+from . import horarios
 from .characters import DOCTOR_KEYS, setup_doctor_spots, doctor_schedule
 from .crowd import Crowd, thought
 from .cutscenes import Cutscene, SCENES, dating_scene, move_in_scene, date_scene, same_scene
@@ -115,6 +117,8 @@ MOOD_ALIASES = {"feliz": "happy", "sorriso": "smile", "sorrindo": "smile", "apai
 HOTBAR_KEYS = {pygame.K_1: 0, pygame.K_2: 1, pygame.K_3: 2, pygame.K_4: 3, pygame.K_5: 4, pygame.K_6: 5,
                pygame.K_7: 6, pygame.K_8: 7, pygame.K_9: 8, pygame.K_0: 9, pygame.K_MINUS: 10,
                pygame.K_EQUALS: 11}
+# Ctrl + estas teclas mudam o zoom (+1 aproxima, -1 afasta)
+ZOOM_KEYS = {pygame.K_EQUALS: 1, pygame.K_PLUS: 1, pygame.K_KP_PLUS: 1, pygame.K_MINUS: -1, pygame.K_KP_MINUS: -1}
 
 FLAVOR = {
     "nightstand": "Um abajur, um livro de economia e um porta-retrato da equipe.",
@@ -658,7 +662,13 @@ class Game:
                     (ev.type == pygame.MOUSEBUTTONDOWN and ev.button == 1):
                 self.fishing_input(ev)
             return
-        if ev.type == pygame.KEYDOWN:
+        ctrl = pygame.key.get_mods() & pygame.KMOD_CTRL
+        if ev.type == pygame.KEYDOWN and ctrl and ev.key in ZOOM_KEYS:
+            self.step_zoom(ZOOM_KEYS[ev.key])
+        elif ev.type == pygame.MOUSEWHEEL and ctrl:
+            if ev.y:
+                self.step_zoom(ev.y)
+        elif ev.type == pygame.KEYDOWN:
             if ev.key in (pygame.K_e, pygame.K_SPACE):
                 self.interact()
             elif ev.key == pygame.K_f:
@@ -728,6 +738,7 @@ class Game:
             return
         self.hotbar_label_t -= dt
         if not any(isinstance(m, Cutscene) for m in self.modals):
+            self.ambient.view = self.view_size(self.current_map)
             self.ambient.update(dt, self.current_map, self.camera(self.current_map), self.minutes, self.weather)
             cm = self.current_map
             clima.update(self, dt, cm.outdoor or getattr(cm, "open_air", False))
@@ -1149,6 +1160,8 @@ class Game:
     def door_open(self, door):
         """Portaria dos Apartamentos Bayside (7h às 23h) e apartamentos (dono em casa + 2 corações)."""
         target = door[0]
+        if self.map_name == "city" and not horarios.can_enter(self, target):   # lojas e escritórios com horário
+            return False
         if target == "bayside" and self.map_name == "city":
             a, b = BAYSIDE_HOURS
             if not (a <= self.minutes < b):
@@ -2096,7 +2109,8 @@ class Game:
     def chat(self, npc):
         key = npc.key
         self.talk_log.add(f"{key}|{self.period}")
-        mult = (1.5 if "psiquiatria" in self.buffs else 1) * fundacao.talk_mult(self) * habilidades.talk_mult(self)
+        mult = ((1.5 if "psiquiatria" in self.buffs else 1) * (andrea.TALK_BONUS if andrea.BUFF in self.buffs else 1)
+                * fundacao.talk_mult(self) * habilidades.talk_mult(self))
         if key not in self.talked:
             self.talked.add(key)
             self.add_friendship(key, int(TALK_POINTS * mult))
@@ -2460,7 +2474,8 @@ class Game:
         opts = ["Continuar", "Mochila", "Objetivos", "Relacionamentos", "Conquistas", "Coleções", "Rever cenas"]
         if self.album["given"]:
             opts.append("Álbum de fotos")
-        opts += [f"Tela cheia: {fs}", f"Efeitos sonoros: {sv}%", "Controles", "Salvar e voltar ao título"]
+        opts += [f"Tela cheia: {fs}", f"Zoom: {round(self.user_zoom() * 100)}%", f"Efeitos sonoros: {sv}%",
+                 "Controles", "Salvar e voltar ao título"]
 
         def step_volume(key):
             # cada E sobe 20%; depois de 100% volta a 0% (mudo)
@@ -2490,11 +2505,13 @@ class Game:
                 album.open_album(self)
             elif o.startswith("Tela cheia"):
                 self.toggle_fullscreen()
+            elif o.startswith("Zoom"):
+                self.open_zoom(back=lambda: self.open_pause(i))
             elif o.startswith("Efeitos"):
                 step_volume("sfx")
                 self.open_pause(i)
             elif o == "Controles":
-                self.push(ui.InfoPanel("Controles", draw_controls))
+                self.push(ui.InfoPanel("Controles", draw_controls, scroll=True))
             elif o.startswith("Salvar"):
                 self.save()
                 self.start_fade(lambda: setattr(self, "scene", "title"))
@@ -2633,6 +2650,11 @@ class Game:
         audio.sfx("sleep")
 
         def go():
+            if getattr(self, "act", None) and self.act.get("kind") == "dormir":   # só levanta com a tela já escura
+                self.act = None
+                self.player.hidden = False
+                if self.player.pose and self.player.pose.get("src") == "act":
+                    self.player.pose = None
             self.summary = self.process_night(passed_out)
             self.modals = []
             self.fishing = None
@@ -3024,7 +3046,7 @@ class Game:
             elif choice.startswith("Tela cheia"):
                 self.toggle_fullscreen()
             elif choice == "Controles":
-                self.push(ui.InfoPanel("Controles", draw_controls))
+                self.push(ui.InfoPanel("Controles", draw_controls, scroll=True))
             elif choice == "Sair":
                 self.running = False
         elif ev.key == pygame.K_ESCAPE:
@@ -3071,7 +3093,42 @@ class Game:
     # Desenho
     # ------------------------------------------------------------------
     def zoom_for(self, m):
-        return 1.0 if m.outdoor else 1.5
+        base = 1.0 if m.outdoor else 1.5
+        if any(isinstance(mo, Cutscene) for mo in self.modals):      # cenas: sempre o enquadramento padrão
+            return base
+        return base * self.user_zoom()
+
+    def user_zoom(self):
+        """Zoom escolhido pela jogadora (1.0 = padrão), guardado em settings["zoom"]."""
+        z = self.settings.get("zoom", 1.0)
+        return z if z in ZOOM_LEVELS else 1.0
+
+    def set_zoom(self, z, toast=True):
+        self.settings["zoom"] = z
+        self.save_settings()
+        if toast:
+            self.toasts.push(f"Zoom: {round(z * 100)}%", C_LILAC)
+
+    def step_zoom(self, d):
+        """Ctrl + rodinha / Ctrl + = e -: aproxima (d > 0) ou afasta (d < 0) um nível."""
+        i = ZOOM_LEVELS.index(self.user_zoom())
+        j = min(max(i + (1 if d > 0 else -1), 0), len(ZOOM_LEVELS) - 1)
+        if j != i:
+            audio.sfx("move")
+            self.set_zoom(ZOOM_LEVELS[j])
+
+    def open_zoom(self, back=None):
+        cur = self.user_zoom()
+        opts = [f"{round(z * 100)}%" + ("  (padrão)" if z == 1.0 else "") + ("  - atual" if z == cur else "")
+                for z in ZOOM_LEVELS]
+
+        def pick(i):
+            self.set_zoom(ZOOM_LEVELS[i], toast=False)
+            if back:
+                back()
+        ch = ui.Choice("Zoom da câmera (menor = mais afastado). Atalho: Ctrl + rodinha ou Ctrl + / -", opts, pick)
+        ch.sel = ZOOM_LEVELS.index(cur)
+        self.push(ch)
 
     def view_size(self, m):
         z = self.zoom_for(m)
@@ -3100,7 +3157,12 @@ class Game:
         if getattr(self, "_view", None) is None or self._view.get_size() != (vw, vh):
             self._view = pygame.Surface((vw, vh))
         self.draw_world(self._view, m, cam, **kw)
-        big = pygame.transform.scale(self._view, (int(vw * z), int(vh * z)))
+        # zoom: o quadro do mundo é ampliado (ou reduzido, se afastado) para a tela, sem borrar os pixels;
+        # quando sobra só 1-3 px de borda por causa do arredondamento, estica até a tela
+        tw, th = vw * z, vh * z
+        tw = SCREEN_W if abs(tw - SCREEN_W) < 4 else int(tw)
+        th = SCREEN_H if abs(th - SCREEN_H) < 4 else int(th)
+        big = pygame.transform.scale(self._view, (tw, th))
         surf.fill((6, 4, 10))
         surf.blit(big, ((SCREEN_W - big.get_width()) // 2, (SCREEN_H - big.get_height()) // 2))
 
@@ -3211,6 +3273,10 @@ class Game:
             behind = pygame.Rect(int(pr.x - cam[0]) - 8 * SCALE, int(pr.y - cam[1]) - 30 * SCALE, 16 * SCALE, 30 * SCALE)
         for _, _, kind, e in items:
             if kind == "obj":
+                # longe da câmera: pula antes de montar o desenho (com o zoom afastado há muitos objetos no mapa)
+                if (e.base_y < cam[1] or e.base_y - 14 * TILE > cam[1] + SH
+                        or (e.x + e.w + 6) * TILE < cam[0] or (e.x - 6) * TILE > cam[0] + SW):
+                    continue
                 spr = self.object_image(e)
                 x = e.x * TILE + (e.w * TILE - spr.get_width()) // 2 - cam[0]
                 y = e.base_y - spr.get_height() - cam[1]
@@ -3559,23 +3625,25 @@ def draw_controls(surf, rect):
         ("E / Espaço / clique", "Interagir, conversar, trabalhar, pescar"),
         ("1-9, 0, -, =", "Escolher item da barra"),
         ("Roda do mouse", "Trocar item da barra"),
+        ("Ctrl + roda / + / -", "Aproximar ou afastar a câmera (zoom)"),
         ("I / Tab", "Abrir a mochila (24 espaços)"),
         ("O / R / K", "Objetivos / relacionamentos / conquistas"),
         ("M / C / T", "Mapa da cidade / calendário / celular"),
         ("F / botão direito", "Comer, beber ou ler o item escolhido"),
         ("P", "Modo foto (sem interface; Enter tira a foto)"),
-        ("Esc", "Menu: objetivos, relacionamentos, coleções, opções"),
+        ("Esc", "Menu de pausa: coleções, zoom, som e mais"),
         ("F11", "Tela cheia"),
         ("Setas / D F J K", "Karaokê no Noonan's (à noite, na jukebox)"),
     ]
     y = rect.y + 70
     for k, v in rows:
         ui.text(surf, k, (rect.x + 34, y), 18, C_LILAC, bold=True)
-        ui.text(surf, v, (rect.x + 260, y), 18, C_TEXT)
-        y += 34
+        ui.text(surf, v, (rect.x + 250, y), 18, C_TEXT)
+        y += 31
     y += 6
     for line in ui.wrap("Pesca: com a vara selecionada, fique de frente para a água e aperte E. Quando aparecer o '!', "
                         "aperte E. No minigame, segure Espaço para manter o peixe dentro da barra verde.", 16,
                         rect.w - 70):
         ui.text(surf, line, (rect.x + 34, y), 16, C_MUTED)
         y += 22
+    return y

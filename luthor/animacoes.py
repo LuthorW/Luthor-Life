@@ -191,13 +191,16 @@ def _update_act(g, dt):
         sp[1] += sp[3] * dt
         sp[4] -= dt
     act["sparks"] = [sp for sp in act["sparks"] if sp[4] > 0]
+    if k == "dormir" and act["t"] >= ACT_DUR[k]:
+        # continua deitada enquanto a tela escurece; quem tira a cama de cena é o fim do dia (Game.end_day)
+        if not act.get("ending"):
+            act["ending"] = True
+            g.end_day(False)
+        return
     if act["t"] >= ACT_DUR[k]:
         g.act = None
         if g.player.pose and g.player.pose.get("src") == "act":
             g.player.pose = None
-        if k == "dormir":
-            g.player.hidden = False
-            g.end_day(False)
         return
     g.player.pose = _act_pose(g, act) or g.player.pose
 
@@ -623,13 +626,14 @@ class Gulls:
             return
         m = g.current_map
         cam = g.camera(m)
+        VW, VH = g.view_size(m)                               # parte visível do mundo (muda com o zoom)
         night = g.darkness(g.minutes) > 0.3
         self.spawn_t -= dt
         if not night and self.spawn_t <= 0 and len(self.birds) < 7:
             self.spawn_t = random.uniform(5, 11)
             for _ in range(10):
-                tx = int((cam[0] + random.randrange(0, SCREEN_W)) // TILE)
-                ty = int((cam[1] + random.randrange(0, SCREEN_H)) // TILE)
+                tx = int((cam[0] + random.randrange(0, VW)) // TILE)
+                ty = int((cam[1] + random.randrange(0, VH)) // TILE)
                 if m.tile_at(tx, ty) != "sand" or m.is_solid(tx, ty):
                     continue
                 if math.hypot(g.player.x - (tx + 0.5) * TILE, g.player.y - (ty + 0.5) * TILE) < 5 * TILE:
@@ -644,8 +648,8 @@ class Gulls:
             self.fly_t = random.uniform(6, 14)
             d = random.choice((-1, 1))
             sea_y = 63 * TILE
-            self.flyers.append(dict(x=cam[0] + (-40 if d > 0 else SCREEN_W + 40),
-                                    y=random.uniform(max(cam[1] + 40, sea_y - 6 * TILE), cam[1] + SCREEN_H - 60),
+            self.flyers.append(dict(x=cam[0] + (-40 if d > 0 else VW + 40),
+                                    y=random.uniform(max(cam[1] + 40, sea_y - 6 * TILE), cam[1] + VH - 60),
                                     d=d, ph=random.uniform(0, 6)))
         px, py = g.player.x, g.player.y
         keep = []
@@ -667,13 +671,13 @@ class Gulls:
                 b["x"] += b["fly"][0] * dt * SCALE
                 b["y"] += b["fly"][1] * dt * SCALE
                 b["fly"][1] -= 15 * dt
-            if -200 < b["x"] - cam[0] < SCREEN_W + 200 and -300 < b["y"] - cam[1] < SCREEN_H + 200:
+            if -200 < b["x"] - cam[0] < VW + 200 and -300 < b["y"] - cam[1] < VH + 200:
                 keep.append(b)
         self.birds = keep
         for f in self.flyers:
             f["x"] += f["d"] * 42 * SCALE * dt
             f["y"] += math.sin(self.t * 1.3 + f["ph"]) * 6 * dt
-        self.flyers = [f for f in self.flyers if -80 < f["x"] - cam[0] < SCREEN_W + 80]
+        self.flyers = [f for f in self.flyers if -80 < f["x"] - cam[0] < VW + 80]
 
     def draw(self, surf, cam, flying):
         for b in self.birds:

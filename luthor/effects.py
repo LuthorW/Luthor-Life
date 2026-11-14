@@ -42,7 +42,8 @@ class Ambient:
             self.reset()
             return
         x0, y0 = cam[0] - 100, cam[1] - 100
-        x1, y1 = cam[0] + SCREEN_W + 400, cam[1] + SCREEN_H + 300
+        vw, vh = getattr(self, "view", (SCREEN_W, SCREEN_H))     # tamanho visível (muda com o zoom)
+        x1, y1 = cam[0] + vw + 400, cam[1] + vh + 300
         day = 7 * 60 <= minutes <= 18 * 60 and weather != "chuva" and SEASON in ("spring", "summer")
         night = (minutes >= 19 * 60 + 30 or minutes < 5 * 60) and SEASON != "winter"
         # borboletas
@@ -131,8 +132,9 @@ class Ambient:
 
     def draw_snow(self, surf):
         """Flocos de neve (em coordenadas de tela), por cima de tudo."""
+        kx, ky = surf.get_width() / SCREEN_W, surf.get_height() / SCREEN_H   # cobre a tela em qualquer zoom
         for f in getattr(self, "flakes", []):
-            x, y, r = int(f["x"]), int(f["y"]), f["r"]
+            x, y, r = int(f["x"] * kx), int(f["y"] * ky), f["r"]
             pygame.draw.rect(surf, (236, 242, 255), (x, y, r, r))
             if r > 2:
                 pygame.draw.rect(surf, (255, 255, 255), (x, y, r - 1, r - 1))

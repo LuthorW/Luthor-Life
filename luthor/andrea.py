@@ -1,9 +1,11 @@
-"""Andrea Rojas: amiga da Letícia que mora em Metropolis (conselheira do lado dela, nunca rival).
+"""Andrea Rojas: amiga da Letícia que mora em Metropolis (do lado dela, nunca rival). Não tem NADA a ver com a
+Luthor Corp: nada de parceria, encomenda, conselho ou "ajuda" à empresa; os bônus dela são de amiga.
 
 - Mensagens no celular de vez em quando (app Mensagens, com 3 respostas como as das amigas da cidade).
 - Uma visita por estação (dia fixo, `VISITS`): na véspera ela avisa, de manhã manda o convite, e a cena toca quando
   a Letícia chega ao lugar no horário (Grão Nobre na primavera, praia no verão, Trattoria no outono, terraço no
-  inverno). Cada visita dá energia, carisma, um presente e uma parceria de negócios ($400).
+  inverno). Cada visita dá um presente, energia (+30), carisma e "bom astral" (`BUFF`: conversas +25% até o fim
+  do dia, em `Game.talk`).
 - A amizade com ela fica em `g.andrea["pts"]` (não entra no painel de relacionamentos: ela não mora aqui).
 """
 import random
@@ -15,7 +17,8 @@ from .config import C_PINK, C_GOLD, C_GREEN, C_LILAC
 
 KEY = "rojas"
 FIRST_DAY = 4                       # mensagens começam no 4º dia de jogo
-PARTNERSHIP = 400
+BUFF = "andrea"        # em g.buffs (some à noite, como os bônus das consultas)
+TALK_BONUS = 1.25
 
 celular.EXTRA_SENDERS[KEY] = dict(name="Andrea Rojas", short="Andrea", look=EXTRAS[KEY]["look"], portrait="andrea",
                                   on_reply=lambda g: _befriend(g, 15))
@@ -194,7 +197,7 @@ def _intro(g):
 
 
 def _talk(q):
-    """Conversa de cada estação: a amizade antiga, a Luthor Corp e um conselho do lado da Letícia."""
+    """Conversa de cada estação: a amizade antiga e um conselho de amiga."""
     if q == 1:
         return [
             ("fala", KEY, "Me conta: como é ser a CEO que todo mundo em National City cumprimenta na rua?"),
@@ -227,10 +230,10 @@ def _talk(q):
         return [
             ("fala", KEY, "Essa lasanha é um crime. Eu vou contratar a Dona Graça e levar para Metropolis."),
             ("fala", "player", "Tenta. Ela te expulsa da cozinha com uma colher de pau."),
-            ("fala", KEY, "Justo. Agora, sério: eu ouvi falar dos seus tios. Se precisar de qualquer coisa, eu estou do seu lado. Sempre estive."),
+            ("fala", KEY, "Justo. Agora, sério: eu ouvi falar dos seus tios. E ouvi que você resolveu tudo antes de eu terminar de ler a matéria."),
             ("escolha", "O que dizer?", [
-                ("Eu sei. Você foi a primeira a chegar na reunião do conselho.", 0,
-                 "E vou ser a primeira sempre que precisar. Amiga é para essas coisas."),
+                ("A minha equipe é a melhor de National City.", 0,
+                 "Dá para ver. E a chefe deles não é nada mal. Eu só vim aplaudir."),
                 ("Está tudo sob controle. Quase tudo.", 0,
                  "Quase tudo já é muito. O resto a gente resolve no telefone, de madrugada, como antigamente."),
                 ("Hoje eu só quero comer lasanha com você.", 0,
@@ -244,8 +247,8 @@ def _talk(q):
         ("escolha", "O que dizer?", [
             ("Você faz parte disso, sabia? Mesmo de longe.", 0,
              "Eu sei. Por isso eu volto toda estação. Você é a minha casa fora de casa."),
-            ("Demorou, mas eu aprendi a pedir ajuda.", 0,
-             "Eu vi. E fico muito orgulhosa. A Letícia da faculdade nunca pedia nada."),
+            ("Demorou, mas eu aprendi a descansar.", 0,
+             "Eu vi. E fico muito orgulhosa. A Letícia da faculdade nunca desligava."),
             ("Ano que vem, você vem morar aqui.", 0,
              "Ha! Quem sabe. Metropolis que se cuide."),
         ]),
@@ -254,12 +257,12 @@ def _talk(q):
 
 def _end(q):
     return [
-        ("fala", KEY, random.choice(["Ah, antes que eu esqueça: fechei uma parceria com a Luthor Corp. Pequena, mas boa. "
-                                     "Considera presente de amiga.",
-                                     "Trouxe uma coisinha. E uma proposta de parceria. A proposta é séria; a coisinha também."]),
+        ("fala", KEY, random.choice(["Ah, antes que eu esqueça: isso aqui é seu. Vi e pensei em você na hora.",
+                                     "Trouxe uma coisinha para você. Não é nada demais. É perfeito, mas não é nada demais."]),
          "happy"),
-        ("fala", "player", "Andrea... obrigada. Por tudo."),
-        ("fala", KEY, "Não agradece. Me liga. E responde as minhas mensagens antes de três dias, por favor.", "happy"),
+        ("fala", "player", random.choice(["Andrea, você não precisava.", "Você sempre acerta nos presentes."])),
+        ("fala", KEY, "Precisava, sim. Agora me liga. E responde as minhas mensagens antes de três dias, por favor.",
+         "happy"),
         ("efeito", "brilhos", 1.2),
         ("esperar", 0.6),
         ("fade_out",),
@@ -299,7 +302,7 @@ def _finish(g):
     g.andrea["seen"].append(_tag(g))
     g.andrea["visits"] += 1
     _befriend(g, 120)
-    g.money += PARTNERSHIP
+    g.buffs.add(BUFF)                                    # bom astral: conversas +25% até o fim do dia
     g.energy = min(g.max_energy, g.energy + 30)
     habilidades.gain(g, "carisma", 10)
     item = GIFTS[q]
@@ -307,7 +310,7 @@ def _finish(g):
         g.toasts.push(f"Presente da Andrea: {ITEMS[item]['name']}", C_GREEN, item)
     noticias.event(g, "andrea")
     audio.sfx("reward")
-    g.toasts.push(f"Parceria com a empresa da Andrea: +${PARTNERSHIP}. Energia +30.", C_GOLD)
+    g.toasts.push("Bom astral depois da visita da Andrea: energia +30 e conversas +25% até o fim do dia.", C_GOLD)
 
 
 def check(g):

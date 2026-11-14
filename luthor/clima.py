@@ -15,6 +15,7 @@ from .config import SCALE
 # chance de a chuva de amanhã virar tempestade, por estação
 STORM_CHANCE = {"spring": 0.30, "summer": 0.50, "autumn": 0.30, "winter": 0.0}
 RAINBOW_CHANCE = 0.70
+RAINBOW_ENABLED = False    # a dona achou o arco-íris estranho: desligado (o código ficou)
 RAINBOW_FROM, RAINBOW_TO = 6 * 60, 11 * 60
 
 
@@ -73,7 +74,7 @@ def load_state(g, d):
     d = d.get("clima") or {}
     g.storm = bool(d.get("storm", False)) and g.weather == "chuva"
     g.storm_tomorrow = bool(d.get("storm_tomorrow", False)) and g.weather_tomorrow == "chuva"
-    g.rainbow = bool(d.get("rainbow", False)) and g.weather != "chuva"
+    g.rainbow = RAINBOW_ENABLED and bool(d.get("rainbow", False)) and g.weather != "chuva"
 
 
 def night(g, notes, was_rain):
@@ -81,7 +82,7 @@ def night(g, notes, was_rain):
     season = seasons.of_quarter(g.quarter)
     g.clima_said = set()
     g.storm = g.storm_tomorrow and g.weather == "chuva"
-    g.rainbow = (was_rain and g.weather != "chuva" and season != "winter"
+    g.rainbow = (RAINBOW_ENABLED and was_rain and g.weather != "chuva" and season != "winter"
                  and random.random() < RAINBOW_CHANCE)
     g.storm_tomorrow = (g.weather_tomorrow == "chuva" and random.random() < STORM_CHANCE[season])
 

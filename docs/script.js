@@ -87,7 +87,6 @@
     ["decorar", "Decorando a cobertura"],
     ["album", "O álbum de fotos do Barry"],
     ["conquistas", "As 46 medalhas (tecla K)"],
-    ["arco_iris", "Arco-íris depois da chuva"],
     ["aniversario", "Festa surpresa no aniversário da Letícia", true],
     ["andrea", "A Andrea Rojas visita o terraço no inverno"],
     ["piquenique", "Piquenique no parque com a Vittoria"],
