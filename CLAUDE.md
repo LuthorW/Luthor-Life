@@ -132,6 +132,8 @@ luthor/
                  lançamento, fogão, conversa e presente; bônus pequenos por nível e um extra no nível 5. `g.skills`
   mural.py       mural de fotos na parede da cobertura (9,1, em cima da escrivaninha, no lugar de uma janela):
                  até 4 fotos do álbum do Barry ou do modo foto (saves/fotos), escolhidas no app Fotos (`g.mural`)
+  pausa.py       menu de pausa (Esc): painel com 2 abas, Menu (atalhos + resumo do dia) e Configurações (tela cheia,
+                 zoom e efeitos sonoros mudam com as setas, na hora; Controles); Tab troca de aba (`PauseMenu`)
   conquistas.py  46 medalhas em 4 categorias (tecla K e menu de pausa), aviso que desliza no canto de baixo
   surpresa.py    aniversário da Letícia (`BDAY` = outono, dia 6): festa surpresa no terraço das 19h às 23h, a Jess de
                  anfitriã, convidados = namorada + amigas com 2+ corações (`guests`), um presente de cada (`GIFTS`);
@@ -310,7 +312,7 @@ luthor/
   sprites ganharam `scarf` (cachecol) e `sleeves="short"`. No inverno a "chuva" vira neve. Chance de chuva: primavera 25%, verão 12%, outono 32%, inverno 35%.
 - **Som:** `audio.sfx(nome)` para efeitos (conversa, menus, lojas, itens, coração, pesca...). A dona NÃO gostou
   das músicas geradas: desligadas (`audio.MUSIC_ENABLED = False`). Passos também saíram (testados duas vezes; `audio.STEPS_ENABLED = False`): não colocar de novo sem ela pedir.
-  Volume dos efeitos no menu de pausa (settings `sfx`).
+  Volume dos efeitos na aba Configurações do menu de pausa (settings `sfx`, de 10 em 10%).
 - **Bichinhos (activities.py):** gato e cachorro desenhados em `_cat`/`_dog` (4 direções, andar de 4 quadros,
   sentado, piscando, rabo abanando, dormindo); o nome é digitado na adoção (`ui.TextPrompt`, Tab sugere) e pode ser
   trocado na caminha. A caminha fica no canto da sala, `activities.PET_BED` = (24, 14) (igual a `world.build_home`).
@@ -477,7 +479,7 @@ luthor/
   encomenda, nem "ajuda": a Luthor Corp não precisa de ajuda). É só amiga; os bônus dela são de amiga (presente, energia,
   carisma, bom astral). Ela não está na reunião do conselho (historia_5): as falas dela foram para o Hamilton e a Sam.
 - **Zoom da câmera:** `settings["zoom"]` (um de `config.ZOOM_LEVELS`, 75% a 175%; 1.0 = padrão) multiplica o zoom
-  base de `Game.zoom_for` (cidade 1x, interiores 1,5x). Muda no menu de pausa ("Zoom", `open_zoom`) ou com Ctrl + rodinha
+  base de `Game.zoom_for` (cidade 1x, interiores 1,5x). Muda na aba Configurações da pausa (setas) ou com Ctrl + rodinha
   / Ctrl + - / Ctrl + = (`ZOOM_KEYS`, `step_zoom`). As cutscenes usam sempre o zoom padrão. Com zoom afastado o quadro do
   mundo é maior que a tela: em código de mundo use `g.view_size(m)` / `surf.get_size()`, nunca SCREEN_W/SCREEN_H.
 - **Atalhos:** I/Tab mochila, O objetivos, R relacionamentos, K conquistas, M mapa, C calendário (a mesma tecla fecha), P modo foto,
@@ -789,3 +791,4 @@ substitua `pygame.key.get_pressed`. Antes de entregar uma mudança, rode alguns 
     horário de funcionamento nos prédios (horarios.py).
 45. Executável para Windows (`gerar_exe.py` -> `LuthorLife.exe` nas versões do GitHub); o botão "Baixar o jogo" do site
     e do README baixa o .exe (o .zip ficou só para Linux/macOS).
+46. Menu de pausa novo (pausa.py): painel com as abas Menu e Configurações (tela cheia, zoom, som e controles).

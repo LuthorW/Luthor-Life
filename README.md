@@ -96,7 +96,7 @@ O jogo salva sozinho toda noite, quando você dorme: no .exe, em `%APPDATA%\Luth
 | `F` / botão direito | Comer, beber ou ler |
 | `I` / `Tab` | Mochila |
 | `O` / `R` | Objetivos / relacionamentos |
-| `Esc` | Menu: objetivos, relacionamentos, coleções e cenas |
+| `Esc` | Pausa: menu (objetivos, relacionamentos, coleções, cenas) e configurações (tela cheia, zoom, som, controles) |
 | setas ou `D` `F` `J` `K` | Karaokê |
 | `F11` | Tela cheia |
 

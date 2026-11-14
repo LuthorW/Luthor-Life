@@ -57,6 +57,7 @@ from . import noticias   # manchetes da CatCo sobre o que a Letícia faz
 from . import degustacao  # degustação de vinhos com a Vittoria (sede do Gruppo Ricci)
 from . import pediatria  # brinquedoteca e voluntariado no Conti Moretti
 from . import surpresa   # aniversário da Letícia: festa surpresa no terraço
+from . import pausa      # menu de pausa (Esc) com a aba de configurações
 from . import andrea     # Andrea Rojas: mensagens e visita a cada estação
 from . import colecao    # primeira coleção da Celeste (investimento da Letícia)
 from . import coracoes   # eventos de coração que completam a história da Lucy e da Vittoria
@@ -2468,56 +2469,9 @@ class Game:
         self.push(ui.InfoPanel("E-mails da CEO", draw))
 
     # --- Menu de pausa ------------------------------------------------
-    def open_pause(self, sel=0):
-        fs = "Sim" if self.settings.get("fullscreen") else "Não"
-        sv = int(round(self.settings.get("sfx", 0.7) * 100))
-        opts = ["Continuar", "Mochila", "Objetivos", "Relacionamentos", "Conquistas", "Coleções", "Rever cenas"]
-        if self.album["given"]:
-            opts.append("Álbum de fotos")
-        opts += [f"Tela cheia: {fs}", f"Zoom: {round(self.user_zoom() * 100)}%", f"Efeitos sonoros: {sv}%",
-                 "Controles", "Salvar e voltar ao título"]
-
-        def step_volume(key):
-            # cada E sobe 20%; depois de 100% volta a 0% (mudo)
-            v = round(self.settings.get(key, 0.6 if key == "music" else 0.7) + 0.2, 1)
-            v = 0.0 if v > 1.0 else v
-            self.settings[key] = v
-            self.save_settings()
-            audio.set_volume(**{("music_vol" if key == "music" else "sfx_vol"): v})
-            if key == "sfx":
-                audio.sfx("confirm")
-
-        def pick(i):
-            o = opts[i]
-            if o == "Mochila":
-                self.push(Inventory(self))
-            elif o == "Objetivos":
-                self.open_goals()
-            elif o == "Relacionamentos":
-                self.open_relationships()
-            elif o == "Conquistas":
-                conquistas.open_panel(self)
-            elif o == "Coleções":
-                self.push(ui.InfoPanel("Coleções", self.draw_collections))
-            elif o == "Rever cenas":
-                self.open_scene_gallery()
-            elif o == "Álbum de fotos":
-                album.open_album(self)
-            elif o.startswith("Tela cheia"):
-                self.toggle_fullscreen()
-            elif o.startswith("Zoom"):
-                self.open_zoom(back=lambda: self.open_pause(i))
-            elif o.startswith("Efeitos"):
-                step_volume("sfx")
-                self.open_pause(i)
-            elif o == "Controles":
-                self.push(ui.InfoPanel("Controles", draw_controls, scroll=True))
-            elif o.startswith("Salvar"):
-                self.save()
-                self.start_fade(lambda: setattr(self, "scene", "title"))
-        ch = ui.Choice(f"Pausa  —  {self.date_label()}, {self.time_label()}", opts, pick)
-        ch.sel = sel
-        self.push(ch)
+    def open_pause(self, sel=0, tab=0):
+        """Esc: painel de pausa com as abas Menu e Configurações (pausa.py)."""
+        pausa.open_pause(self, tab, sel)
 
     def goal_status(self, key):
         unlocked = sum(1 for s in self.stations if s["unlocked"])
@@ -3117,19 +3071,6 @@ class Game:
             audio.sfx("move")
             self.set_zoom(ZOOM_LEVELS[j])
 
-    def open_zoom(self, back=None):
-        cur = self.user_zoom()
-        opts = [f"{round(z * 100)}%" + ("  (padrão)" if z == 1.0 else "") + ("  - atual" if z == cur else "")
-                for z in ZOOM_LEVELS]
-
-        def pick(i):
-            self.set_zoom(ZOOM_LEVELS[i], toast=False)
-            if back:
-                back()
-        ch = ui.Choice("Zoom da câmera (menor = mais afastado). Atalho: Ctrl + rodinha ou Ctrl + / -", opts, pick)
-        ch.sel = ZOOM_LEVELS.index(cur)
-        self.push(ch)
-
     def view_size(self, m):
         z = self.zoom_for(m)
         return int(SCREEN_W / z) // 2 * 2, int(SCREEN_H / z) // 2 * 2
@@ -3631,7 +3572,7 @@ def draw_controls(surf, rect):
         ("M / C / T", "Mapa da cidade / calendário / celular"),
         ("F / botão direito", "Comer, beber ou ler o item escolhido"),
         ("P", "Modo foto (sem interface; Enter tira a foto)"),
-        ("Esc", "Menu de pausa: coleções, zoom, som e mais"),
+        ("Esc", "Pausa: menu e configurações (Tab troca de aba)"),
         ("F11", "Tela cheia"),
         ("Setas / D F J K", "Karaokê no Noonan's (à noite, na jukebox)"),
     ]

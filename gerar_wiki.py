@@ -1268,7 +1268,7 @@ def controles_page():
             ("I / Tab", "Mochila (24 espaços)"), ("O", "Objetivos"), ("R", "Relacionamentos"), ("M", "Mapa da cidade"),
             ("C", "Calendário"), ("T", "Celular"), ("K", "Conquistas"), ("P", "Modo foto (Enter salva; 1 acena, 2 sorri, 3 coração)"),
             ("Ctrl+rodinha / Ctrl+- / Ctrl+=", "Zoom: afastar ou aproximar a câmera (75% a 175%; 100% é o padrão)"),
-            ("Esc", "Menu de pausa: objetivos, relacionamentos, coleções, cenas, zoom e volume"), ("F11", "Tela cheia"),
+            ("Esc", "Pausa: aba Menu (objetivos, relacionamentos, coleções, cenas) e aba Configurações (tela cheia, zoom, som, controles)"), ("F11", "Tela cheia"),
             ("Setas / D F J K", "Karaokê")]
     rows = [[" ".join(f"<kbd>{esc(x)}</kbd>" for x in k.split(" ") if x not in ("/",)), esc(v)] for k, v in keys]
     body = [table(["Tecla", "O que faz"], rows),
