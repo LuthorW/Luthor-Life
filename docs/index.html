@@ -50,9 +50,9 @@
           cultive a horta do terraço, adote um bichinho e encontre o amor numa cidade que vive com você,
           da manhã até tarde da noite.</p>
         <div class="cta">
-          <a class="btn green" href="https://github.com/LuthorW/Luthor-Life/archive/refs/heads/main.zip">
+          <a class="btn green" href="https://github.com/LuthorW/Luthor-Life/releases/latest/download/LuthorLife.exe">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v12m0 0l-5-5m5 5l5-5M4 21h16"/></svg>
-            Baixar o jogo
+            Baixar o jogo (Windows)
           </a>
           <a class="btn" href="#jogar">Como jogar</a>
           <a class="btn" href="wiki/index.html">Wiki do jogo</a>
@@ -325,27 +325,29 @@
       <div class="reveal">
         <p class="kicker">// instalação</p>
         <h2>Como jogar</h2>
-        <p class="intro">O jogo roda em Windows, Linux e macOS. Você só precisa do Python.</p>
+        <p class="intro">No Windows é só baixar e jogar, sem instalar nada. No Linux e no macOS, o jogo roda com Python.</p>
       </div>
       <div class="steps">
         <div class="step reveal">
-          <h3>Instale o Python</h3>
-          <p>Baixe em python.org (3.10 ou mais novo). No Windows, marque <b>“Add Python to PATH”</b> na instalação.</p>
-          <a class="btn ghost" href="https://www.python.org/downloads/" target="_blank" rel="noopener" style="font-size:20px;padding:9px 16px">python.org</a>
-        </div>
-        <div class="step reveal">
           <h3>Baixe o jogo</h3>
-          <p>Baixe o .zip e extraia, ou clone o repositório:</p>
-          <div class="code"><code>git clone https://github.com/LuthorW/Luthor-Life.git</code><button type="button">copiar</button></div>
+          <p>Baixe o <b>LuthorLife.exe</b> (Windows, uns 170 MB). É um arquivo só: não precisa instalar nada, nem o Python.</p>
+          <a class="btn ghost" href="https://github.com/LuthorW/Luthor-Life/releases/latest/download/LuthorLife.exe" style="font-size:20px;padding:9px 16px">LuthorLife.exe</a>
         </div>
         <div class="step reveal">
           <h3>Jogue!</h3>
-          <p>No Windows, dê dois cliques em <b>Jogar.bat</b>: ele instala o que falta e abre o jogo. Ou, no terminal:</p>
+          <p>Dê dois cliques no <b>LuthorLife.exe</b>. Se aparecer “O Windows protegeu o computador”, clique em
+            <b>Mais informações</b> e depois em <b>Executar assim mesmo</b>: o jogo é seguro, só não tem assinatura digital paga.</p>
+        </div>
+        <div class="step reveal">
+          <h3>Linux e macOS</h3>
+          <p>Instale o <a href="https://www.python.org/downloads/" target="_blank" rel="noopener">Python</a> 3.10 ou mais novo,
+            baixe o <a href="https://github.com/LuthorW/Luthor-Life/archive/refs/heads/main.zip">código (.zip)</a> e, na pasta do jogo:</p>
           <div class="code"><code>pip install -r requirements.txt</code><button type="button">copiar</button></div>
           <div class="code" style="margin-top:8px"><code>python main.py</code><button type="button">copiar</button></div>
         </div>
       </div>
-      <p class="note reveal"><b>Dica:</b> o jogo salva sozinho toda noite, quando você dorme. O progresso fica em <code>saves/save.json</code>.
+      <p class="note reveal"><b>Dica:</b> o jogo salva sozinho toda noite, quando você dorme. No .exe o progresso fica em
+        <code>%APPDATA%\Luthor Life</code>; rodando com Python, em <code>saves/save.json</code>.
         Aperte <kbd>F11</kbd> para jogar em tela cheia.</p>
     </div>
   </section>

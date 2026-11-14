@@ -1272,8 +1272,9 @@ def controles_page():
             ("Setas / D F J K", "Karaokê")]
     rows = [[" ".join(f"<kbd>{esc(x)}</kbd>" for x in k.split(" ") if x not in ("/",)), esc(v)] for k, v in keys]
     body = [table(["Tecla", "O que faz"], rows),
-            '<p>Rodar o jogo: <code>python main.py</code> (ou <code>Jogar.bat</code> no Windows). Precisa só do '
-            '<code>pygame-ce</code>.</p>']
+            '<p>Jogar: no Windows, baixe o <a href="https://github.com/LuthorW/Luthor-Life/releases/latest/download/'
+            'LuthorLife.exe">LuthorLife.exe</a> e dê dois cliques (não precisa instalar nada). No Linux e no macOS, '
+            'com Python: <code>python main.py</code> (precisa só do <code>pygame-ce</code>).</p>']
     write("controles.html", "Controles", "\n".join(body), desc="Teclas do jogo.")
 
 

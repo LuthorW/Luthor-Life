@@ -1,5 +1,6 @@
 """Constantes globais do Luthor Life."""
 import os
+import sys
 
 TITLE = "Luthor Life"
 SCREEN_W, SCREEN_H = 1280, 720
@@ -15,6 +16,12 @@ ZOOM_LEVELS = (0.75, 0.85, 1.0, 1.15, 1.3, 1.5, 1.75)
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 ASSETS = os.path.join(BASE_DIR, "assets")
 SAVE_DIR = os.path.join(BASE_DIR, "saves")
+# Executável (LuthorLife.exe, feito por gerar_exe.py com o PyInstaller): as imagens vêm de dentro do .exe
+# (sys._MEIPASS, uma pasta temporária apagada ao fechar), então o jogo salvo fica em %APPDATA%\Luthor Life\saves
+FROZEN = bool(getattr(sys, "frozen", False))
+if FROZEN:
+    ASSETS = os.path.join(getattr(sys, "_MEIPASS", BASE_DIR), "assets")
+    SAVE_DIR = os.path.join(os.environ.get("APPDATA") or os.path.expanduser("~"), "Luthor Life", "saves")
 SAVE_PATH = os.path.join(SAVE_DIR, "save.json")
 SETTINGS_PATH = os.path.join(SAVE_DIR, "settings.json")
 SAVE_VERSION = 2

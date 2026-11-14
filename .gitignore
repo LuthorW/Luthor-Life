@@ -3,6 +3,8 @@ assets/portraits_hd/
 # músicas geradas pelo jogo na primeira vez que abre (luthor/audio.py)
 saves/audio/
 /build/
+# executável gerado por gerar_exe.py (vai para as versões do GitHub, não para o git)
+/dist/
 # fotos tiradas no modo foto (tecla P)
 saves/fotos/
 # arquivos compilados do Python (o jogo recria sozinho)

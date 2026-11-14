@@ -9,7 +9,7 @@
 Simulação de vida em pixel art, no estilo Stardew Valley, feita em Python.
 
 [![Site](https://img.shields.io/badge/site-luthorw.github.io-8a00e6?style=for-the-badge)](https://luthorw.github.io/Luthor-Life/)
-[![Baixar](https://img.shields.io/badge/baixar-.zip-2fbf63?style=for-the-badge)](https://github.com/LuthorW/Luthor-Life/archive/refs/heads/main.zip)
+[![Baixar](https://img.shields.io/badge/baixar-Windows%20.exe-2fbf63?style=for-the-badge)](https://github.com/LuthorW/Luthor-Life/releases/latest/download/LuthorLife.exe)
 [![Python](https://img.shields.io/badge/python-3.10+-b84cff?style=for-the-badge&logo=python&logoColor=white)](https://www.python.org/downloads/)
 [![pygame-ce](https://img.shields.io/badge/pygame--ce-2.4+-6ee78c?style=for-the-badge)](https://pyga.me/)
 
@@ -67,18 +67,24 @@ E ainda: a **Marina Luthor** (pesca em alto-mar, passeio ao pôr do sol, regata 
 
 ## Como jogar
 
-1. Instale o [Python](https://www.python.org/downloads/) 3.10 ou mais novo. No Windows, marque **Add Python to PATH**.
-2. [Baixe o jogo](https://github.com/LuthorW/Luthor-Life/archive/refs/heads/main.zip) e extraia, ou clone:
+**Windows:** [baixe o LuthorLife.exe](https://github.com/LuthorW/Luthor-Life/releases/latest/download/LuthorLife.exe) (uns 170 MB) e dê dois cliques. Não precisa instalar nada, nem o Python.
+Se aparecer "O Windows protegeu o computador", clique em **Mais informações** e depois em **Executar assim mesmo**
+(o jogo só não tem assinatura digital paga).
+
+**Linux e macOS (ou para mexer no código):**
+
+1. Instale o [Python](https://www.python.org/downloads/) 3.10 ou mais novo.
+2. [Baixe o código (.zip)](https://github.com/LuthorW/Luthor-Life/archive/refs/heads/main.zip) e extraia, ou clone:
    ```bash
    git clone https://github.com/LuthorW/Luthor-Life.git
    ```
-3. No Windows, dê dois cliques em **`Jogar.bat`**. Em qualquer sistema:
+3. Na pasta do jogo (no Windows também dá para usar o **`Jogar.bat`**):
    ```bash
    pip install -r requirements.txt
    python main.py
    ```
 
-O jogo salva sozinho toda noite, quando você dorme (em `saves/save.json`).
+O jogo salva sozinho toda noite, quando você dorme: no .exe, em `%APPDATA%\Luthor Life`; com Python, em `saves/save.json`.
 
 ## Controles
 

@@ -7,6 +7,12 @@ A dona do projeto fala português do Brasil: responda, comente o código e escre
 - Repositório: https://github.com/LuthorW/Luthor-Life (branch `main`)
 - Site do jogo: pasta `docs/` (GitHub Pages → https://luthorw.github.io/Luthor-Life/)
 - Rodar: `python main.py` (ou `Jogar.bat` no Windows). Dependência única: `pygame-ce>=2.4`.
+- **Executável (Windows):** `py gerar_exe.py` monta `dist/LuthorLife.exe` (PyInstaller, um arquivo só, ~170 MB, com
+  luthor/, fonte, retratos e logos; sem portraits_hd). No .exe (`config.FROZEN`) as imagens vêm de `sys._MEIPASS` e o
+  jogo salvo fica em `%APPDATA%\Luthor Life\saves`. Publicar = subir o .exe numa release do GitHub (`gh release
+  create`/`upload --clobber`): o botão "Baixar o jogo" do site/README aponta para
+  `releases/latest/download/LuthorLife.exe`. Conferir sem jogar: `dist/LuthorLife.exe --conferir foto.png` (com
+  SDL_VIDEODRIVER=dummy). Depois de mudar o jogo, gere o .exe de novo e suba na release.
 - A máquina da dona é Windows com Python 3.14.
 
 ## Estrutura
@@ -781,3 +787,5 @@ substitua `pygame.key.get_pressed`. Antes de entregar uma mudança, rode alguns 
     desligado, a Letícia só sai da cama com a tela já escura, a Andrea sem nenhuma ligação com a Luthor Corp (bônus de
     amiga no lugar da parceria; fora da reunião do conselho) e
     horário de funcionamento nos prédios (horarios.py).
+45. Executável para Windows (`gerar_exe.py` -> `LuthorLife.exe` nas versões do GitHub); o botão "Baixar o jogo" do site
+    e do README baixa o .exe (o .zip ficou só para Linux/macOS).

@@ -25,7 +25,7 @@ import pygame
 
 from . import art, audio, poses, entities
 from .art import new, R, P, shade
-from .config import TILE, SCALE, SCREEN_W, SCREEN_H, SAVE_DIR, C_PINK, C_MUTED, C_GREEN, C_TEXT, C_LILAC
+from .config import TILE, SCALE, SCREEN_W, SCREEN_H, SAVE_DIR, FROZEN, C_PINK, C_MUTED, C_GREEN, C_TEXT, C_LILAC
 from .data import ITEMS, SHOPS, _food
 from .entities import FOOT, draw_shadow, draw_held
 
@@ -848,6 +848,7 @@ def resolve(g, fx, fy):
 # Modo foto
 # ---------------------------------------------------------------------------
 PHOTO_DIR = os.path.join(SAVE_DIR, "fotos")
+PHOTO_WHERE = "%APPDATA%/Luthor Life/saves/fotos" if FROZEN else "saves/fotos"   # o que aparece na tela
 
 
 def handle_play(g, ev):
@@ -891,7 +892,7 @@ def draw_photo(g, surf):
                 k += 1
                 path = os.path.join(PHOTO_DIR, name.replace(".png", f"_{k}.png"))
             pygame.image.save(surf, path)
-            g.photo_msg = (f"Foto salva em saves/fotos/{os.path.basename(path)}", 2.5)
+            g.photo_msg = (f"Foto salva em {PHOTO_WHERE}/{os.path.basename(path)}", 2.5)
         except (OSError, pygame.error):
             g.photo_msg = ("Não deu para salvar a foto.", 2.5)
         g.photo_flash = 0.35
