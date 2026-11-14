@@ -118,7 +118,7 @@ luthor/
   mural.py       mural de fotos na parede da cobertura (9,1, em cima da escrivaninha, no lugar de uma janela):
                  até 4 fotos do álbum do Barry ou do modo foto (saves/fotos), escolhidas no app Fotos (`g.mural`)
   conquistas.py  46 medalhas em 4 categorias (tecla K e menu de pausa), aviso que desliza no canto de baixo
-  surpresa.py    aniversário da Letícia (`BDAY` = verão, dia 8): festa surpresa no terraço das 19h às 23h, a Jess de
+  surpresa.py    aniversário da Letícia (`BDAY` = outono, dia 6): festa surpresa no terraço das 19h às 23h, a Jess de
                  anfitriã, convidados = namorada + amigas com 2+ corações (`guests`), um presente de cada (`GIFTS`);
                  perdeu a festa = bolo da Jess de manhã. `g.surpresa`. O casamento nunca cai nesse dia
   andrea.py      Andrea Rojas (mora em Metrópolis; look de `historia.EXTRAS["rojas"]`): mensagens no celular

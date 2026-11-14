@@ -42,7 +42,7 @@ def fmt_hour(m):
 BIRTHDAYS = {   # chave: (trimestre, dia). Nenhum cai em dia de festa (7 e 10 do inverno).
     "meredith": (1, 2), "lucy": (1, 4), "jess": (1, 9), "joca": (1, 12), "bea": (1, 14),
     "ian": (2, 3), "nia": (2, 5), "theo": (2, 9), "vittoria": (2, 11), "izzie": (2, 13),
-    "barry": (3, 2), "rafa": (3, 4), "sam": (3, 6), "graca": (3, 10), "milany": (3, 13),
+    "barry": (3, 2), "rafa": (3, 4), "milany": (3, 8), "graca": (3, 10), "sam": (3, 13),
     "brainy": (4, 3), "marco": (4, 6), "addison": (4, 8), "yang": (4, 12),
 }
 BDAY_MULT = {"love": 5, "like": 3, "neutral": 2, "dislike": 1}

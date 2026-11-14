@@ -1,4 +1,4 @@
-"""Aniversário da Letícia: festa surpresa no terraço da cobertura (dia 8 do verão).
+"""Aniversário da Letícia: festa surpresa no terraço da cobertura (dia 6 do outono).
 
 - De manhã a Jess manda uma mensagem inocente ("passa no terraço às 20h? não é trabalho, prometo").
 - Durante o dia, quem conversa com a Letícia deseja feliz aniversário (e jura que não sabe de nada).
@@ -13,7 +13,7 @@ from .characters import NPCS, NPC_ORDER
 from .data import ITEMS
 from .config import C_PINK, C_GOLD, C_GREEN, C_LILAC
 
-BDAY = (2, 8)                       # (trimestre, dia): verão, dia 8 (o dia depois do Luau)
+BDAY = (3, 6)                       # (trimestre, dia): outono, dia 6 (a véspera da Feira da Colheita)
 START, END = 19 * 60, 23 * 60
 MAX_GUESTS = 9
 HOST = "jess"
