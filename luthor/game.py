@@ -1473,7 +1473,29 @@ class Game:
         if bait:
             self.remove_item("isca")
         wait = random.uniform(2.0, 6.5) * (0.4 if bait else 1.0)
-        self.fishing = dict(phase="wait", t=wait, where=where, tile=tile, bait=bait)
+        tile, dist = self.cast_tile(tile)
+        self.fishing = dict(phase="wait", t=wait, where=where, tile=tile, bait=bait, dist=dist)
+
+    def cast_reach(self):
+        """Até quantos tiles a linha vai: 1 com a vara simples, +1 com a de fibra de carbono e +1 a cada 2 níveis
+        de pesca (nível 5 com a vara de fibra = 4 tiles)."""
+        return 1 + (1 if self.selected_item() == "vara_fibra" else 0) + habilidades.level(self, "pesca") // 2
+
+    def cast_tile(self, first):
+        """A boia cai no tile de água mais longe dentro do alcance, na direção em que a Letícia olha (a linha não
+        passa por cima de terra, píer ou barco: para na última água seguida)."""
+        px, py = self.player.tile
+        dx, dy = first[0] - px, first[1] - py
+        m = self.current_map
+        where = WATER_TILES.get(m.tile_at(*first))
+        best, dist = first, 1
+        for k in range(2, self.cast_reach() + 1):
+            t = (px + dx * k, py + dy * k)
+            if not (0 <= t[0] < m.w and 0 <= t[1] < m.h) or WATER_TILES.get(m.tile_at(*t)) != where \
+                    or m.object_at(*t):                  # um barco ou outro objeto na água
+                break
+            best, dist = t, k
+        return best, dist
 
     def fishing_input(self, ev):
         f = self.fishing
@@ -1481,7 +1503,7 @@ class Game:
             self.fishing = None
             return
         if f["phase"] == "bite":
-            fish = self.choose_fish(f["where"])
+            fish = self.choose_fish(f["where"], f.get("dist", 1))
             self.fishing = None
             if fish in JUNK:
                 self.add_item(fish)
@@ -1511,8 +1533,10 @@ class Game:
             self.fishing = None
             self.toasts.push("O peixe mordeu e fugiu! Aperte E mais rápido quando aparecer o '!'.", C_MUTED)
 
-    def choose_fish(self, where):
-        if random.random() < 0.07:
+    def choose_fish(self, where, dist=1):
+        """dist = quão longe a boia caiu (cast_tile): mais longe, menos lixo e peixes de valor um pouco mais comuns."""
+        far = max(0, dist - 1)
+        if random.random() < 0.07 - 0.015 * far:
             return random.choice(list(JUNK))
         cands, weights = [], []
         for k, f in FISH.items():
@@ -1528,6 +1552,8 @@ class Game:
                 w *= 0.25
             if "joca_spot" in self.flags and f["value"] >= 100:
                 w *= 2
+            if far and f["value"] >= 60:
+                w *= 1 + 0.12 * far
             cands.append(k)
             weights.append(w)
         if not cands:

@@ -166,7 +166,9 @@ luthor/
   clima.py       tempestade (raios e trovões; o clima continua "chuva"); o arco-íris está DESLIGADO (`RAINBOW_ENABLED`)
   timetest.py    modo de teste de dia/horário: `python main.py --teste` (F6 abre o painel; não salva nada)
   scenetest.py   modo de teste de cenas: `python main.py --cenas` / `--cena chave` (não salva nada)
-  minigames.py   pesca, fliperama Meteoro, fogão, mochila
+  minigames.py   pesca, fliperama Meteoro, fogão, mochila. Alcance da linha: `Game.cast_reach` (1 tile + 1 com a vara
+                 de fibra + 1 a cada 2 níveis de pesca) e `cast_tile` (água mais longe na frente, sem passar por barco/terra);
+                 boia mais longe = menos lixo e peixes de valor um pouco mais comuns (`choose_fish(where, dist)`)
   effects.py     borboletas, vagalumes, pétalas, brilho na água, luz de janela
   lighting.py    iluminação: "mapa de luz" multiplicado no mundo (noite azul, chuva, pôr do sol dourado) com luz
                  de postes, janelas acesas, portas, faróis e em volta da Letícia; letreiros (NEON_STYLES) brilham.
@@ -197,6 +199,8 @@ luthor/
   feliz, bad -> ruim, shy/love -> tímido. Presente amado = tímido, presente ruim = ruim. Fundo branco ou xadrez
   desenhado é apagado por `art._clear_fake_bg`. Médicas seguem o mesmo padrão
   (a Cristina, chave interna `yang`, usa `portrait_key="cristina"`).
+  Os retratos da Sam são 1394x1394: a foto veio com o alto da cabeça cortado e ele foi completado (tela maior em cima,
+  sem reduzir a resolução).
   **Retrato novo:** coloque o PNG em assets/portraits e rode `py limpar_retratos.py` se ele tiver fundo (usa numpy;
   limpa pelo padrão do xadrez). O jogo reduz em etapas na hora de mostrar (`art._shrink`).
 - **Carros (entities.Car):** freiam de verdade (`sqrt(2·desaceleração·folga)`) e param a `Car.GAP` do carro da frente
@@ -387,7 +391,8 @@ luthor/
   ligado por `animacoes.update_fx`); a Letícia usa um roxo. Quem está de guarda-chuva sorri em vez de acenar.
 - **NPCs comendo/bebendo:** sentados em café, Trattoria, Noonan's, Gruppo Ricci, hospital e marina pegam algo de
   `entities.SNACKS` e dão goles/mordidas de vez em quando (`NPC._tick_snack`).
-- **Aceno:** amigos com 2+ corações (ou namorada) acenam quando a Letícia passa perto, 1x por período (`g.waved`).
+- **Aceno:** quem já conversou com a Letícia (amizade > 0, ou namorada) acena quando ela passa perto (1,5 a 5 tiles),
+  1x por período (`g.waved`); quem está andando para um instante para acenar. Desconhecidos não acenam.
 - **Modo foto (P):** esconde HUD e avisos; Enter salva em saves/fotos/; 1 acena, 2 sorri, 3 coração; P/Esc sai.
 - **Sobretudo (trench):** do tamanho do blazer (até a cintura) para o corpo da Vittoria ficar igual ao das outras.
 - **Festas (festas.py):** uma por estação: Festa das Flores (primavera, dia 7, 9h–15h, Parque Central, anfitriã Nia,
@@ -462,7 +467,8 @@ luthor/
   ser NPC), `celular.AGENDA_EXTRA`/`AGENDA_TODAY` (linhas da Agenda), `festas.CAL_EXTRA` (linhas do calendário),
   `noticias.EXTRA_EVENTS` (manchetes de eventos novos) e `scenetest.DYNAMIC` (cenas montadas na hora no `--cenas`).
   Projetos que precisam de flag usam `locked_flag` (o Terminal P&D só mostra a proposta com a flag).
-- **Mar e natureza (natureza.py):** o mar troca os tiles "sea"/"sea_foam" (`draw_sea`: mais escuro longe da areia,
+- **Mar e natureza (natureza.py):** o mar troca os tiles "sea"/"sea_foam" (`draw_sea`: mais escuro longe da areia, contado da linha da praia;
+  colunas do píer usam a linha da praia vizinha, senão viram uma faixa clara,
   cristas andando para a praia, brilhinhos; no pôr do sol reflete pêssego e lilás). Ondas sobem e voltam pela areia
   (`draw_shore`, o píer fica de fora). Depois da iluminação, `draw_glints` põe o caminho do sol (pôr do sol) e o
   luar (noite) no mar; chovendo, nada. Árvores e arbustos (`SWAY`) entortam a copa 1–2 px com rajadas que atravessam
@@ -792,3 +798,5 @@ substitua `pygame.key.get_pressed`. Antes de entregar uma mudança, rode alguns 
 45. Executável para Windows (`gerar_exe.py` -> `LuthorLife.exe` nas versões do GitHub); o botão "Baixar o jogo" do site
     e do README baixa o .exe (o .zip ficou só para Linux/macOS).
 46. Menu de pausa novo (pausa.py): painel com as abas Menu e Configurações (tela cheia, zoom, som e controles).
+47. Aceno de quem já conversou com a Letícia (também andando), linha de pesca mais longe com a vara de fibra e o nível
+    de pesca, retratos da Sam com a cabeça inteira, mar sem a faixa clara embaixo do píer e a Rua Bayside chegando à orla.

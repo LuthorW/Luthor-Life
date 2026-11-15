@@ -16,7 +16,7 @@ MAX_LEVEL = len(LEVELS)
 SKILLS = {
     "pesca": dict(name="Pesca", color=(110, 190, 240), icon="peixe",
                   how="Pescar no píer, no lago e no alto-mar.",
-                  perk="Barra de captura 6% maior por nível.",
+                  perk="Barra de captura 6% maior por nível; a cada 2 níveis a linha vai 1 tile mais longe.",
                   top="Nível 5: peixes valem 10% a mais."),
     "ciencia": dict(name="Ciência", color=(190, 130, 255), icon="frasco",
                     how="Trabalhar nas bancadas e lançar produtos.",

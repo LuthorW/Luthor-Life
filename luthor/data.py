@@ -140,7 +140,7 @@ ITEMS.update({
     "vara": dict(name="Vara de Pesca", kind="tool", price=0, icon="rod", color=(160, 110, 60),
                  desc="Selecione e aperte E de frente para a água."),
     "vara_fibra": dict(name="Vara de Fibra de Carbono", kind="tool", price=650, icon="rod", color=(60, 60, 70),
-                       desc="Barra de pesca maior. Muito mais fácil fisgar."),
+                       desc="Barra de pesca maior e a linha vai 1 tile mais longe. Muito mais fácil fisgar."),
     "isca": dict(name="Isca", kind="bait", price=5, icon="bait", color=(200, 120, 90),
                  desc="Peixes mordem bem mais rápido. Usada automaticamente ao pescar."),
 })

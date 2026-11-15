@@ -1256,7 +1256,7 @@ def guia_page():
             f'<ul><li>Converse com cada pessoa uma vez por período: manhã (6h–12h), tarde (12h–18h) e noite (18h–2h).</li>'
             f'<li>Dê <a href="presentes.html">presentes</a>: até 1 por dia e 2 por semana para cada pessoa.</li>'
             f'<li>{HP} pontos = 1 coração. Os eventos de coração liberam cenas e bônus.</li>'
-            '<li>Amigas com 2 corações acenam quando você passa, mandam mensagens no celular e abrem a porta de casa.</li></ul>',
+            '<li>Quem já conversou com você acena quando você passa. Amigas com 2 corações mandam mensagens no celular e abrem a porta de casa.</li></ul>',
             "<h2>Dicas do jogo</h2>",
             "<ul>" + "".join(f"<li>{esc(t)}</li>" for t in data.TIPS) + "</ul>"]
     write("guia.html", "Primeiros passos", "\n".join(body), desc="Guia para começar a jogar.")

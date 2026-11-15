@@ -394,7 +394,7 @@ def draw_rod(g, surf, cam):
     if cast < 0.45:                                       # a boia voa da ponta da vara até a água
         k = max(0.0, (cast - 0.1) / 0.35)
         bx = tip[0] + (bx - tip[0]) * k
-        by = tip[1] + (by - tip[1]) * k - math.sin(k * math.pi) * 22 * SCALE
+        by = tip[1] + (by - tip[1]) * k - math.sin(k * math.pi) * (16 + 6 * f.get("dist", 1)) * SCALE
     pts = []
     for i in range(9):                                    # linha com uma barriguinha
         k = i / 8
@@ -555,15 +555,17 @@ def _update_waves(g, dt):
     waved = g.__dict__.setdefault("waved", set())
     px, py = g.player.x, g.player.y
     for npc in g.npcs.values():
-        if npc.map != g.map_name or npc.wave_t > 0 or npc.pose or npc.seat_lift is not None or npc.moving:
+        # quem anda também acena (para um instante: npc.paused); sentado ou com algo nas mãos, não
+        if npc.map != g.map_name or npc.wave_t > 0 or npc.pose or npc.seat_lift is not None:
             continue
-        if g.hearts(npc.key) < 2 and npc.key not in (g.dating, g.partner):
+        # quem já conversou com a Letícia pelo menos uma vez (amizade > 0); desconhecidos não acenam
+        if g.friendship.get(npc.key, 0) <= 0 and npc.key not in (g.dating, g.partner):
             continue
         key = (npc.key, g.day, g.period)
         if key in waved:
             continue
         d = math.hypot(px - (npc.fx + 0.5) * TILE, py - npc.base_y) / TILE
-        if 1.8 <= d <= 4.5:
+        if 1.5 <= d <= 5.0:
             waved.add(key)
             npc.face_toward(px, py)
             npc.paused = max(npc.paused, 1.6)

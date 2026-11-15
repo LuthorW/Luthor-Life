@@ -398,6 +398,7 @@ def build_city():
         m.tiles[yy][43] = "cross_v"; m.tiles[yy][44] = "cross_v"
     # --- Orla ----------------------------------------------------------------
     m.fill(1, 49, W - 2, 49, "pavement")
+    m.tiles[49][43] = "cross_v"; m.tiles[49][44] = "cross_v"   # a Rua Bayside chega à orla (a calçada não a tapa)
     m.fill(0, 50, W - 1, 50, "road_line_b")
     m.fill(0, 51, W - 1, 51, "road_line_t")
     m.fill(43, 50, 44, 51, "road")
@@ -756,7 +757,7 @@ def build_hq():
     m.add("coffee_table", 20, 13)
     m.add("armchair", 19, 13); m.add("armchair", 22, 13)
     m.add("plant", 24, 16)                    # (24,10) fica livre: é a passagem para a sala de reuniões
-    m.add("cooler", 16, 10)
+    m.add("cooler", 14, 10)
     m.add("plant_big", 32, 10)
     m.finalize()
     return m

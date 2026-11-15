@@ -88,6 +88,15 @@ def _sea_info(m):
         for (x, y, t) in m.anim_tiles:
             if t in SEA and (x not in top or y < top[x]):
                 top[x] = y
+        # colunas do píer (ou de outra coisa saindo da areia): a 1ª água fica embaixo dele, e o mar dali para baixo
+        # parecia raso, uma faixa clara até o fim do mapa. Elas usam a linha da praia da coluna vizinha.
+        beach = {x: y for x, y in top.items() if m.tile_at(x, y - 1) == "sand"}
+        if beach:
+            for x in list(top):
+                if x not in beach:
+                    near = min(beach, key=lambda b: abs(b - x))
+                    if beach[near] < top[x]:
+                        top[x] = beach[near]
         runs = []
         cur = None
         for x in range(m.w):
