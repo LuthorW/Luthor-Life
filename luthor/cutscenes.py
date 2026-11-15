@@ -51,6 +51,7 @@ from .config import SCALE
 PLAYER_NAME = "Letícia"
 PLAYER_PORTRAIT = "leticia.png"
 BAR_H = 64
+EMOTE_ROOM = 2.9       # tiles acima do tile dos pés que a cena deixa à vista (cabeça + emoji)
 
 
 # ---------------------------------------------------------------------------
@@ -308,16 +309,38 @@ class Cutscene(ui.Modal):
 
     # ----- câmera
     def tile_cam(self, x, y):
+        self.want = (x, y)                       # para onde a cena quer olhar (o clamp muda com os atores)
         vw, vh = self.g.view_size(self.map)
         cx = (x + 0.5) * TILE - vw / 2
         cy = (y + 0.5) * TILE - vh / 2
         return self.clamp(cx, cy)
 
+    def _edge_room(self, vw, vh, mw, mh):
+        """Limites da câmera: o mapa inteiro e, se alguém está encostado na borda, um pouco além dela (no preto),
+        para a cabeça e o emoji dessa pessoa não ficarem embaixo das faixas pretas."""
+        bar = BAR_H / self.g.zoom_for(self.map)
+        lo_x, hi_x, lo_y, hi_y = 0.0, mw - vw, 0.0, mh - vh
+        for a in self.actors.values():
+            if not (0 <= a.fx < self.map.w and 0 <= a.fy < self.map.h):
+                continue
+            lo_y = min(lo_y, (a.fy - EMOTE_ROOM) * TILE - bar)         # cabeça + emoji abaixo da faixa de cima
+            hi_y = max(hi_y, (a.fy + 1.2) * TILE + bar - vh)          # pés acima da faixa de baixo
+            lo_x = min(lo_x, (a.fx - 0.4) * TILE)
+            hi_x = max(hi_x, (a.fx + 1.4) * TILE - vw)
+        return lo_x, hi_x, lo_y, hi_y
+
     def clamp(self, cx, cy):
         vw, vh = self.g.view_size(self.map)
         mw, mh = self.map.w * TILE, self.map.h * TILE
-        cx = (mw - vw) / 2 if mw <= vw else min(max(cx, 0), mw - vw)
-        cy = (mh - vh) / 2 if mh <= vh else min(max(cy, 0), mh - vh)
+        lo_x, hi_x, lo_y, hi_y = self._edge_room(vw, vh, mw, mh)
+        if mw <= vw:
+            cx = min(max((mw - vw) / 2, lo_x), max(hi_x, lo_x))
+        else:
+            cx = min(max(cx, lo_x), hi_x)
+        if mh <= vh:
+            cy = min((mh - vh) / 2, lo_y) if lo_y < 0 else (mh - vh) / 2
+        else:
+            cy = min(max(cy, lo_y), hi_y)
         return [cx, cy]
 
     # ----- execução
@@ -435,6 +458,7 @@ class Cutscene(ui.Modal):
             def swap(name=args[0], tm=args[1] if len(args) > 1 else None):
                 self.map = self.g.world[name]
                 self.actors = {}
+                self.want = None
                 self.follow = None
                 self.cam_target = None
                 if tm is not None:
@@ -614,6 +638,11 @@ class Cutscene(ui.Modal):
         if self.follow and self.follow in self.actors:
             a = self.actors[self.follow]
             self.cam_target = self.tile_cam(a.fx, a.fy)
+        if not self.cam_target and not self.follow and getattr(self, "want", None):
+            # alguém chegou perto da borda (ou saiu dela): a câmera ajusta devagar, sem parar a cena
+            t = self.tile_cam(*self.want)
+            if abs(t[0] - self.cam[0]) > 2 or abs(t[1] - self.cam[1]) > 2:
+                self.cam_target = t
         if self.cam_target:
             k = min(1.0, dt * 2.2)
             self.cam[0] += (self.cam_target[0] - self.cam[0]) * k

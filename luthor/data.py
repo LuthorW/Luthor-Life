@@ -274,12 +274,13 @@ SELLABLE = {"product", "fish", "dish", "junk", "crop", "forage"}
 # Lojas. Abertas quando o atendente está no local.
 # --------------------------------------------------------------------------
 SHOPS = {
+    # cada item é vendido num lugar só (vinho na Trattoria, flores no Mercado, livro na Bayside Books...)
     "cafe": dict(title="Grão Nobre", subtitle="Café, comida e presentes.",
-                 stock=["expresso", "cappuccino", "croissant", "sanduiche", "rosquinha", "flores", "vinho", "livro"],
+                 stock=["expresso", "cappuccino", "croissant", "sanduiche", "rosquinha"],
                  discount_flag="rafa_discount"),
     "market": dict(title="Mercado Central", subtitle="Ingredientes frescos, flores e presentes especiais.",
                    stock=["arroz", "massa", "farinha", "ovos", "leite", "queijo", "tomate", "manjericao",
-                          "cogumelos", "limao", "chocolate", "flores", "girassois", "vinho", "rosas", "pingente",
+                          "cogumelos", "limao", "chocolate", "flores", "girassois", "rosas", "pingente",
                           "semente_manjericao", "semente_tomate", "semente_morango", "semente_girassol",
                           "semente_rosa", "semente_abobora"]),
     "books": dict(title="Bayside Books", subtitle="Livros que mudam vidas (e dão bônus permanentes).",
@@ -288,11 +289,11 @@ SHOPS = {
     "trattoria": dict(title="Ricci Trattoria", subtitle="Cozinha italiana de verdade. Grazie!",
                       stock=["pizza", "lasanha", "tiramisu", "soda", "vinho"], discount_flag="vittoria_family"),
     "bar": dict(title="Noonan's", subtitle="Bebidas, petiscos e fliperama.",
-                stock=["soda", "drink", "petiscos", "vinho"]),
+                stock=["drink", "petiscos"]),
     "pharmacy": dict(title="Farmácia Conti Moretti", subtitle="Sua saúde em primeiro lugar.",
                      stock=["vitamina", "cha_camomila", "isotonico", "barra_cereal", "kit_cuidado"]),
     "bait": dict(title="Barraca do Joca", subtitle="Tudo pra pescaria. 'Peixe bom é peixe fisgado!'",
-                 stock=["isca", "vara_fibra", "limao"]),
+                 stock=["isca", "vara_fibra"]),
 }
 
 CAFE_STOCK = SHOPS["cafe"]["stock"]

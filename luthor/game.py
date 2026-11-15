@@ -58,6 +58,9 @@ from . import degustacao  # degustação de vinhos com a Vittoria (sede do Grupp
 from . import pediatria  # brinquedoteca e voluntariado no Conti Moretti
 from . import surpresa   # aniversário da Letícia: festa surpresa no terraço
 from . import pausa      # menu de pausa (Esc) com a aba de configurações
+from . import resumo     # tela do fim do dia (vendas, LCORP, avisos)
+from . import praca      # praça do chafariz no Parque Central
+from . import armario    # armário da cozinha da cobertura (guardar coisas)
 from . import andrea     # Andrea Rojas: mensagens e visita a cada estação
 from . import colecao    # primeira coleção da Celeste (investimento da Letícia)
 from . import coracoes   # eventos de coração que completam a história da Lucy e da Vittoria
@@ -77,7 +80,7 @@ from . import animacoes   # regar, bancada, vara de pesca, deitar, colo, aceno, 
 from .world import CITY_LAYOUT, CITY_DOORS, old_city_xy
 
 # módulos novos com estado próprio (init_state / save_state / load_state, night, morning, hud_lines...)
-NOVOS = (surpresa, andrea, colecao, coracoes, encontros, clube, corrida, laboratorio)
+NOVOS = (surpresa, andrea, colecao, coracoes, encontros, clube, corrida, laboratorio, armario)
 celular.AGENDA_TODAY.extend(m.hud_lines for m in NOVOS if hasattr(m, "hud_lines"))
 
 
@@ -134,6 +137,7 @@ FLAVOR = {
     "sofa": "Um sofá roxo. Perigosamente confortável.", "sofa_grey": "Um sofá de espera.",
     "armchair": "Uma poltrona de leitura.", "coffee_table": "Uma mesinha de centro com revistas da CatCo.",
     "statue": "O monumento da Luthor Corp. Dizem que dá sorte tocar no 'L'.",
+    "chafariz": "O chafariz da praça. Tem moedinhas no fundo: dizem que o desejo se realiza se ela cair na bacia de cima.",
     "bench": "Um banco. A vista daqui é ótima.", "bench_l": "Um banco encostado na parede. Lugar bom pra ver o movimento.",
     "bench_r": "Um banco encostado na parede. Lugar bom pra ver o movimento.", "lamp": "Iluminação pública patrocinada pela Luthor Corp.",
     "table": "Uma mesinha.", "table_it": "Toalha xadrez, vela acesa. Romântico.",
@@ -469,6 +473,7 @@ class Game:
             npc.plan_day(self.weekday, self.weather, partner=(key == self.partner), date=date)
             if key in DOCTOR_KEYS:
                 npc.schedule = doctor_schedule(key, self.abs_day())
+            npc.schedule = horarios.fix_schedule(key, npc.schedule)   # ninguém dentro de prédio fechado
             festas.override(self, npc)          # dia de festa: todo mundo vai
             casal.override(self, npc)           # aniversário de namoro: ela espera no jantar
             clube.override(self, npc)           # quinta: o Theo espera o clube do livro
@@ -650,8 +655,7 @@ class Game:
         if self.scene == "title":
             self.handle_title(ev)
         elif self.scene == "summary":
-            if ev.type == pygame.KEYDOWN and ev.key in ui.CONFIRM:
-                self.start_fade(self.begin_day)
+            resumo.handle(self, ev)                 # Enter começa o dia; V mostra todas as vendas
         elif self.scene == "play":
             self.handle_play(ev)
 
@@ -937,7 +941,7 @@ class Game:
                or decor.object_label(self, t) or fundacao.object_label(self, t) or historia.object_label(self, t)
                or pedidos.object_label(self, t) or degustacao.object_label(self, t)
                or pediatria.object_label(self, t) or lugares.object_label(self, t)
-               or laboratorio.object_label(self, t)
+               or laboratorio.object_label(self, t) or armario.object_label(self, t)
                or activities.object_label(self, t) or hospital.object_label(self, t)
                or marina.target_label(self, t))
         if lab:
@@ -1058,7 +1062,7 @@ class Game:
                 or decor.use_object(self, o) or fundacao.use_object(self, o) or historia.use_object(self, o)
                 or pedidos.use_object(self, o) or degustacao.use_object(self, o)
                 or pediatria.use_object(self, o) or lugares.use_object(self, o)
-                or laboratorio.use_object(self, o)):
+                or laboratorio.use_object(self, o) or armario.use_object(self, o)):
             return
         if k in self.SEATS:                         # dá para sentar até na casa dos outros
             self.sit(o)
@@ -3361,7 +3365,8 @@ class Game:
 
     def object_image(self, o):
         img = (assentos.object_image(self, o) or lugares.object_image(self, o) or album.object_image(self, o) or festas.object_image(self, o)
-               or natureza.object_image(self, o) or scenery.object_image(self, o))
+               or natureza.object_image(self, o) or scenery.object_image(self, o)
+               or praca.object_image(self, o))
         if img is not None:
             return img
         if o.kind == "plot":
@@ -3521,40 +3526,7 @@ class Game:
             surf.blit(veil, (0, 0))
 
     def draw_summary(self, surf):
-        surf.fill((10, 6, 18))
-        s = self.summary
-        d, q, y = s["date"]
-        ui.text(surf, "Fim do dia", (SCREEN_W // 2, 34), 40, C_TEXT, bold=True, center=True)
-        ui.text(surf, self.date_label(d, q, y), (SCREEN_W // 2, 88), 20, C_LILAC, center=True)
-        r = pygame.Rect(260, 130, SCREEN_W - 520, 330)
-        ui.panel(surf, r)
-        ui.text(surf, "Vendas da noite", (r.x + 24, r.y + 16), 20, C_LILAC, bold=True)
-        yy = r.y + 52
-        if not s["table"]:
-            ui.text(surf, "Nada vendido hoje.", (r.x + 24, yy), 18, C_MUTED)
-        for item, n, val in s["table"][:6]:
-            surf.blit(art.item_icon(item, 2), (r.x + 22, yy - 4))
-            ui.text(surf, f"{n}x {ITEMS[item]['name']}", (r.x + 64, yy), 18)
-            ui.text(surf, f"$ {val:,}".replace(",", "."), (r.right - 24, yy), 18, C_GOLD, right=True)
-            yy += 34
-        if len(s["table"]) > 6:
-            ui.text(surf, f"+ {len(s['table']) - 6} outros itens", (r.x + 64, yy), 16, C_MUTED)
-        pygame.draw.line(surf, (80, 60, 110), (r.x + 20, r.bottom - 60), (r.right - 20, r.bottom - 60))
-        ui.text(surf, "Total", (r.x + 24, r.bottom - 46), 22, C_TEXT, bold=True)
-        ui.text(surf, f"$ {s['earnings']:,}".replace(",", "."), (r.right - 24, r.bottom - 46), 22, C_GOLD,
-                bold=True, right=True)
-        a, b = s["stock"]
-        col = C_GREEN if b >= a else C_RED
-        sign = "+" if b >= a else ""
-        ui.text(surf, f"LCORP: $ {a:.2f}  ->  $ {b:.2f}  ({sign}{b - a:.2f})".replace(".", ","), (SCREEN_W // 2, 478),
-                19, col, bold=True, center=True)
-        yy = 514
-        for msg, color in s["notes"][:5]:
-            ui.text(surf, msg, (SCREEN_W // 2, yy), 17, color, center=True)
-            yy += 26
-        if int(self.t * 2) % 2 == 0:
-            ui.text(surf, "Jogo salvo. Pressione Enter para começar o novo dia.", (SCREEN_W // 2, SCREEN_H - 34),
-                    17, C_MUTED, center=True)
+        resumo.draw(self, surf)
 
 
 def mix_rgb(a, b, t):

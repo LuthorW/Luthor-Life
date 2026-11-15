@@ -518,7 +518,7 @@ FESTIVALS = {
         place="no Parque Central", where="Parque Central", area=(13, 28, 27, 42), audience=(20, 39, "up"), entry=(20, 44),
         host_spot=(22, 38, "left"), effect="petalas", activity="festa_mastro",
         props=[("festa_mastro", 20, 38), ("festa_arco", 18, 41), ("festa_arco", 18, 28), ("barraca_flores", 14, 39),
-               ("festa_vaso", 14, 35), ("festa_vaso", 26, 35), ("festa_vaso", 14, 29), ("festa_vaso", 26, 29)],
+               ("festa_vaso", 14, 31), ("festa_vaso", 25, 31), ("festa_vaso", 14, 37), ("festa_vaso", 25, 37)],
         shop=["coroa_flores", "flores", "girassois", "soda", "rosquinha"],
         speech=["Bom dia, National City! Bem-vindos à Festa das Flores!",
                 "A primavera chegou, o parque está florido e, pela primeira vez, a Luthor Corp patrocinou as coroas de flores. Obrigada, chefe!",

@@ -194,6 +194,7 @@ def reserved(g):
         return _RES["home"]
     out = {DOOR_IN, (16, 13), world.HOME_BED, (20, 7), (14, 12), (24, 14), (23, 14), (24, 13)}
     out |= {(x, 4) for x in range(16, 23)}                      # café da manhã (casal.py)
+    out |= {(24, 3), (23, 4), (23, 3)}                            # geladeira e armário da cozinha (armario.py)
     try:
         from .cutscenes import SCENES, move_in_scene
         for sc in SCENES.values():

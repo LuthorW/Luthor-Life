@@ -18,11 +18,36 @@ OPEN_HOURS = {
     "books": (8 * 60, 21 * 60, ("theo",), 2),
     "boutique": (9 * 60, 19 * 60, ("celeste",), 2),
     "trattoria": (9 * 60, 23 * 60, ("graca", "vittoria"), 2),
-    "bar": (16 * 60, 26 * 60, ("marco",), 2),
+    "bar": (14 * 60, 26 * 60, ("marco",), 2),
     "cinema": (12 * 60, 26 * 60, (), 0),
     "catco": (8 * 60, 20 * 60, ("lucy", "nia", "barry"), 4),
     "ricci": (9 * 60, 19 * 60, ("vittoria",), 4),
 }
+
+def fix_schedule(key, sch):
+    """Rotina de NPC sem ninguém dentro de prédio fechado (a não ser quem comanda o lugar).
+
+    Chegou antes de abrir: espera onde estava e entra na hora de abrir (se até lá já era hora de ir embora, nem
+    vai). Ficaria depois de fechar: na hora de fechar vai para casa (ou sai de cena, se não tem casa na cidade)."""
+    from .characters import _at_home
+    sch = sorted(sch, key=lambda e: e[0])
+    out = []
+    for i, (t, m, x, y, d) in enumerate(sch):
+        nxt = sch[i + 1][0] if i + 1 < len(sch) else 26 * 60
+        if m not in OPEN_HOURS or key in OPEN_HOURS[m][2]:
+            out.append((t, m, x, y, d))
+            continue
+        a, b = OPEN_HOURS[m][0], OPEN_HOURS[m][1]
+        start, end = max(t, a), min(nxt, b)
+        if start >= end:                       # o lugar fica fechado o tempo todo em que ela iria
+            continue
+        out.append((start, m, x, y, d))
+        if end < nxt:                          # fechou com ela lá dentro: vai embora
+            out.append(_at_home(key, [(end, None, 0, 0, "down")])[0])
+    if not out:
+        out = _at_home(key, [(sch[0][0] if sch else 6 * 60, None, 0, 0, "down")])
+    return out
+
 
 # ganchos extras: fn(g, lugar) -> True quando algo marcado ali deve abrir a porta
 INVITES = []

@@ -448,7 +448,7 @@ NPCS = {
         look=look((30, 26, 28), (190, 140, 110), (40, 40, 46), (200, 40, 60), (30, 30, 36), (20, 18, 22), "short"),
         portrait="marco.png", shop="bar", shop_map="bar",
         gifts=dict(love=["moqueca", "peixe_grelhado", "vinho"], like=["petiscos", "pizza", "atum"], dislike=["flores"]),
-        schedule=dict(default=[(360, None, 0, 0, "down"), (960, "bar", 4, 3, "down"), (1530, None, 0, 0, "down")]),
+        schedule=dict(default=[(360, None, 0, 0, "down"), (820, "bar", 4, 3, "down"), (1530, None, 0, 0, "down")]),
         lines=dict(
             low=["Bem-vinda ao Noonan's. O fliperama Meteoro tá ali no canto. O recorde é 32. Ninguém bate.",
                  "Aqui todo mundo é igual. CEO, repórter, pescador. Todo mundo paga a conta.",

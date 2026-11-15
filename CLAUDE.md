@@ -54,7 +54,9 @@ luthor/
   falas.py       MAIS: falas extras de todas as personagens (mesmas categorias de LINES), somadas no fim de
                  dialogue.py (a Celeste, no boutique.py, que monta as falas dela depois). Fala nova: pode entrar aqui
   horarios.py    horário de funcionamento dos prédios (`OPEN_HOURS`: abre, fecha, quem comanda, corações) e a porta
-                 trancada fora dele (`can_enter`, chamado por `Game.door_open`); exceções em `invited` + `INVITES`
+                 trancada fora dele (`can_enter`, chamado por `Game.door_open`); exceções em `invited` + `INVITES`;
+                 `fix_schedule` (chamado em `Game.plan_npcs`) tira da rotina quem não comanda o prédio fora do horário
+                 (chega na abertura, vai para casa no fechamento)
   hospital.py    Conti Moretti: especialidades, consultas, bônus do dia, farmácia, doação
   crowd.py       figurantes (moradores sem conversa) que circulam pela cidade
   activities.py  horta do terraço, coletáveis, bichinho, karaokê, cinema, céu do terraço
@@ -181,7 +183,19 @@ luthor/
   seasons.py     estações (Q1 primavera, Q2 verão, Q3 outono, Q4 inverno): grama, árvores, neve, coletáveis
   audio.py       som: efeitos gerados por código (músicas existem no código, mas DESLIGADAS: MUSIC_ENABLED)
   ui.py          fonte, painéis com moldura em pixel art, Dialog, Choice, Shop, InfoPanel, NumberPrompt, Toasts, HUD
-  data.py        PROJECTS, ITEMS, FISH, RECIPES, BOOKS, SHOPS, CROPS, FORAGE, FLAG_LABELS, GOALS, TIPS
+  data.py        PROJECTS, ITEMS, FISH, RECIPES, BOOKS, SHOPS, CROPS, FORAGE, FLAG_LABELS, GOALS, TIPS. Cada item é
+                 vendido num lugar só (vinho na Trattoria, lenço/óculos só na Boutique): item novo de loja não pode repetir
+  resumo.py      tela do fim do dia: vendas da noite (as 5 maiores + total por tipo), ação LCORP, dinheiro, novo dia e
+                 avisos; V/Tab abre a lista com TODOS os itens vendidos e os avisos (`ui.ScrollPanel`)
+  praca.py       praça do chafariz no Parque Central, SIMÉTRICA (pedido da dona): praça 14..25 x 29..39, eixos no meio
+                 das colunas 19|20 e da fileira 34 (par espelhado: x + x' = 39, y + y' = 68); trilhas norte/sul 18..21,
+                 leste/oeste 33..35 (a oeste desce até o deque do lago). Chão de pedra ("plaza") com quinas de flores e
+                 vasos, mosaico (anel de terracota e rosa dos ventos) e meio-fio (`decorate_floor`), chafariz de pedra
+                 animado (objeto "chafariz" 6x3 em 17,33, desenho espelhado, `object_image`). As cenas usam as colunas
+                 15 e 23 da praça: nada sólido ali
+  armario.py     armário da cozinha da cobertura (`SPOT` = 24,4, embaixo da geladeira): baú com 36 espaços; tela com a
+                 mochila em cima e o armário embaixo (E pilha, F 1, G guarda tudo menos ferramentas, Tab troca de lado).
+                 Estado em `g.armario["slots"]` (módulo em `NOVOS`)
 ```
 
 ## Convenções importantes
@@ -475,12 +489,16 @@ luthor/
   a cidade (mais na chuva/tempestade); `natureza.faded` é a copa translúcida no mesmo quadro. Tufinhos de grama
   (`draw_ground`) só ao ar livre e fora do inverno. Sem nuvens.
 - **Horário dos prédios (horarios.py):** Grão Nobre 6h-22h (Harry), Mercado 7h-20h (Bea), Bayside Books 8h-21h (Theo),
-  La Boutique 9h-19h (Celeste), Ricci Trattoria 9h-23h (Dona Graça ou Vittoria), Noonan's 16h-2h (Marco), Cine National
+  La Boutique 9h-19h (Celeste), Ricci Trattoria 9h-23h (Dona Graça ou Vittoria), Noonan's 14h-2h (Marco, que chega 13h40), Cine National
   12h-2h (ninguém), CatCo 8h-20h (Lucy, Nia ou Barry) e Gruppo Ricci 9h-19h (Vittoria). Fora do horário a porta tranca;
   quem comanda libera a qualquer hora com 2 corações (lojas/cafés/restaurantes) ou 4 (escritórios). A Luthor Corp (sede e
   Marina), o hospital e as casas nunca fecham. Cena/evento pendente, pedido de namoro, encontro, visita da Andrea e
   aniversário de namoro marcados ali abrem a porta (`invited`). Quem já está dentro pode ficar depois que fecha.
   Lugar novo com horário: entrada em `OPEN_HOURS`; atividade nova marcada fora do horário: gancho em `INVITES`.
+  NPCs e figurantes também respeitam o horário: `horarios.fix_schedule` corta a rotina (a Meredith não fica mais no cinema
+  de manhã) e `crowd._open` cruza os horários dos figurantes com `OPEN_HOURS`.
+- **Câmera das cenas:** a câmera da cutscene pode passar da borda do mapa (fundo preto) para mostrar o emoji acima da
+  cabeça e quem está perto das faixas pretas (`cutscenes.EMOTE_ROOM`, `_edge_room`; a câmera volta para `want` sozinha).
 - **Andrea Rojas e a Luthor Corp:** a Andrea NÃO tem nada a ver com a Luthor Corp (nem conselho, nem parceria, nem
   encomenda, nem "ajuda": a Luthor Corp não precisa de ajuda). É só amiga; os bônus dela são de amiga (presente, energia,
   carisma, bom astral). Ela não está na reunião do conselho (historia_5): as falas dela foram para o Hamilton e a Sam.
@@ -800,3 +818,6 @@ substitua `pygame.key.get_pressed`. Antes de entregar uma mudança, rode alguns 
 46. Menu de pausa novo (pausa.py): painel com as abas Menu e Configurações (tela cheia, zoom, som e controles).
 47. Aceno de quem já conversou com a Letícia (também andando), linha de pesca mais longe com a vara de fibra e o nível
     de pesca, retratos da Sam com a cabeça inteira, mar sem a faixa clara embaixo do píer e a Rua Bayside chegando à orla.
+48. Ninguém dentro de prédio fechado (rotinas cortadas pelo horário), Noonan's abre às 14h, tela do fim do dia nova com a
+    lista de todos os itens vendidos (V), cada item vendido numa loja só, câmera das cenas passando da borda para o emoji
+    aparecer, praça do chafariz caprichada e simétrica (praca.py) e armário de guardar coisas na cozinha (armario.py).

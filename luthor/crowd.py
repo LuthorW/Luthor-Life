@@ -26,7 +26,7 @@ from .hospital import LEADERS
 # Horário de funcionamento (minutos do dia; fecha depois da meia-noite = > 1440)
 VENUES = {
     "cafe": (7 * 60, 19 * 60), "catco": (8 * 60, 20 * 60), "ricci": (9 * 60, 18 * 60), "marina": (8 * 60, 20 * 60), "books": (9 * 60, 21 * 60),
-    "market": (7 * 60, 19 * 60), "trattoria": (11 * 60 + 30, 23 * 60), "bar": (17 * 60, 25 * 60),
+    "market": (7 * 60, 19 * 60), "trattoria": (11 * 60 + 30, 23 * 60), "bar": (15 * 60, 25 * 60),
     "cinema": (12 * 60, 24 * 60), "hospital": (7 * 60, 22 * 60), "park": (6 * 60 + 30, 21 * 60),
     "beach": (7 * 60, 20 * 60), "boutique": (10 * 60, 19 * 60),
 }
@@ -270,6 +270,9 @@ class Crowd:
             return False
         if weather == "chuva" and venue in ("park", "beach"):
             return False
+        from . import horarios                   # e só enquanto o prédio está aberto
+        if venue in horarios.OPEN_HOURS:
+            a, b = max(a, horarios.OPEN_HOURS[venue][0]), min(b, horarios.OPEN_HOURS[venue][1])
         return a <= minutes < b - 30
 
     def _occupied(self, venue):

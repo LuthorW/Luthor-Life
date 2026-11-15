@@ -51,6 +51,11 @@ def _base(g):
             r = 3 if o.kind.startswith("bush") else 5
             col = (40, 100, 60) if o.kind == "pine" else ((90, 150, 70) if o.kind == "palm" else leaf)
             pygame.draw.circle(s, col, (o.x * T + T // 2, o.y * T + T // 2), r)
+        elif o.kind == "chafariz":                       # chafariz redondo no meio da praça
+            c = (o.x * T + o.w * T // 2, o.y * T + o.h * T // 2)
+            pygame.draw.ellipse(s, (196, 190, 206), (c[0] - o.w * T // 2, c[1] - o.h * T // 2, o.w * T, o.h * T))
+            pygame.draw.ellipse(s, TILE_COLORS["fountain"], (c[0] - o.w * T // 2 + 2, c[1] - o.h * T // 2 + 2,
+                                                             o.w * T - 4, o.h * T - 4))
     for b in m.buildings:
         rect = pygame.Rect(b.x * T, b.y * T, b.w * T, b.h * T)
         col = BUILDING_COLORS.get(b.target, (110, 104, 120))

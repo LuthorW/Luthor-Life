@@ -4,7 +4,7 @@ import random
 
 import pygame
 
-from . import art, scenery, nautical, caprichado, interiores
+from . import art, scenery, nautical, caprichado, interiores, praca
 from .config import TILE, SCALE
 
 SOLID_TILES = {"wall", "wall_top", "glass", "water", "sea", "sea_foam", "fountain", "void", "deep"}
@@ -17,6 +17,7 @@ OBJECT_DEFS = {
     "palm": (1, 1, True, "obj"), "hedge": (1, 1, True, "obj"), "planter": (1, 1, True, "obj"),
     "bush": (1, 1, True, "obj"), "bush2": (1, 1, True, "obj"), "bush3": (1, 1, True, "obj"),
     "lamp": (1, 1, True, "obj"), "bench": (1, 1, True, "obj"), "statue": (1, 1, True, "obj"),
+    "chafariz": (6, 3, True, "obj"), "armario_cozinha": (1, 1, True, "obj"),
     "hydrant": (1, 1, True, "obj"), "busstop": (2, 1, True, "obj"), "umbrella": (1, 1, True, "obj"),
     "umbrella2": (1, 1, True, "obj"), "lifeguard": (2, 1, True, "obj"), "boat": (3, 1, True, "obj"),
     "kiosk": (3, 1, True, "obj"), "signboard": (1, 1, True, "obj"),
@@ -75,7 +76,7 @@ OBJECT_DEFS.update(interiores.OBJECT_DEFS)
 # do objeto). Postes, bancos, árvores e arbustos ocupam só a base: dá para contornar sem enroscar.
 # NPCs continuam desviando do tile inteiro.
 HITBOXES = {
-    "lamp": (5, 10, 6, 6), "hydrant": (4, 8, 8, 8), "signboard": (5, 10, 6, 6), "bench": (1, 6, 14, 9),
+    "lamp": (5, 10, 6, 6), "hydrant": (4, 8, 8, 8), "chafariz": (2, 6, 92, 40), "signboard": (5, 10, 6, 6), "bench": (1, 6, 14, 9),
     "tree": (4, 8, 8, 8), "tree2": (4, 8, 8, 8), "tree3": (4, 8, 8, 8), "pine": (5, 8, 6, 8),
     "palm": (4, 9, 8, 7), "bush": (2, 5, 12, 11), "bush2": (2, 5, 12, 11), "bush3": (2, 5, 12, 11),
     "planter": (2, 5, 12, 11), "umbrella": (6, 9, 4, 7), "umbrella2": (6, 9, 4, 7), "rock": (3, 7, 10, 9),
@@ -236,6 +237,7 @@ class GameMap:
         scenery.decorate_floor(self, surf)
         nautical.decorate_floor(self, surf)
         caprichado.decorate_floor(self, surf)       # meio-fio
+        praca.decorate_floor(self, surf)            # mosaico e meio-fio da praça do chafariz
         caprichado.building_shadows(self, surf)     # sombra dos prédios no chão
         self.floor_surface = surf
 
@@ -413,39 +415,46 @@ def build_city():
     m.fill(54, 64, 63, 65, "pier")
 
     # --- Parque Central -------------------------------------------------------
-    m.fill(14, 29, 26, 40, "dirt")          # praça do chafariz
+    # Praça simétrica: eixo vertical no meio das colunas 19|20 (trilhas norte/sul 18..21, chafariz 17..22) e eixo
+    # horizontal no meio da fileira 34 (praça 29..39, chafariz 33..35, trilhas leste/oeste 33..35).
+    # Par espelhado: x + x' = 39 e y + y' = 68.
+    m.fill(14, 29, 25, 39, "plaza")         # praça do chafariz (pedras; mosaico e meio-fio em praca.py)
+    for (cx, cy, sx, sy) in ((14, 29, 1, 1), (25, 29, -1, 1), (14, 39, 1, -1), (25, 39, -1, -1)):
+        for (dx, dy) in ((0, 0), (1, 0), (0, 1)):     # quinas cortadas com canteiros de flores
+            m.tiles[cy + dy * sy][cx + dx * sx] = "flowers"
     m.fill(18, 22, 21, 28, "dirt")          # entrada norte
-    m.fill(27, 32, 40, 33, "dirt")          # trilha leste até a Rua Bayside
-    m.fill(18, 41, 21, 48, "dirt")          # trilha sul até a orla
-    m.fill(18, 32, 22, 34, "fountain")
+    m.fill(26, 33, 40, 35, "dirt")          # trilha leste até a Rua Bayside
+    m.fill(10, 33, 13, 35, "dirt")          # trilha oeste...
+    m.fill(10, 36, 12, 39, "dirt")          # ...que desce até o deque do lago
+    m.fill(18, 40, 21, 48, "dirt")          # trilha sul até a orla
     for (x0, y0, x1, y1) in ((3, 38, 9, 43), (4, 37, 8, 37), (4, 44, 8, 44)):
         m.fill(x0, y0, x1, y1, "water")     # lago
     m.fill(9, 40, 12, 41, "pier")           # deque de pesca do lago
     for (fx, fy, fw, fh) in [(4, 27, 4, 2), (30, 26, 3, 3), (24, 42, 6, 2), (1, 45, 3, 1), (32, 39, 3, 2),
-                             (14, 26, 2, 2), (28, 45, 4, 2)]:
+                             (14, 26, 2, 2), (24, 26, 2, 2), (28, 45, 4, 2)]:
         m.fill(fx, fy, fx + fw - 1, fy + fh - 1, "flowers")
-    m.add("statue", 20, 33)
+    m.add("chafariz", *praca.FOUNTAIN)      # chafariz de pedra animado (6x3)
     for x in range(1, 41):
         if x not in (18, 19, 20, 21):
             m.add("hedge", x, 22)
     for y in range(23, 49):
-        if y not in (32, 33):
+        if y not in (33, 34, 35):
             m.add("hedge", 40, y)
-    for (bx, by) in [(15, 28), (25, 28), (14, 41), (26, 41), (27, 31), (27, 34), (12, 39)]:
+    for (bx, by) in [(15, 28), (24, 28), (15, 40), (24, 40), (13, 32), (26, 32), (13, 36), (26, 36)]:
         m.add("bench", bx, by)
     for (tx, ty, k) in [(2, 26, "tree"), (8, 24, "tree2"), (11, 30, "tree3"), (5, 32, "tree"), (2, 35, "tree2"),
                         (15, 45, "tree"), (11, 46, "tree3"), (31, 24, "tree2"), (36, 27, "tree"), (33, 29, "tree3"),
                         (36, 38, "tree"), (31, 43, "tree2"), (37, 45, "tree"), (24, 46, "tree3"), (2, 42, "tree"),
                         (25, 24, "tree"), (11, 26, "tree3"), (35, 35, "pine"), (2, 47, "pine"), (7, 47, "tree2")]:
         m.add(k, tx, ty)
-    for (lx, ly) in [(17, 27), (22, 27), (13, 34), (27, 37), (17, 42), (22, 42), (13, 30)]:
+    for (lx, ly) in [(17, 27), (22, 27), (17, 41), (22, 41), (13, 31), (26, 31), (13, 37), (26, 37)]:
         m.add("lamp", lx, ly)
-    for (bx, by, k) in [(16, 26, "bush"), (23, 26, "bush2"), (11, 33, "bush3"), (27, 39, "bush"), (11, 37, "bush2"),
-                        (6, 29, "bush"), (3, 45, "bush2"), (27, 44, "bush"), (9, 34, "bush3"), (34, 42, "bush"),
+    for (bx, by, k) in [(16, 26, "bush"), (23, 26, "bush2"), (8, 34, "bush3"), (8, 37, "bush2"),
+                        (6, 29, "bush"), (3, 45, "bush2"), (27, 44, "bush"), (34, 42, "bush"),
                         (5, 24, "bush2"), (37, 30, "bush3"), (13, 43, "bush")]:
         if m.tiles[by][bx] in ("grass", "flowers"):
             m.add(k, bx, by)
-    for (px, py) in [(17, 31), (23, 31), (16, 36), (24, 36)]:
+    for (px, py) in [(14, 29), (25, 29), (14, 39), (25, 39)]:     # vasos nas quinas floridas (as cenas usam o miolo)
         m.add("flowerpot" if px < 20 else "flowerpot2", px, py)
     m.add("picnic", 29, 36)
     m.add("rock_big", 2, 38); m.add("rock", 10, 44); m.add("stump", 34, 47)
@@ -701,6 +710,7 @@ def build_home():
     m.add("stove", 21, 2)
     m.add("kitchen2", 22, 2)
     m.add("fridge", 24, 2)
+    m.add("armario_cozinha", 24, 4)     # armário para guardar coisas (armario.py, SPOT)
     m.add("island", 19, 5)
     m.add("stool", 19, 6); m.add("stool", 21, 6)
     m.add("petbed", 24, 14)          # caminha no canto da sala (activities.PET_BED)

@@ -188,7 +188,7 @@ MORE_GIFTS = {
 }
 ITEMS.update(MORE_GIFTS)
 for shop, items in {"cafe": ["macarons", "cafe_especial"],
-                    "market": ["vela_aromatica", "lenco_seda", "bonsai", "mel", "oculos_sol"],
+                    "market": ["vela_aromatica", "bonsai", "mel"],       # lenço e óculos: só na Boutique
                     "books": ["caneta_tinteiro", "quebra_cabeca", "jogo_tabuleiro", "kit_pintura"],
                     "bar": ["whisky"],
                     "bait": ["miniatura_veleiro"],
